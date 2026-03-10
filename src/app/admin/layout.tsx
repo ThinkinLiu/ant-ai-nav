@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, Users, FileCheck, BarChart3, ArrowLeft, MessageCircle } from 'lucide-react'
+import { LayoutDashboard, Users, FileCheck, BarChart3, ArrowLeft, MessageCircle, UserCheck } from 'lucide-react'
 
 const navItems = [
   { href: '/admin', label: '数据概览', icon: BarChart3 },
   { href: '/admin/tools', label: '工具审核', icon: FileCheck },
+  { href: '/admin/applications', label: '发布者审核', icon: UserCheck },
   { href: '/admin/users', label: '用户管理', icon: Users },
   { href: '/admin/comments', label: '评论管理', icon: MessageCircle },
 ]
