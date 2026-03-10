@@ -1,0 +1,262 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getSupabaseClient } from '@/storage/database/supabase-client'
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const client = getSupabaseClient()
+
+    // 获取工具详情
+    const { data: tool, error } = await client
+      .from('ai_tools')
+      .select('*')
+      .eq('id', parseInt(id))
+      .single()
+
+    if (error || !tool) {
+      return NextResponse.json(
+        { success: false, error: '工具不存在' },
+        { status: 404 }
+      )
+    }
+
+    // 增加浏览量
+    await client
+      .from('ai_tools')
+      .update({ view_count: (tool.view_count || 0) + 1 })
+      .eq('id', tool.id)
+
+    // 获取分类信息
+    const { data: category } = await client
+      .from('categories')
+      .select('*')
+      .eq('id', tool.category_id)
+      .single()
+
+    // 获取发布者信息
+    const { data: publisher } = await client
+      .from('users')
+      .select('*')
+      .eq('id', tool.publisher_id)
+      .single()
+
+    // 获取标签
+    const { data: toolTags } = await client
+      .from('tool_tags')
+      .select('tags(*)')
+      .eq('tool_id', tool.id)
+
+    const tags = toolTags?.map((tt: any) => tt.tags).filter(Boolean) || []
+
+    // 获取评论统计
+    const { data: comments } = await client
+      .from('comments')
+      .select('rating')
+      .eq('tool_id', tool.id)
+      .not('rating', 'is', null)
+
+    const ratings = comments?.map(c => c.rating).filter(Boolean) as number[] || []
+    const avgRating = ratings.length > 0 
+      ? ratings.reduce((a, b) => a + b, 0) / ratings.length 
+      : 0
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...tool,
+        category,
+        publisher: publisher ? { ...publisher, password: undefined } : null,
+        tags,
+        avgRating: Math.round(avgRating * 10) / 10,
+        reviewCount: comments?.length || 0,
+      },
+    })
+  } catch (error) {
+    console.error('获取工具详情错误:', error)
+    return NextResponse.json(
+      { success: false, error: '服务器错误' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const authHeader = request.headers.get('authorization')
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { success: false, error: '请先登录' },
+        { status: 401 }
+      )
+    }
+
+    const token = authHeader.substring(7)
+    const client = getSupabaseClient(token)
+
+    // 获取当前用户
+    const { data: { user } } = await client.auth.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: '无效的登录状态' },
+        { status: 401 }
+      )
+    }
+
+    // 获取工具
+    const { data: tool } = await client
+      .from('ai_tools')
+      .select('publisher_id')
+      .eq('id', parseInt(id))
+      .single()
+
+    if (!tool) {
+      return NextResponse.json(
+        { success: false, error: '工具不存在' },
+        { status: 404 }
+      )
+    }
+
+    // 检查权限
+    const { data: userData } = await client
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (tool.publisher_id !== user.id && userData?.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: '无权限修改此工具' },
+        { status: 403 }
+      )
+    }
+
+    const body = await request.json()
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    }
+
+    if (body.name) updateData.name = body.name
+    if (body.description) updateData.description = body.description
+    if (body.longDescription) updateData.long_description = body.longDescription
+    if (body.website) updateData.website = body.website
+    if (body.logo) updateData.logo = body.logo
+    if (body.categoryId) updateData.category_id = body.categoryId
+    if (body.isFree !== undefined) updateData.is_free = body.isFree
+    if (body.pricingInfo) updateData.pricing_info = body.pricingInfo
+    if (body.status) updateData.status = body.status
+    if (body.isFeatured !== undefined) updateData.is_featured = body.isFeatured
+    if (body.rejectReason) updateData.reject_reason = body.rejectReason
+
+    const { data: updatedTool, error } = await client
+      .from('ai_tools')
+      .update(updateData)
+      .eq('id', parseInt(id))
+      .select()
+      .single()
+
+    if (error) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: updatedTool,
+    })
+  } catch (error) {
+    console.error('更新工具错误:', error)
+    return NextResponse.json(
+      { success: false, error: '服务器错误' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const authHeader = request.headers.get('authorization')
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { success: false, error: '请先登录' },
+        { status: 401 }
+      )
+    }
+
+    const token = authHeader.substring(7)
+    const client = getSupabaseClient(token)
+
+    const { data: { user } } = await client.auth.getUser()
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: '无效的登录状态' },
+        { status: 401 }
+      )
+    }
+
+    // 获取工具
+    const { data: tool } = await client
+      .from('ai_tools')
+      .select('publisher_id')
+      .eq('id', parseInt(id))
+      .single()
+
+    if (!tool) {
+      return NextResponse.json(
+        { success: false, error: '工具不存在' },
+        { status: 404 }
+      )
+    }
+
+    // 检查权限
+    const { data: userData } = await client
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (tool.publisher_id !== user.id && userData?.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: '无权限删除此工具' },
+        { status: 403 }
+      )
+    }
+
+    const { error } = await client
+      .from('ai_tools')
+      .delete()
+      .eq('id', parseInt(id))
+
+    if (error) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: '删除成功',
+    })
+  } catch (error) {
+    console.error('删除工具错误:', error)
+    return NextResponse.json(
+      { success: false, error: '服务器错误' },
+      { status: 500 }
+    )
+  }
+}
