@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 
+// 国内火爆AI工具名称列表
+const domesticHotTools = [
+  'DeepSeek', 'Kimi智能助手', '通义千问', '文心一言', '讯飞星火', '豆包',
+  '智谱清言', '腾讯混元', '百川大模型', '商量SenseChat', 'MiniMax', '阶跃星辰',
+  '天工AI', '海螺AI', '秘塔AI搜索', '即梦AI', '可灵AI', '通义万相', '文心一格',
+  '无界AI', '堆友', '美图设计室', 'liblibAI', '剪映AI', '必剪', '快影',
+  '秘塔写作猫', '火山写作', '彩云小梦', '通义灵码', '百度Comate', '豆包MarsCode',
+  '飞书AI', '钉钉AI', '石墨文档AI', '魔音工坊', 'Suno AI', 'Udio',
+]
+
 /**
  * 首页聚合API - 一次请求获取所有首页数据
- * 包含：分类列表(带工具数量)、热门工具(TOP 6)、最新工具(20个)
+ * 包含：分类列表(带工具数量)、国内火爆工具(8个)、热门工具(TOP 6)、最新工具(16个)
  */
 export async function GET() {
   try {
@@ -50,8 +60,17 @@ export async function GET() {
       }
     }
 
-    // 3. 并行获取热门工具和最新工具
-    const [hotToolsResult, latestToolsResult] = await Promise.all([
+    // 3. 并行获取国内火爆工具、热门工具和最新工具
+    const [domesticToolsResult, hotToolsResult, latestToolsResult] = await Promise.all([
+      // 国内火爆AI工具（按名称匹配，最多8个）
+      client
+        .from('ai_tools')
+        .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id')
+        .eq('status', 'approved')
+        .in('name', domesticHotTools)
+        .limit(8),
+      
+      // 热门工具（按浏览量排序）
       client
         .from('ai_tools')
         .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id')
@@ -61,14 +80,18 @@ export async function GET() {
         .order('favorite_count', { ascending: false })
         .limit(6),
       
+      // 最新上架（16个，2排）
       client
         .from('ai_tools')
         .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id')
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
-        .limit(20)
+        .limit(16)
     ])
 
+    if (domesticToolsResult.error) {
+      console.error('获取国内火爆工具错误:', domesticToolsResult.error.message)
+    }
     if (hotToolsResult.error) {
       return NextResponse.json(
         { success: false, error: hotToolsResult.error.message },
@@ -94,6 +117,11 @@ export async function GET() {
     }))
 
     // 组装工具数据（添加分类信息）
+    const domesticTools = (domesticToolsResult.data || []).map(tool => ({
+      ...tool,
+      category: categoryMap.get(tool.category_id) || null,
+    }))
+
     const hotTools = (hotToolsResult.data || []).map(tool => ({
       ...tool,
       category: categoryMap.get(tool.category_id) || null,
@@ -108,6 +136,7 @@ export async function GET() {
       success: true,
       data: {
         categories: categoriesWithCount,
+        domesticTools,
         hotTools,
         latestTools,
       },

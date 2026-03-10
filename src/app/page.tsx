@@ -61,6 +61,7 @@ interface Tool {
 
 interface HomeData {
   categories: Category[]
+  domesticTools: Tool[]
   hotTools: Tool[]
   latestTools: Tool[]
 }
@@ -73,6 +74,7 @@ function HomePageContent() {
   
   const [categories, setCategories] = useState<Category[]>([])
   const [tools, setTools] = useState<Tool[]>([])
+  const [domesticTools, setDomesticTools] = useState<Tool[]>([])
   const [hotTools, setHotTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string>('all')
@@ -87,6 +89,7 @@ function HomePageContent() {
         const data = await response.json()
         if (data.success) {
           setCategories(data.data.categories)
+          setDomesticTools(data.data.domesticTools)
           setHotTools(data.data.hotTools)
           setTools(data.data.latestTools)
         }
@@ -206,7 +209,46 @@ function HomePageContent() {
         </div>
       </section>
 
-      {/* Tools Grid */}
+      {/* 国内火爆AI工具 - 1排 */}
+      {!searchQuery && !categoryId && !isFeatured && activeCategory === 'all' && domesticTools.length > 0 && (
+        <section className="py-8 bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50 dark:from-red-950/20 dark:via-orange-950/20 dark:to-yellow-950/20">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center gap-2 mb-6">
+              <Flame className="h-6 w-6 text-red-500" />
+              <h2 className="text-2xl font-bold">国内火爆AI工具</h2>
+              <Badge variant="destructive" className="ml-2">HOT</Badge>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+              {domesticTools.map((tool) => (
+                <Link key={tool.id} href={`/tools/${tool.id}`}>
+                  <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+                    <CardContent className="p-4 text-center">
+                      <div 
+                        className="h-12 w-12 mx-auto rounded-lg flex items-center justify-center text-white font-bold text-lg mb-3"
+                        style={{ backgroundColor: tool.category?.color || '#EF4444' }}
+                      >
+                        {tool.logo ? (
+                          <img src={tool.logo} alt={tool.name} className="h-full w-full rounded-lg object-cover" />
+                        ) : (
+                          tool.name[0]
+                        )}
+                      </div>
+                      <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                        {tool.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                        {tool.category?.name || 'AI工具'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 最新上架 - 2排 */}
       <section className="py-12">
         <div className="container mx-auto px-4">
           {/* Sort Options */}
