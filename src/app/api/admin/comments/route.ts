@@ -3,6 +3,7 @@ import { getSupabaseClient } from '@/storage/database/supabase-client'
 
 /**
  * 获取所有评论列表（管理员专用）
+ * 支持分页和搜索
  */
 export async function GET(request: NextRequest) {
   try {
@@ -44,9 +45,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '10')
+    const keyword = searchParams.get('keyword')?.trim() || ''
     const toolId = searchParams.get('toolId')
 
-    // 构建查询
+    // 分页
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+
     let query = client
       .from('comments')
       .select(`
@@ -61,13 +66,15 @@ export async function GET(request: NextRequest) {
       .is('parent_id', null) // 只获取主评论，不包含回复
       .order('created_at', { ascending: false })
 
+    // 按工具筛选
     if (toolId) {
       query = query.eq('tool_id', parseInt(toolId))
     }
 
-    // 分页
-    const from = (page - 1) * pageSize
-    const to = from + pageSize - 1
+    // 关键词搜索（搜索评论内容）
+    if (keyword) {
+      query = query.ilike('content', `%${keyword}%`)
+    }
 
     const { data, error, count } = await query.range(from, to)
 
@@ -97,11 +104,67 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 如果有搜索关键词，还需要按用户名过滤
+    let filteredData = data || []
+    if (keyword && filteredData.length > 0) {
+      // 搜索用户名匹配的评论
+      const { data: matchedUsers } = await client
+        .from('users')
+        .select('id')
+        .ilike('name', `%${keyword}%`)
+      
+      const matchedUserIds = new Set(matchedUsers?.map(u => u.id) || [])
+      
+      // 合并内容匹配和用户名匹配的结果
+      const { data: userComments } = await client
+        .from('comments')
+        .select(`
+          id,
+          content,
+          rating,
+          created_at,
+          user:users!comments_user_id_fkey(id, name, avatar),
+          tool:ai_tools!comments_tool_id_fkey(id, name),
+          parent_id
+        `)
+        .in('user_id', Array.from(matchedUserIds))
+        .is('parent_id', null)
+        .order('created_at', { ascending: false })
+        .range(from, to)
+      
+      if (userComments && userComments.length > 0) {
+        // 合并去重
+        const existingIds = new Set(filteredData.map(c => c.id))
+        for (const uc of userComments) {
+          if (!existingIds.has(uc.id)) {
+            filteredData.push(uc)
+          }
+        }
+        // 按时间排序
+        filteredData.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+      }
+    }
+
     // 组装数据
-    const comments = (data || []).map(comment => ({
+    const comments = filteredData.map(comment => ({
       ...comment,
       reply_count: replyCounts[comment.id] || 0
     }))
+
+    // 重新计算总数（如果有搜索）
+    let total = count || 0
+    if (keyword) {
+      // 获取搜索后的真实总数
+      const { count: searchCount } = await client
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .is('parent_id', null)
+        .or(`content.ilike.%${keyword}%`)
+      
+      total = searchCount || 0
+    }
 
     return NextResponse.json({
       success: true,
@@ -110,8 +173,8 @@ export async function GET(request: NextRequest) {
         pagination: {
           page,
           pageSize,
-          total: count || 0,
-          totalPages: Math.ceil((count || 0) / pageSize)
+          total,
+          totalPages: Math.ceil(total / pageSize)
         }
       }
     })

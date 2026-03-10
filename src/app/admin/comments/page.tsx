@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Select,
@@ -26,7 +27,7 @@ import { formatRelativeTime } from '@/lib/utils'
 import { 
   MessageCircle, Trash2, ChevronLeft, ChevronRight, 
   ChevronsLeft, ChevronsRight, Star, ExternalLink,
-  Search, Eye
+  Search, Eye, X
 } from 'lucide-react'
 
 interface Comment {
@@ -66,6 +67,10 @@ export default function AdminCommentsPage() {
     totalPages: 0
   })
   
+  // 搜索相关
+  const [keyword, setKeyword] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  
   // 删除确认弹窗
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean
@@ -79,17 +84,17 @@ export default function AdminCommentsPage() {
     comment: Comment | null
   }>({ open: false, comment: null })
 
-  useEffect(() => {
-    fetchComments()
-  }, [pagination.page, pagination.pageSize])
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({
         page: pagination.page.toString(),
         pageSize: pagination.pageSize.toString()
       })
+      
+      if (keyword) {
+        params.append('keyword', keyword)
+      }
       
       const response = await fetch(`/api/admin/comments?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -107,6 +112,27 @@ export default function AdminCommentsPage() {
       console.error('获取评论列表失败:', error)
     } finally {
       setLoading(false)
+    }
+  }, [token, pagination.page, pagination.pageSize, keyword])
+
+  useEffect(() => {
+    fetchComments()
+  }, [fetchComments])
+
+  const handleSearch = () => {
+    setKeyword(searchInput)
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }
+
+  const handleClearSearch = () => {
+    setSearchInput('')
+    setKeyword('')
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch()
     }
   }
 
@@ -154,7 +180,34 @@ export default function AdminCommentsPage() {
             <Badge variant="secondary">{pagination.total} 条</Badge>
           </CardTitle>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">每页显示</span>
+            {/* 搜索框 */}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Input
+                  placeholder="搜索评论内容/用户名..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="w-64 pr-8"
+                />
+                {searchInput && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                    onClick={handleClearSearch}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+              <Button onClick={handleSearch} size="default">
+                <Search className="h-4 w-4 mr-1" />
+                搜索
+              </Button>
+            </div>
+            <div className="h-6 w-px bg-border" />
+            <span className="text-sm text-muted-foreground">每页</span>
             <Select value={pagination.pageSize.toString()} onValueChange={handlePageSizeChange}>
               <SelectTrigger className="w-20">
                 <SelectValue />
@@ -168,6 +221,18 @@ export default function AdminCommentsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {/* 搜索状态提示 */}
+          {keyword && (
+            <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <span>搜索关键词：</span>
+              <Badge variant="secondary">{keyword}</Badge>
+              <span>找到 {pagination.total} 条结果</span>
+              <Button variant="ghost" size="sm" onClick={handleClearSearch}>
+                清除搜索
+              </Button>
+            </div>
+          )}
+          
           {loading ? (
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -175,7 +240,7 @@ export default function AdminCommentsPage() {
           ) : comments.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>暂无评论</p>
+              <p>{keyword ? '未找到匹配的评论' : '暂无评论'}</p>
             </div>
           ) : (
             <div className="space-y-4">
