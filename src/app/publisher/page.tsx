@@ -36,13 +36,14 @@ export default function PublisherDashboard() {
 
   const fetchMyTools = async () => {
     try {
-      const response = await fetch('/api/tools?publisherId=' + user?.id, {
+      const response = await fetch('/api/tools?publisherId=' + user?.id + '&limit=100', {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await response.json()
       if (data.success) {
         setTools(data.data.data)
-        const total = data.data.data.length
+        // 使用API返回的总数，而不是当前页的数量
+        const total = data.data.total || data.data.data.length
         const pending = data.data.data.filter((t: Tool) => t.status === 'pending').length
         const approved = data.data.data.filter((t: Tool) => t.status === 'approved').length
         const rejected = data.data.data.filter((t: Tool) => t.status === 'rejected').length

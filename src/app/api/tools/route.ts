@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '12')
     const categoryId = searchParams.get('categoryId')
-    const status = searchParams.get('status') || 'approved'
+    const publisherId = searchParams.get('publisherId')
+    const status = searchParams.get('status') || (publisherId ? '' : 'approved') // 发布者查看自己的工具时不限制状态
     const search = searchParams.get('search')
     const isFeatured = searchParams.get('isFeatured')
     const sortBy = searchParams.get('sortBy') || 'created_at'
@@ -19,11 +20,14 @@ export async function GET(request: NextRequest) {
     // 构建查询
     let query = client
       .from('ai_tools')
-      .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id', { count: 'exact' })
+      .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id, status, reject_reason', { count: 'exact' })
 
     // 筛选条件
     if (categoryId) {
       query = query.eq('category_id', parseInt(categoryId))
+    }
+    if (publisherId) {
+      query = query.eq('publisher_id', publisherId)
     }
     if (status) {
       query = query.eq('status', status)
