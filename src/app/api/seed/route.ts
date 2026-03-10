@@ -165,8 +165,8 @@ export async function POST(request: NextRequest) {
           status: 'approved',
           is_featured: tool.is_featured,
           is_free: tool.is_free,
-          view_count: Math.floor(Math.random() * 1000) + 100,
-          favorite_count: Math.floor(Math.random() * 100) + 10,
+          view_count: 0,
+          favorite_count: 0,
         })
     }
 

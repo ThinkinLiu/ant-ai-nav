@@ -804,8 +804,8 @@ export async function POST(request: NextRequest) {
             is_featured: tool.isFeatured || false,
             is_free: tool.isFree,
             pricing_info: tool.isFree ? '基础功能免费使用' : '付费使用，具体价格请访问官网',
-            view_count: Math.floor(Math.random() * 2000) + 100,
-            favorite_count: Math.floor(Math.random() * 200) + 10,
+            view_count: 0,
+            favorite_count: 0,
           })
 
         if (error) {

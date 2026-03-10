@@ -24,12 +24,18 @@ export async function GET() {
         .select('category_id')
         .eq('status', 'approved'),
       
-      // 3. 获取热门工具 TOP 6（按浏览量排序）
+      // 3. 获取热门工具 TOP 6
+      // 排序规则：
+      // - 首先按浏览量降序（真实用户行为）
+      // - 浏览量相同时按创建时间降序（新工具优先曝光）
+      // - 创建时间相同时按收藏数降序
       client
         .from('ai_tools')
         .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id')
         .eq('status', 'approved')
         .order('view_count', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('favorite_count', { ascending: false })
         .limit(6),
       
       // 4. 获取最新工具 20个（按创建时间排序）

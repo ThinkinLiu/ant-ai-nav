@@ -244,8 +244,8 @@ export async function POST(request: NextRequest) {
             is_featured: tool.isFeatured || false,
             is_free: tool.isFree,
             pricing_info: tool.isFree ? '基础功能免费使用，高级功能需付费' : '付费使用，提供免费试用，具体价格请访问官网',
-            view_count: Math.floor(Math.random() * 5000) + 100,
-            favorite_count: Math.floor(Math.random() * 500) + 10,
+            view_count: 0,
+            favorite_count: 0,
           })
 
         return error ? null : tool
