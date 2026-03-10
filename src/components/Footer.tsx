@@ -43,7 +43,41 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
+        {/* 友情链接 */}
+        <div className="mt-8 pt-6 border-t">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">友情链接：</span>
+            <a 
+              href="https://ai.itlao5.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              AI导航5
+            </a>
+            <a 
+              href="https://itlao5.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              IT老五博客
+            </a>
+            <a 
+              href="https://github.com/ThinkinLiu/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              Github
+            </a>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            关注微信公众号「IT老五」获取更多AI工具资讯和教程
+          </p>
+        </div>
+
+        <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} 蚂蚁AI导航. All rights reserved.</p>
         </div>
       </div>
