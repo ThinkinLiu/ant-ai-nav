@@ -17,7 +17,145 @@ export async function GET(request: NextRequest) {
 
     const client = getSupabaseClient()
     
-    // 构建查询
+    // 如果按评论数排序，需要特殊处理
+    if (sortBy === 'comment_count') {
+      // 1. 先获取所有符合条件的工具
+      let baseQuery = client
+        .from('ai_tools')
+        .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id, status, reject_reason', { count: 'exact' })
+
+      if (categoryId) {
+        baseQuery = baseQuery.eq('category_id', parseInt(categoryId))
+      }
+      if (publisherId) {
+        baseQuery = baseQuery.eq('publisher_id', publisherId)
+      }
+      if (status) {
+        baseQuery = baseQuery.eq('status', status)
+      }
+      if (isFeatured === 'true') {
+        baseQuery = baseQuery.eq('is_featured', true)
+      }
+      if (search) {
+        baseQuery = baseQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+      }
+
+      // 获取所有工具（分批获取，因为有Supabase限制）
+      const allTools: any[] = []
+      let offset = 0
+      const batchSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        const { data, error } = await client
+          .from('ai_tools')
+          .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id, status, reject_reason, publisher_id')
+          .range(offset, offset + batchSize - 1)
+
+        if (error || !data || data.length === 0) {
+          hasMore = false
+        } else {
+          // 应用筛选条件
+          let filteredData = data
+          if (categoryId) {
+            filteredData = filteredData.filter((t: any) => t.category_id === parseInt(categoryId!))
+          }
+          if (publisherId) {
+            filteredData = filteredData.filter((t: any) => t.publisher_id === publisherId)
+          }
+          if (status) {
+            filteredData = filteredData.filter((t: any) => t.status === status)
+          }
+          if (isFeatured === 'true') {
+            filteredData = filteredData.filter((t: any) => t.is_featured === true)
+          }
+          if (search) {
+            const searchLower = search.toLowerCase()
+            filteredData = filteredData.filter((t: any) => 
+              t.name.toLowerCase().includes(searchLower) || 
+              t.description?.toLowerCase().includes(searchLower)
+            )
+          }
+          allTools.push(...filteredData)
+          if (data.length < batchSize) {
+            hasMore = false
+          } else {
+            offset += batchSize
+          }
+        }
+      }
+
+      // 2. 获取所有工具的评论数
+      const toolIds = allTools.map(t => t.id)
+      const commentCountMap = new Map<number, number>()
+      
+      if (toolIds.length > 0) {
+        // 分批查询评论数
+        for (let i = 0; i < toolIds.length; i += batchSize) {
+          const batchIds = toolIds.slice(i, i + batchSize)
+          const { data: commentsData } = await client
+            .from('comments')
+            .select('tool_id')
+            .in('tool_id', batchIds)
+            .eq('is_hidden', false)
+
+          if (commentsData) {
+            for (const comment of commentsData) {
+              const count = commentCountMap.get(comment.tool_id) || 0
+              commentCountMap.set(comment.tool_id, count + 1)
+            }
+          }
+        }
+      }
+
+      // 3. 添加评论数并排序
+      const toolsWithCommentCount = allTools.map(tool => ({
+        ...tool,
+        comment_count: commentCountMap.get(tool.id) || 0,
+      }))
+
+      // 按评论数排序
+      const ascending = sortOrder === 'asc'
+      toolsWithCommentCount.sort((a, b) => {
+        return ascending 
+          ? a.comment_count - b.comment_count 
+          : b.comment_count - a.comment_count
+      })
+
+      // 4. 分页
+      const total = toolsWithCommentCount.length
+      const from = (page - 1) * limit
+      const to = from + limit
+      const paginatedTools = toolsWithCommentCount.slice(from, to)
+
+      // 5. 获取分类信息
+      const { data: categoriesData } = await client
+        .from('categories')
+        .select('id, name, slug, description, icon, color')
+      
+      const categoryMap = new Map(
+        (categoriesData || []).map(c => [c.id, c])
+      )
+
+      // 6. 组装最终数据
+      const finalTools = paginatedTools.map(tool => ({
+        ...tool,
+        category: categoryMap.get(tool.category_id) || null,
+      }))
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          data: finalTools,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      })
+    }
+
+    // 普通排序逻辑
     let query = client
       .from('ai_tools')
       .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id, status, reject_reason', { count: 'exact' })
@@ -48,10 +186,12 @@ export async function GET(request: NextRequest) {
     const to = from + limit - 1
     query = query.range(from, to)
 
-    // 并行查询工具和分类
-    const [toolsResult, categoriesResult] = await Promise.all([
+    // 并行查询工具、分类和评论数
+    const [toolsResult, categoriesResult, commentsResult] = await Promise.all([
       query,
-      client.from('categories').select('id, name, slug, description, icon, color')
+      client.from('categories').select('id, name, slug, description, icon, color'),
+      // 如果有工具ID列表，查询评论数
+      Promise.resolve(null as any)
     ])
 
     if (toolsResult.error) {
@@ -61,15 +201,36 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // 获取工具ID列表
+    const toolIds = (toolsResult.data || []).map(t => t.id)
+
+    // 查询评论数
+    let commentCountMap = new Map<number, number>()
+    if (toolIds.length > 0) {
+      const { data: commentsData } = await client
+        .from('comments')
+        .select('tool_id')
+        .in('tool_id', toolIds)
+        .eq('is_hidden', false)
+
+      if (commentsData) {
+        for (const comment of commentsData) {
+          const count = commentCountMap.get(comment.tool_id) || 0
+          commentCountMap.set(comment.tool_id, count + 1)
+        }
+      }
+    }
+
     // 创建分类映射
     const categoryMap = new Map(
       (categoriesResult.data || []).map(c => [c.id, c])
     )
 
-    // 组装工具数据（添加分类信息）
+    // 组装工具数据（添加分类信息和评论数）
     const toolsWithCategory = (toolsResult.data || []).map(tool => ({
       ...tool,
       category: categoryMap.get(tool.category_id) || null,
+      comment_count: commentCountMap.get(tool.id) || 0,
     }))
 
     return NextResponse.json({

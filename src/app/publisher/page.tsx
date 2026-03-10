@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { formatRelativeTime } from '@/lib/utils'
-import { Edit, Trash2, Eye, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { Edit, Trash2, Eye, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ArrowUp, ArrowDown, MessageCircle, Heart } from 'lucide-react'
 
 interface Tool {
   id: number
@@ -23,6 +23,7 @@ interface Tool {
   status: string
   view_count: number
   favorite_count: number
+  comment_count: number
   created_at: string
   is_featured: boolean
   reject_reason: string | null
@@ -38,6 +39,16 @@ interface Stats {
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50]
 
+type SortField = 'created_at' | 'view_count' | 'favorite_count' | 'comment_count'
+type SortOrder = 'asc' | 'desc'
+
+const SORT_OPTIONS: { value: SortField; label: string }[] = [
+  { value: 'created_at', label: '发布时间' },
+  { value: 'view_count', label: '浏览量' },
+  { value: 'favorite_count', label: '收藏量' },
+  { value: 'comment_count', label: '评论量' },
+]
+
 export default function PublisherDashboard() {
   const { user, token } = useAuth()
   const [tools, setTools] = useState<Tool[]>([])
@@ -49,6 +60,10 @@ export default function PublisherDashboard() {
   const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalItems, setTotalItems] = useState(0)
+
+  // 排序状态
+  const [sortField, setSortField] = useState<SortField>('created_at')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
   // 获取统计数据
   const fetchStats = async () => {
@@ -66,13 +81,13 @@ export default function PublisherDashboard() {
     }
   }
 
-  // 获取工具列表（带分页）
+  // 获取工具列表（带分页和排序）
   const fetchMyTools = async () => {
     if (!user?.id) return
     setLoading(true)
     try {
       const response = await fetch(
-        `/api/tools?publisherId=${user.id}&page=${currentPage}&limit=${pageSize}`,
+        `/api/tools?publisherId=${user.id}&page=${currentPage}&limit=${pageSize}&sortBy=${sortField}&sortOrder=${sortOrder}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -97,17 +112,28 @@ export default function PublisherDashboard() {
     }
   }, [user, token])
 
-  // 分页变化时重新获取数据
+  // 分页或排序变化时重新获取数据
   useEffect(() => {
     if (user && token) {
       fetchMyTools()
     }
-  }, [user, token, currentPage, pageSize])
+  }, [user, token, currentPage, pageSize, sortField, sortOrder])
 
   // 每页记录数变化时，重置到第一页
   const handlePageSizeChange = (value: string) => {
     setPageSize(parseInt(value))
     setCurrentPage(1)
+  }
+
+  // 排序字段变化
+  const handleSortFieldChange = (value: string) => {
+    setSortField(value as SortField)
+    setCurrentPage(1) // 重置到第一页
+  }
+
+  // 切换排序方向
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
   }
 
   // 分页导航
@@ -203,6 +229,39 @@ export default function PublisherDashboard() {
         <CardContent>
           {tools.length > 0 ? (
             <>
+              {/* 排序控制 */}
+              <div className="flex flex-wrap items-center gap-4 mb-4 pb-4 border-b">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">排序：</span>
+                  <Select value={sortField} onValueChange={handleSortFieldChange}>
+                    <SelectTrigger className="w-28 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SORT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={toggleSortOrder}
+                    title={sortOrder === 'asc' ? '升序' : '降序'}
+                  >
+                    {sortOrder === 'asc' ? (
+                      <ArrowUp className="h-4 w-4" />
+                    ) : (
+                      <ArrowDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* 工具列表 */}
               <div className="space-y-4">
                 {tools.map((tool) => (
                   <div
@@ -234,14 +293,26 @@ export default function PublisherDashboard() {
                       <p className="text-sm text-muted-foreground line-clamp-1">
                         {tool.description}
                       </p>
+                      
+                      {/* 统计数据行 */}
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1" title="浏览量">
                           <Eye className="h-3 w-3" />
-                          {tool.view_count}
+                          {tool.view_count.toLocaleString()}
                         </span>
+                        <span className="flex items-center gap-1" title="收藏量">
+                          <Heart className="h-3 w-3" />
+                          {tool.favorite_count.toLocaleString()}
+                        </span>
+                        <span className="flex items-center gap-1" title="评论量">
+                          <MessageCircle className="h-3 w-3" />
+                          {tool.comment_count.toLocaleString()}
+                        </span>
+                        <span className="text-muted-foreground/60">|</span>
                         <span>{formatRelativeTime(tool.created_at)}</span>
                         {tool.category && <span>{tool.category.name}</span>}
                       </div>
+                      
                       {tool.reject_reason && (
                         <p className="text-sm text-red-500 mt-1">
                           拒绝原因：{tool.reject_reason}
