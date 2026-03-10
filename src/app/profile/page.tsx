@@ -13,7 +13,8 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { 
   User, Heart, MessageCircle, Settings, LogOut, Clock, 
-  Eye, Star, ChevronRight, Trash2, Loader2, Save
+  Eye, Star, ChevronRight, Trash2, Loader2, Save,
+  Camera, FileText, AlertCircle
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatRelativeTime } from '@/lib/utils'
@@ -68,6 +69,17 @@ export default function ProfilePage() {
   const [editMode, setEditMode] = useState(false)
   const [editName, setEditName] = useState('')
   const [saving, setSaving] = useState(false)
+  
+  // 头像上传
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  
+  // 发布者申请状态
+  const [publisherApplication, setPublisherApplication] = useState<{
+    status: string
+    reviewed_at?: string
+    review_note?: string
+  } | null>(null)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -76,7 +88,9 @@ export default function ProfilePage() {
       fetchFavorites()
       fetchComments()
       fetchStats()
+      fetchPublisherStatus()
       setEditName(user.name || '')
+      setAvatarPreview(user.avatar || null)
     }
   }, [user, isLoading, token])
 
@@ -125,6 +139,71 @@ export default function ProfilePage() {
     const now = new Date()
     const joinedDays = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)) || 1
     setStats(prev => ({ ...prev, joinedDays: Math.max(1, joinedDays) }))
+  }
+
+  const fetchPublisherStatus = async () => {
+    if (!token) return
+    try {
+      const response = await fetch('/api/user/apply-publisher', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await response.json()
+      if (data.success && data.data.status !== 'none' && data.data.status !== 'direct') {
+        setPublisherApplication(data.data)
+      }
+    } catch (error) {
+      console.error('获取申请状态失败:', error)
+    }
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !token) return
+
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+      alert('请选择图片文件')
+      return
+    }
+
+    // 验证文件大小 (最大 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('图片大小不能超过 2MB')
+      return
+    }
+
+    setAvatarUploading(true)
+    try {
+      // 转换为 base64
+      const reader = new FileReader()
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string
+        
+        // 上传到服务器
+        const response = await fetch('/api/user/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ avatar: base64 }),
+        })
+        
+        const data = await response.json()
+        if (data.success) {
+          setAvatarPreview(base64)
+          window.location.reload() // 刷新页面更新头像
+        } else {
+          alert(data.error || '上传失败')
+        }
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error('上传头像失败:', error)
+      alert('上传失败')
+    } finally {
+      setAvatarUploading(false)
+    }
   }
 
   const handleRemoveFavorite = async (toolId: number) => {
@@ -440,103 +519,255 @@ export default function ProfilePage() {
 
           {/* Settings */}
           <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  账号设置
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* 基本信息 */}
-                <div className="space-y-4">
-                  <h3 className="font-medium">基本信息</h3>
+            <div className="space-y-6">
+              {/* 基本信息 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    基本信息
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* 头像 */}
+                  <div className="flex items-center gap-6">
+                    <div className="relative">
+                      <Avatar className="h-20 w-20 text-2xl">
+                        <AvatarImage src={avatarPreview || user.avatar || undefined} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                          {user.name?.[0] || user.email[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <label className="absolute -bottom-1 -right-1 p-1.5 bg-primary rounded-full cursor-pointer hover:bg-primary/90 transition-colors">
+                        {avatarUploading ? (
+                          <Loader2 className="h-4 w-4 text-primary-foreground animate-spin" />
+                        ) : (
+                          <Camera className="h-4 w-4 text-primary-foreground" />
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleAvatarUpload}
+                          disabled={avatarUploading}
+                        />
+                      </label>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">头像</p>
+                      <p className="text-sm text-muted-foreground">
+                        支持 JPG、PNG 格式，大小不超过 2MB
+                      </p>
+                    </div>
+                  </div>
+
                   <Separator />
-                  <div className="space-y-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="name">昵称</Label>
-                      {editMode ? (
-                        <div className="flex gap-2">
-                          <Input
-                            id="name"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            placeholder="请输入昵称"
-                          />
-                          <Button onClick={handleSaveProfile} disabled={saving}>
-                            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+
+                  {/* 昵称 */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">昵称</Label>
+                    {editMode ? (
+                      <div className="flex gap-2">
+                        <Input
+                          id="name"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="请输入昵称"
+                          className="flex-1"
+                        />
+                        <Button onClick={handleSaveProfile} disabled={saving}>
+                          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        </Button>
+                        <Button variant="outline" onClick={() => {
+                          setEditMode(false)
+                          setEditName(user?.name || '')
+                        }}>取消</Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <span>{user.name || '未设置'}</span>
+                        <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
+                          修改
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 邮箱 */}
+                  <div className="grid gap-2">
+                    <Label>邮箱</Label>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">{user.email}</span>
+                      <Badge variant="outline" className="text-green-600 border-green-600">已验证</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 角色与权限 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    角色与权限
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">当前角色</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user.role === 'admin' 
+                          ? '拥有所有权限' 
+                          : user.role === 'publisher' 
+                          ? '可以发布和管理工具' 
+                          : '可以收藏和评论工具'}
+                      </p>
+                    </div>
+                    <Badge 
+                      variant={user.role === 'admin' ? 'default' : user.role === 'publisher' ? 'secondary' : 'outline'}
+                      className="text-base px-4 py-1"
+                    >
+                      {user.role === 'admin' ? '管理员' : user.role === 'publisher' ? '发布者' : '普通用户'}
+                    </Badge>
+                  </div>
+
+                  {user.role === 'user' && (
+                    <>
+                      <Separator />
+                      
+                      {publisherApplication ? (
+                        <div className="p-4 rounded-lg bg-muted">
+                          <div className="flex items-center gap-2 mb-2">
+                            {publisherApplication.status === 'pending' && (
+                              <>
+                                <Clock className="h-4 w-4 text-yellow-500" />
+                                <span className="text-yellow-600 font-medium">申请审核中</span>
+                              </>
+                            )}
+                            {publisherApplication.status === 'approved' && (
+                              <>
+                                <Badge variant="default" className="bg-green-500">已通过</Badge>
+                              </>
+                            )}
+                            {publisherApplication.status === 'rejected' && (
+                              <>
+                                <AlertCircle className="h-4 w-4 text-red-500" />
+                                <span className="text-red-600 font-medium">申请被拒绝</span>
+                              </>
+                            )}
+                          </div>
+                          {publisherApplication.review_note && (
+                            <p className="text-sm text-muted-foreground">
+                              拒绝原因：{publisherApplication.review_note}
+                            </p>
+                          )}
+                          <Button variant="outline" size="sm" className="mt-3" asChild>
+                            <Link href="/publisher/apply">
+                              {publisherApplication.status === 'rejected' ? '重新申请' : '查看详情'}
+                            </Link>
                           </Button>
-                          <Button variant="outline" onClick={() => setEditMode(false)}>取消</Button>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between">
-                          <span>{user.name || '未设置'}</span>
-                          <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
-                            修改
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
+                          <div>
+                            <p className="font-medium">申请成为发布者</p>
+                            <p className="text-sm text-muted-foreground">
+                              成为发布者后可以发布和管理AI工具
+                            </p>
+                          </div>
+                          <Button asChild>
+                            <Link href="/publisher/apply">
+                              立即申请
+                            </Link>
                           </Button>
                         </div>
                       )}
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>邮箱</Label>
+                    </>
+                  )}
+
+                  {user.role === 'publisher' && (
+                    <>
+                      <Separator />
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">{user.email}</span>
-                        <Badge variant="outline">已验证</Badge>
+                        <div>
+                          <p className="font-medium">发布者中心</p>
+                          <p className="text-sm text-muted-foreground">
+                            管理您发布的AI工具
+                          </p>
+                        </div>
+                        <Button asChild>
+                          <Link href="/publisher">
+                            进入中心
+                          </Link>
+                        </Button>
                       </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>用户角色</Label>
+                    </>
+                  )}
+
+                  {user.role === 'admin' && (
+                    <>
+                      <Separator />
                       <div className="flex items-center justify-between">
-                        <Badge variant={user.role === 'admin' ? 'default' : user.role === 'publisher' ? 'secondary' : 'outline'}>
-                          {user.role === 'admin' ? '管理员' : user.role === 'publisher' ? '发布者' : '普通用户'}
-                        </Badge>
-                        {user.role === 'user' && (
-                          <Button variant="outline" size="sm" asChild>
-                            <Link href="/publisher/apply">申请成为发布者</Link>
-                          </Button>
-                        )}
+                        <div>
+                          <p className="font-medium">管理后台</p>
+                          <p className="text-sm text-muted-foreground">
+                            管理用户、工具和评论
+                          </p>
+                        </div>
+                        <Button asChild>
+                          <Link href="/admin">
+                            进入后台
+                          </Link>
+                        </Button>
                       </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* 安全设置 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    安全设置
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">登录密码</p>
+                      <p className="text-sm text-muted-foreground">定期修改密码可以提高账号安全性</p>
                     </div>
+                    <Button variant="outline" size="sm" disabled>
+                      修改密码
+                    </Button>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
 
-                <Separator />
-
-                {/* 安全设置 */}
-                <div className="space-y-4">
-                  <h3 className="font-medium">安全设置</h3>
-                  <Separator />
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">登录密码</p>
-                        <p className="text-sm text-muted-foreground">定期修改密码可以提高账号安全性</p>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        修改密码
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* 账号操作 */}
-                <div className="space-y-4">
-                  <h3 className="font-medium text-destructive">危险操作</h3>
-                  <Separator />
+              {/* 危险操作 */}
+              <Card className="border-destructive/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-destructive">
+                    <AlertCircle className="h-5 w-5" />
+                    危险操作
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">注销账号</p>
                       <p className="text-sm text-muted-foreground">注销后所有数据将被删除且无法恢复</p>
                     </div>
-                    <Button variant="destructive" size="sm">
+                    <Button variant="destructive" size="sm" disabled>
                       注销账号
                     </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
