@@ -62,6 +62,7 @@ interface Tool {
 interface HomeData {
   categories: Category[]
   domesticTools: Tool[]
+  foreignTools: Tool[]
   hotTools: Tool[]
   latestTools: Tool[]
 }
@@ -75,6 +76,7 @@ function HomePageContent() {
   const [categories, setCategories] = useState<Category[]>([])
   const [tools, setTools] = useState<Tool[]>([])
   const [domesticTools, setDomesticTools] = useState<Tool[]>([])
+  const [foreignTools, setForeignTools] = useState<Tool[]>([])
   const [hotTools, setHotTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string>('all')
@@ -90,6 +92,7 @@ function HomePageContent() {
         if (data.success) {
           setCategories(data.data.categories)
           setDomesticTools(data.data.domesticTools)
+          setForeignTools(data.data.foreignTools)
           setHotTools(data.data.hotTools)
           setTools(data.data.latestTools)
         }
@@ -226,6 +229,45 @@ function HomePageContent() {
                       <div 
                         className="h-12 w-12 mx-auto rounded-lg flex items-center justify-center text-white font-bold text-lg mb-3"
                         style={{ backgroundColor: tool.category?.color || '#EF4444' }}
+                      >
+                        {tool.logo ? (
+                          <img src={tool.logo} alt={tool.name} className="h-full w-full rounded-lg object-cover" />
+                        ) : (
+                          tool.name[0]
+                        )}
+                      </div>
+                      <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                        {tool.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                        {tool.category?.name || 'AI工具'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 国外火爆AI工具 - 1排 */}
+      {!searchQuery && !categoryId && !isFeatured && activeCategory === 'all' && foreignTools.length > 0 && (
+        <section className="py-8 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center gap-2 mb-6">
+              <TrendingUp className="h-6 w-6 text-blue-500" />
+              <h2 className="text-2xl font-bold">国外火爆AI工具</h2>
+              <Badge className="ml-2 bg-blue-500 hover:bg-blue-600">GLOBAL</Badge>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+              {foreignTools.map((tool) => (
+                <Link key={tool.id} href={`/tools/${tool.id}`}>
+                  <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+                    <CardContent className="p-4 text-center">
+                      <div 
+                        className="h-12 w-12 mx-auto rounded-lg flex items-center justify-center text-white font-bold text-lg mb-3"
+                        style={{ backgroundColor: tool.category?.color || '#3B82F6' }}
                       >
                         {tool.logo ? (
                           <img src={tool.logo} alt={tool.name} className="h-full w-full rounded-lg object-cover" />

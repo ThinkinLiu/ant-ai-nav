@@ -11,6 +11,14 @@ const domesticHotTools = [
   '飞书AI', '钉钉AI', '石墨文档AI', '魔音工坊', 'Suno AI', 'Udio',
 ]
 
+// 国外火爆AI工具名称列表
+const foreignHotTools = [
+  'ChatGPT', 'Claude', 'Gemini', 'Midjourney', 'DALL-E', 'Stable Diffusion',
+  'GitHub Copilot', 'Notion AI', 'Perplexity', 'Runway', 'Pika', 'ElevenLabs',
+  'Jasper', 'Copy.ai', 'Grammarly', 'Otter.ai', 'Descript', 'Figma AI',
+  'Canva', 'Adobe Firefly', 'Luma AI', 'Sora', 'Anthropic', 'OpenAI',
+]
+
 /**
  * 首页聚合API - 一次请求获取所有首页数据
  * 包含：分类列表(带工具数量)、国内火爆工具(8个)、热门工具(TOP 6)、最新工具(16个)
@@ -60,14 +68,22 @@ export async function GET() {
       }
     }
 
-    // 3. 并行获取国内火爆工具、热门工具和最新工具
-    const [domesticToolsResult, hotToolsResult, latestToolsResult] = await Promise.all([
+    // 3. 并行获取国内火爆工具、国外火爆工具、热门工具和最新工具
+    const [domesticToolsResult, foreignToolsResult, hotToolsResult, latestToolsResult] = await Promise.all([
       // 国内火爆AI工具（按名称匹配，最多8个）
       client
         .from('ai_tools')
         .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id')
         .eq('status', 'approved')
         .in('name', domesticHotTools)
+        .limit(8),
+      
+      // 国外火爆AI工具（按名称匹配，最多8个）
+      client
+        .from('ai_tools')
+        .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id')
+        .eq('status', 'approved')
+        .in('name', foreignHotTools)
         .limit(8),
       
       // 热门工具（按浏览量排序）
@@ -91,6 +107,9 @@ export async function GET() {
 
     if (domesticToolsResult.error) {
       console.error('获取国内火爆工具错误:', domesticToolsResult.error.message)
+    }
+    if (foreignToolsResult.error) {
+      console.error('获取国外火爆工具错误:', foreignToolsResult.error.message)
     }
     if (hotToolsResult.error) {
       return NextResponse.json(
@@ -122,6 +141,11 @@ export async function GET() {
       category: categoryMap.get(tool.category_id) || null,
     }))
 
+    const foreignTools = (foreignToolsResult.data || []).map(tool => ({
+      ...tool,
+      category: categoryMap.get(tool.category_id) || null,
+    }))
+
     const hotTools = (hotToolsResult.data || []).map(tool => ({
       ...tool,
       category: categoryMap.get(tool.category_id) || null,
@@ -137,6 +161,7 @@ export async function GET() {
       data: {
         categories: categoriesWithCount,
         domesticTools,
+        foreignTools,
         hotTools,
         latestTools,
       },
