@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -71,11 +72,12 @@ const SORT_OPTIONS = [
 
 export default function AdminToolsPage() {
   const { token } = useAuth()
+  const searchParams = useSearchParams()
   const [tools, setTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
   
-  // 筛选状态
-  const [statusFilter, setStatusFilter] = useState('pending')
+  // 筛选状态 - 支持URL参数
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || 'pending')
   const [categoryId, setCategoryId] = useState('')
   const [publisherId, setPublisherId] = useState('')
   const [keyword, setKeyword] = useState('')

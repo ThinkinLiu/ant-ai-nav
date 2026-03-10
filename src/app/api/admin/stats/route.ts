@@ -45,6 +45,11 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'approved')
 
+    const { count: rejectedTools } = await client
+      .from('ai_tools')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'rejected')
+
     const { count: totalComments } = await client
       .from('comments')
       .select('*', { count: 'exact', head: true })
@@ -61,6 +66,7 @@ export async function GET(request: NextRequest) {
         totalTools: totalTools || 0,
         pendingTools: pendingTools || 0,
         approvedTools: approvedTools || 0,
+        rejectedTools: rejectedTools || 0,
         totalComments: totalComments || 0,
         publisherCount: publisherCount || 0,
       },
