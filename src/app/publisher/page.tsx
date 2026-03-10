@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { formatRelativeTime } from '@/lib/utils'
-import { Edit, Trash2, Eye, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ArrowUp, ArrowDown, MessageCircle, Heart } from 'lucide-react'
+import { Edit, Trash2, Eye, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, MessageCircle, Heart, X, Filter } from 'lucide-react'
 
 interface Tool {
   id: number
@@ -41,6 +41,7 @@ const PAGE_SIZE_OPTIONS = [5, 10, 20, 50]
 
 type SortField = 'created_at' | 'view_count' | 'favorite_count' | 'comment_count'
 type SortOrder = 'asc' | 'desc'
+type StatusFilter = '' | 'pending' | 'approved' | 'rejected'
 
 const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'created_at', label: '发布时间' },
@@ -48,6 +49,13 @@ const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'favorite_count', label: '收藏量' },
   { value: 'comment_count', label: '评论量' },
 ]
+
+const STATUS_LABELS: Record<StatusFilter, string> = {
+  '': '全部',
+  'pending': '待审核',
+  'approved': '已通过',
+  'rejected': '已拒绝',
+}
 
 export default function PublisherDashboard() {
   const { user, token } = useAuth()
@@ -65,6 +73,9 @@ export default function PublisherDashboard() {
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
+  // 状态筛选
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('')
+
   // 获取统计数据
   const fetchStats = async () => {
     if (!user?.id) return
@@ -81,17 +92,27 @@ export default function PublisherDashboard() {
     }
   }
 
-  // 获取工具列表（带分页和排序）
+  // 获取工具列表（带分页、排序和状态筛选）
   const fetchMyTools = async () => {
     if (!user?.id) return
     setLoading(true)
     try {
-      const response = await fetch(
-        `/api/tools?publisherId=${user.id}&page=${currentPage}&limit=${pageSize}&sortBy=${sortField}&sortOrder=${sortOrder}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
+      const params = new URLSearchParams({
+        publisherId: user.id,
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
+        sortBy: sortField,
+        sortOrder: sortOrder,
+      })
+      
+      // 如果有状态筛选，添加到参数中
+      if (statusFilter) {
+        params.append('status', statusFilter)
+      }
+
+      const response = await fetch(`/api/tools?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       const data = await response.json()
       if (data.success) {
         setTools(data.data.data)
@@ -112,12 +133,12 @@ export default function PublisherDashboard() {
     }
   }, [user, token])
 
-  // 分页或排序变化时重新获取数据
+  // 分页、排序或筛选变化时重新获取数据
   useEffect(() => {
     if (user && token) {
       fetchMyTools()
     }
-  }, [user, token, currentPage, pageSize, sortField, sortOrder])
+  }, [user, token, currentPage, pageSize, sortField, sortOrder, statusFilter])
 
   // 每页记录数变化时，重置到第一页
   const handlePageSizeChange = (value: string) => {
@@ -128,12 +149,24 @@ export default function PublisherDashboard() {
   // 排序字段变化
   const handleSortFieldChange = (value: string) => {
     setSortField(value as SortField)
-    setCurrentPage(1) // 重置到第一页
+    setCurrentPage(1)
   }
 
   // 切换排序方向
   const toggleSortOrder = () => {
     setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
+  }
+
+  // 状态筛选
+  const handleStatusFilter = (status: StatusFilter) => {
+    setStatusFilter(status)
+    setCurrentPage(1)
+  }
+
+  // 清除筛选
+  const clearFilter = () => {
+    setStatusFilter('')
+    setCurrentPage(1)
   }
 
   // 分页导航
@@ -189,25 +222,37 @@ export default function PublisherDashboard() {
     <div className="space-y-8">
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === '' ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+          onClick={() => handleStatusFilter('')}
+        >
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-sm text-muted-foreground">总发布数</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'pending' ? 'ring-2 ring-yellow-500 bg-yellow-50 dark:bg-yellow-950/20' : ''}`}
+          onClick={() => handleStatusFilter('pending')}
+        >
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
             <p className="text-sm text-muted-foreground">待审核</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'approved' ? 'ring-2 ring-green-500 bg-green-50 dark:bg-green-950/20' : ''}`}
+          onClick={() => handleStatusFilter('approved')}
+        >
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
             <p className="text-sm text-muted-foreground">已通过</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'rejected' ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-950/20' : ''}`}
+          onClick={() => handleStatusFilter('rejected')}
+        >
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
             <p className="text-sm text-muted-foreground">已拒绝</p>
@@ -218,7 +263,18 @@ export default function PublisherDashboard() {
       {/* Tools List */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>我的工具</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            我的工具
+            {statusFilter && (
+              <Badge variant="secondary" className="font-normal">
+                <Filter className="h-3 w-3 mr-1" />
+                {STATUS_LABELS[statusFilter]}
+                <button onClick={clearFilter} className="ml-1 hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+          </CardTitle>
           <Button asChild>
             <Link href="/publisher/tools/new">
               <Plus className="mr-2 h-4 w-4" />
@@ -408,13 +464,21 @@ export default function PublisherDashboard() {
             </>
           ) : (
             <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">您还没有发布任何工具</p>
-              <Button asChild>
-                <Link href="/publisher/tools/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  发布第一个工具
-                </Link>
-              </Button>
+              <p className="text-muted-foreground mb-4">
+                {statusFilter ? `暂无${STATUS_LABELS[statusFilter]}的工具` : '您还没有发布任何工具'}
+              </p>
+              {statusFilter ? (
+                <Button variant="outline" onClick={clearFilter}>
+                  查看全部工具
+                </Button>
+              ) : (
+                <Button asChild>
+                  <Link href="/publisher/tools/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    发布第一个工具
+                  </Link>
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
