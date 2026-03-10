@@ -6,8 +6,15 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { formatRelativeTime } from '@/lib/utils'
-import { Edit, Trash2, Eye, Plus } from 'lucide-react'
+import { Edit, Trash2, Eye, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 
 interface Tool {
   id: number
@@ -22,37 +29,91 @@ interface Tool {
   category: { name: string } | null
 }
 
+interface Stats {
+  total: number
+  pending: number
+  approved: number
+  rejected: number
+}
+
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50]
+
 export default function PublisherDashboard() {
   const { user, token } = useAuth()
   const [tools, setTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 })
+  const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, approved: 0, rejected: 0 })
+  
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalItems, setTotalItems] = useState(0)
 
-  useEffect(() => {
-    if (user && token) {
-      fetchMyTools()
-    }
-  }, [user, token])
-
-  const fetchMyTools = async () => {
+  // 获取统计数据
+  const fetchStats = async () => {
+    if (!user?.id) return
     try {
-      const response = await fetch('/api/tools?publisherId=' + user?.id + '&limit=100', {
+      const response = await fetch(`/api/publisher/stats?publisherId=${user.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await response.json()
       if (data.success) {
+        setStats(data.data)
+      }
+    } catch (error) {
+      console.error('获取统计数据失败:', error)
+    }
+  }
+
+  // 获取工具列表（带分页）
+  const fetchMyTools = async () => {
+    if (!user?.id) return
+    setLoading(true)
+    try {
+      const response = await fetch(
+        `/api/tools?publisherId=${user.id}&page=${currentPage}&limit=${pageSize}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      const data = await response.json()
+      if (data.success) {
         setTools(data.data.data)
-        // 使用API返回的总数，而不是当前页的数量
-        const total = data.data.total || data.data.data.length
-        const pending = data.data.data.filter((t: Tool) => t.status === 'pending').length
-        const approved = data.data.data.filter((t: Tool) => t.status === 'approved').length
-        const rejected = data.data.data.filter((t: Tool) => t.status === 'rejected').length
-        setStats({ total, pending, approved, rejected })
+        setTotalItems(data.data.total)
+        setTotalPages(data.data.totalPages)
       }
     } catch (error) {
       console.error('获取工具列表失败:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 初始加载
+  useEffect(() => {
+    if (user && token) {
+      fetchStats()
+    }
+  }, [user, token])
+
+  // 分页变化时重新获取数据
+  useEffect(() => {
+    if (user && token) {
+      fetchMyTools()
+    }
+  }, [user, token, currentPage, pageSize])
+
+  // 每页记录数变化时，重置到第一页
+  const handlePageSizeChange = (value: string) => {
+    setPageSize(parseInt(value))
+    setCurrentPage(1)
+  }
+
+  // 分页导航
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page)
     }
   }
 
@@ -66,6 +127,8 @@ export default function PublisherDashboard() {
       })
       const data = await response.json()
       if (data.success) {
+        // 重新获取统计数据和工具列表
+        fetchStats()
         fetchMyTools()
       }
     } catch (error) {
@@ -73,7 +136,7 @@ export default function PublisherDashboard() {
     }
   }
 
-  if (loading) {
+  if (loading && tools.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -139,74 +202,139 @@ export default function PublisherDashboard() {
         </CardHeader>
         <CardContent>
           {tools.length > 0 ? (
-            <div className="space-y-4">
-              {tools.map((tool) => (
-                <div
-                  key={tool.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium">{tool.name}</h3>
-                      <Badge
-                        variant={
-                          tool.status === 'approved'
-                            ? 'default'
+            <>
+              <div className="space-y-4">
+                {tools.map((tool) => (
+                  <div
+                    key={tool.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium">{tool.name}</h3>
+                        <Badge
+                          variant={
+                            tool.status === 'approved'
+                              ? 'default'
+                              : tool.status === 'pending'
+                              ? 'secondary'
+                              : 'destructive'
+                          }
+                        >
+                          {tool.status === 'approved'
+                            ? '已通过'
                             : tool.status === 'pending'
-                            ? 'secondary'
-                            : 'destructive'
-                        }
-                      >
-                        {tool.status === 'approved'
-                          ? '已通过'
-                          : tool.status === 'pending'
-                          ? '待审核'
-                          : '已拒绝'}
-                      </Badge>
-                      {tool.is_featured && (
-                        <Badge variant="outline">精选</Badge>
+                            ? '待审核'
+                            : '已拒绝'}
+                        </Badge>
+                        {tool.is_featured && (
+                          <Badge variant="outline">精选</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-1">
+                        {tool.description}
+                      </p>
+                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Eye className="h-3 w-3" />
+                          {tool.view_count}
+                        </span>
+                        <span>{formatRelativeTime(tool.created_at)}</span>
+                        {tool.category && <span>{tool.category.name}</span>}
+                      </div>
+                      {tool.reject_reason && (
+                        <p className="text-sm text-red-500 mt-1">
+                          拒绝原因：{tool.reject_reason}
+                        </p>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-1">
-                      {tool.description}
-                    </p>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
-                        {tool.view_count}
-                      </span>
-                      <span>{formatRelativeTime(tool.created_at)}</span>
-                      {tool.category && <span>{tool.category.name}</span>}
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/tools/${tool.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/publisher/tools/${tool.id}/edit`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-600"
+                        onClick={() => handleDelete(tool.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    {tool.reject_reason && (
-                      <p className="text-sm text-red-500 mt-1">
-                        拒绝原因：{tool.reject_reason}
-                      </p>
-                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/tools/${tool.id}`}>
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/publisher/tools/${tool.id}/edit`}>
-                        <Edit className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-500 hover:text-red-600"
-                      onClick={() => handleDelete(tool.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                ))}
+              </div>
+
+              {/* 分页控制 */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>共 {totalItems} 条记录</span>
+                  <span>，每页</span>
+                  <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                    <SelectTrigger className="w-16 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZE_OPTIONS.map((size) => (
+                        <SelectItem key={size} value={size.toString()}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span>条</span>
                 </div>
-              ))}
-            </div>
+
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="flex items-center gap-1 mx-2">
+                    <span className="text-sm">第</span>
+                    <span className="font-medium">{currentPage}</span>
+                    <span className="text-sm">/ {totalPages} 页</span>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
           ) : (
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">您还没有发布任何工具</p>
