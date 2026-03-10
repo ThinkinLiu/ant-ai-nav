@@ -35,7 +35,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">支持</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/about" className="hover:text-foreground transition-colors">关于我们</Link></li>
+              <li><Link href="/article" className="hover:text-foreground transition-colors">关于我们</Link></li>
               <li><Link href="/contact" className="hover:text-foreground transition-colors">联系我们</Link></li>
               <li><Link href="/privacy" className="hover:text-foreground transition-colors">隐私政策</Link></li>
               <li><Link href="/terms" className="hover:text-foreground transition-colors">使用条款</Link></li>
