@@ -64,11 +64,11 @@ export default function ContactPage() {
               <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                 <div>
                   <p className="font-medium">AI工具交流群</p>
-                  <p className="text-sm text-muted-foreground">群号：123456789</p>
+                  <p className="text-sm text-muted-foreground">群号：1091929557</p>
                 </div>
                 <Button asChild size="sm">
                   <a 
-                    href="https://qm.qq.com/cgi-bin/qm/qr?k=example&jump_from=webapi" 
+                    href="https://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=&authKey=&noverify=0&group_code=1091929557" 
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
@@ -77,6 +77,9 @@ export default function ContactPage() {
                   </a>
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                也可在QQ中搜索群号 <span className="font-medium text-foreground">1091929557</span> 加入
+              </p>
             </div>
             <p className="text-xs text-muted-foreground">
               入群须知：禁止广告、禁止刷屏，文明交流，互帮互助
