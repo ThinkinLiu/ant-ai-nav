@@ -5,37 +5,34 @@ export async function GET() {
   try {
     const client = getSupabaseClient()
     
-    // 并行查询：分类列表 + 工具计数聚合
-    const [categoriesResult, countResult] = await Promise.all([
-      client
-        .from('categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true }),
-      // 使用聚合查询一次性获取所有分类的工具数量
-      client
-        .from('ai_tools')
-        .select('category_id')
-        .eq('status', 'approved')
-    ])
+    // 1. 获取分类列表
+    const { data: categories, error } = await client
+      .from('categories')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
 
-    if (categoriesResult.error) {
+    if (error) {
       return NextResponse.json(
-        { success: false, error: categoriesResult.error.message },
+        { success: false, error: error.message },
         { status: 400 }
       )
     }
 
-    // 在内存中计算每个分类的工具数量（避免N+1查询）
+    // 2. 使用RPC聚合查询获取每个分类的工具数量
+    const { data: countData } = await client
+      .rpc('get_tool_counts_by_category')
+
+    // 创建数量映射
     const countMap = new Map<number, number>()
-    if (countResult.data) {
-      for (const tool of countResult.data) {
-        const count = countMap.get(tool.category_id) || 0
-        countMap.set(tool.category_id, count + 1)
+    if (countData) {
+      for (const item of countData) {
+        countMap.set(item.category_id, item.count)
       }
     }
 
-    const categoriesWithCount = (categoriesResult.data || []).map(category => ({
+    // 组装分类数据
+    const categoriesWithCount = (categories || []).map(category => ({
       ...category,
       toolCount: countMap.get(category.id) || 0,
     }))
