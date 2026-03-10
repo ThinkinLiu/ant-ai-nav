@@ -1,8 +1,9 @@
+import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { 
   MessageCircle, Send, Mail, Github, 
-  Globe, QrCode, ExternalLink
+  Globe, ExternalLink
 } from 'lucide-react'
 
 export default function ContactPage() {
@@ -29,9 +30,13 @@ export default function ContactPage() {
               关注「IT老五」微信公众号，获取最新AI工具资讯、使用教程和行业动态。
             </p>
             <div className="bg-muted rounded-lg p-6 flex flex-col items-center">
-              <div className="w-32 h-32 bg-white rounded-lg flex items-center justify-center border">
-                <QrCode className="w-24 h-24 text-gray-400" />
-              </div>
+              <Image 
+                src="/itlao5.jpg" 
+                alt="IT老五公众号二维码" 
+                width={128} 
+                height={128}
+                className="rounded-lg"
+              />
               <p className="mt-3 text-sm font-medium">IT老五</p>
               <p className="text-xs text-muted-foreground">扫码关注公众号</p>
             </div>
