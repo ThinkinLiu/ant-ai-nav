@@ -6,10 +6,19 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { 
   Search, TrendingUp, Clock, Star, ExternalLink, ChevronRight,
-  PenTool, Palette, MessageCircle, Code, Music, Video, Briefcase, GraduationCap
+  PenTool, Palette, MessageCircle, Code, Music, Video, Briefcase, GraduationCap,
+  Flame, Eye, Heart, Zap
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatRelativeTime } from '@/lib/utils'
@@ -58,12 +67,14 @@ function HomePageContent() {
   
   const [categories, setCategories] = useState<Category[]>([])
   const [tools, setTools] = useState<Tool[]>([])
+  const [hotTools, setHotTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const { user } = useAuth()
 
   useEffect(() => {
     fetchCategories()
+    fetchHotTools()
   }, [])
 
   useEffect(() => {
@@ -79,6 +90,19 @@ function HomePageContent() {
       }
     } catch (error) {
       console.error('获取分类失败:', error)
+    }
+  }
+
+  const fetchHotTools = async () => {
+    try {
+      // 获取热门工具：按浏览量和收藏量综合排序
+      const response = await fetch('/api/tools?sortBy=view_count&sortOrder=desc&limit=6')
+      const data = await response.json()
+      if (data.success) {
+        setHotTools(data.data.data)
+      }
+    } catch (error) {
+      console.error('获取热门工具失败:', error)
     }
   }
 
@@ -109,6 +133,11 @@ function HomePageContent() {
 
   const handleCategoryChange = (slug: string) => {
     setActiveCategory(slug)
+  }
+
+  // 计算热度指数（综合浏览量和收藏量）
+  const getHotnessScore = (tool: Tool) => {
+    return (tool.view_count || 0) * 1 + (tool.favorite_count || 0) * 10
   }
 
   return (
@@ -187,10 +216,92 @@ function HomePageContent() {
               {searchQuery ? `搜索结果: ${searchQuery}` : 
                isFeatured === 'true' ? '精选推荐' : '最新上架'}
             </h2>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <TrendingUp className="h-4 w-4" />
-              <span>热门推荐</span>
-            </div>
+            
+            {/* 热门推荐下拉菜单 */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2 cursor-pointer hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 dark:hover:bg-orange-950 dark:hover:text-orange-400">
+                  <Flame className="h-4 w-4 text-orange-500" />
+                  <span>热门推荐</span>
+                  <ChevronRight className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 p-2">
+                <DropdownMenuLabel className="flex items-center gap-2 text-base">
+                  <Flame className="h-5 w-5 text-orange-500" />
+                  <span>🔥 热门工具 TOP 6</span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                
+                {hotTools.length > 0 ? (
+                  hotTools.map((tool, index) => (
+                    <DropdownMenuItem key={tool.id} asChild className="cursor-pointer p-0">
+                      <Link href={`/tools/${tool.id}`} className="flex items-start gap-3 p-3 w-full hover:bg-muted/50 rounded-md">
+                        {/* 排名标识 */}
+                        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                          index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                          index === 1 ? 'bg-gray-300 text-gray-700' :
+                          index === 2 ? 'bg-amber-600 text-white' :
+                          'bg-muted text-muted-foreground'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        
+                        {/* 工具信息 */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium truncate">{tool.name}</span>
+                            {tool.is_featured && (
+                              <Badge variant="default" className="shrink-0 text-[10px] px-1 py-0">精选</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            {tool.description}
+                          </p>
+                          {/* 热度指标 */}
+                          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              {(tool.view_count || 0).toLocaleString()}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Heart className="h-3 w-3" />
+                              {(tool.favorite_count || 0).toLocaleString()}
+                            </span>
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">
+                              {tool.category?.name || '未分类'}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        {/* 热度火焰 */}
+                        <div className="flex items-center gap-0.5">
+                          {index < 3 && (
+                            <>
+                              <Zap className="h-3 w-3 text-orange-500" />
+                              <Zap className="h-3 w-3 text-orange-500" />
+                              {index === 0 && <Zap className="h-3 w-3 text-orange-500" />}
+                            </>
+                          )}
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <div className="py-6 text-center text-muted-foreground text-sm">
+                    暂无热门工具数据
+                  </div>
+                )}
+                
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="cursor-pointer justify-center text-primary">
+                  <Link href="/tools?sortBy=view_count&sortOrder=desc" className="gap-1">
+                    查看更多热门工具
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Tools Grid */}
