@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { 
-  Search, TrendingUp, Clock, Star, ExternalLink, ChevronRight,
+  TrendingUp, Clock, Star, ChevronRight,
   PenTool, Palette, MessageCircle, Code, Music, Video, Briefcase, GraduationCap,
   Flame, Eye, Heart, Zap
 } from 'lucide-react'
@@ -59,6 +59,12 @@ interface Tool {
   category: Category
 }
 
+interface HomeData {
+  categories: Category[]
+  hotTools: Tool[]
+  latestTools: Tool[]
+}
+
 function HomePageContent() {
   const searchParams = useSearchParams()
   const searchQuery = searchParams.get('search')
@@ -72,41 +78,39 @@ function HomePageContent() {
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const { user } = useAuth()
 
+  // 初始加载：一次性获取首页所有数据
   useEffect(() => {
-    fetchCategories()
-    fetchHotTools()
-  }, [])
+    const fetchHomeData = async () => {
+      setLoading(true)
+      try {
+        const response = await fetch('/api/home')
+        const data = await response.json()
+        if (data.success) {
+          setCategories(data.data.categories)
+          setHotTools(data.data.hotTools)
+          setTools(data.data.latestTools)
+        }
+      } catch (error) {
+        console.error('获取首页数据失败:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    // 只有在没有搜索/筛选条件时才使用聚合API
+    if (!searchQuery && !categoryId && !isFeatured && activeCategory === 'all') {
+      fetchHomeData()
+    }
+  }, []) // 仅首次加载
 
+  // 搜索/筛选时单独请求
   useEffect(() => {
-    fetchTools()
+    if (searchQuery || categoryId || isFeatured || activeCategory !== 'all') {
+      fetchFilteredTools()
+    }
   }, [searchQuery, categoryId, isFeatured, activeCategory])
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories')
-      const data = await response.json()
-      if (data.success) {
-        setCategories(data.data)
-      }
-    } catch (error) {
-      console.error('获取分类失败:', error)
-    }
-  }
-
-  const fetchHotTools = async () => {
-    try {
-      // 获取热门工具：按浏览量和收藏量综合排序
-      const response = await fetch('/api/tools?sortBy=view_count&sortOrder=desc&limit=6')
-      const data = await response.json()
-      if (data.success) {
-        setHotTools(data.data.data)
-      }
-    } catch (error) {
-      console.error('获取热门工具失败:', error)
-    }
-  }
-
-  const fetchTools = async () => {
+  const fetchFilteredTools = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -129,15 +133,10 @@ function HomePageContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchQuery, categoryId, isFeatured, activeCategory, categories])
 
   const handleCategoryChange = (slug: string) => {
     setActiveCategory(slug)
-  }
-
-  // 计算热度指数（综合浏览量和收藏量）
-  const getHotnessScore = (tool: Tool) => {
-    return (tool.view_count || 0) * 1 + (tool.favorite_count || 0) * 10
   }
 
   return (

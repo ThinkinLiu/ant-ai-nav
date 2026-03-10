@@ -16,9 +16,10 @@ export async function GET(request: NextRequest) {
 
     const client = getSupabaseClient()
     
+    // 构建查询
     let query = client
       .from('ai_tools')
-      .select('*', { count: 'exact' })
+      .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id', { count: 'exact' })
 
     // 筛选条件
     if (categoryId) {
@@ -43,34 +44,38 @@ export async function GET(request: NextRequest) {
     const to = from + limit - 1
     query = query.range(from, to)
 
-    const { data: tools, error, count } = await query
+    // 并行查询工具和分类
+    const [toolsResult, categoriesResult] = await Promise.all([
+      query,
+      client.from('categories').select('id, name, slug, description, icon, color')
+    ])
 
-    if (error) {
+    if (toolsResult.error) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: toolsResult.error.message },
         { status: 400 }
       )
     }
 
-    // 获取分类信息
-    const { data: categories } = await client
-      .from('categories')
-      .select('*')
+    // 创建分类映射
+    const categoryMap = new Map(
+      (categoriesResult.data || []).map(c => [c.id, c])
+    )
 
-    // 组装数据
-    const toolsWithCategory = (tools || []).map(tool => ({
+    // 组装工具数据（添加分类信息）
+    const toolsWithCategory = (toolsResult.data || []).map(tool => ({
       ...tool,
-      category: categories?.find(c => c.id === tool.category_id),
+      category: categoryMap.get(tool.category_id) || null,
     }))
 
     return NextResponse.json({
       success: true,
       data: {
         data: toolsWithCategory,
-        total: count || 0,
+        total: toolsResult.count || 0,
         page,
         limit,
-        totalPages: Math.ceil((count || 0) / limit),
+        totalPages: Math.ceil((toolsResult.count || 0) / limit),
       },
     })
   } catch (error) {

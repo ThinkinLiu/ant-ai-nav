@@ -5,35 +5,40 @@ export async function GET() {
   try {
     const client = getSupabaseClient()
     
-    // 获取所有分类
-    const { data: categories, error } = await client
-      .from('categories')
-      .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
+    // 并行查询：分类列表 + 工具计数聚合
+    const [categoriesResult, countResult] = await Promise.all([
+      client
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      // 使用聚合查询一次性获取所有分类的工具数量
+      client
+        .from('ai_tools')
+        .select('category_id')
+        .eq('status', 'approved')
+    ])
 
-    if (error) {
+    if (categoriesResult.error) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: categoriesResult.error.message },
         { status: 400 }
       )
     }
 
-    // 获取每个分类的工具数量
-    const categoriesWithCount = await Promise.all(
-      (categories || []).map(async (category) => {
-        const { count } = await client
-          .from('ai_tools')
-          .select('*', { count: 'exact', head: true })
-          .eq('category_id', category.id)
-          .eq('status', 'approved')
-        
-        return {
-          ...category,
-          toolCount: count || 0,
-        }
-      })
-    )
+    // 在内存中计算每个分类的工具数量（避免N+1查询）
+    const countMap = new Map<number, number>()
+    if (countResult.data) {
+      for (const tool of countResult.data) {
+        const count = countMap.get(tool.category_id) || 0
+        countMap.set(tool.category_id, count + 1)
+      }
+    }
+
+    const categoriesWithCount = (categoriesResult.data || []).map(category => ({
+      ...category,
+      toolCount: countMap.get(category.id) || 0,
+    }))
 
     return NextResponse.json({
       success: true,
