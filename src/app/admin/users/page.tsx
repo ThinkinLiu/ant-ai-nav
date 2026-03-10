@@ -29,7 +29,7 @@ export default function AdminUsersPage() {
   const { token } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('')
+  const [filter, setFilter] = useState('all')
 
   useEffect(() => {
     fetchUsers()
@@ -38,7 +38,7 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     setLoading(true)
     try {
-      const url = filter ? `/api/admin/users?role=${filter}` : '/api/admin/users'
+      const url = filter !== 'all' ? `/api/admin/users?role=${filter}` : '/api/admin/users'
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -82,7 +82,7 @@ export default function AdminUsersPage() {
               <SelectValue placeholder="全部角色" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">全部角色</SelectItem>
+              <SelectItem value="all">全部角色</SelectItem>
               <SelectItem value="user">普通用户</SelectItem>
               <SelectItem value="publisher">发布者</SelectItem>
               <SelectItem value="admin">管理员</SelectItem>
