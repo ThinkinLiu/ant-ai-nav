@@ -143,6 +143,15 @@ export async function PUT(
       updated_at: new Date().toISOString(),
     }
 
+    // 编辑后重置状态为待审核（除非是管理员明确指定状态）
+    if (body.status && userData?.role === 'admin') {
+      updateData.status = body.status
+    } else if (body.name || body.description || body.website || body.categoryId) {
+      // 如果修改了核心内容，重置为待审核
+      updateData.status = 'pending'
+      updateData.reject_reason = null
+    }
+
     if (body.name) updateData.name = body.name
     if (body.description) updateData.description = body.description
     if (body.longDescription) updateData.long_description = body.longDescription
@@ -151,9 +160,8 @@ export async function PUT(
     if (body.categoryId) updateData.category_id = body.categoryId
     if (body.isFree !== undefined) updateData.is_free = body.isFree
     if (body.pricingInfo) updateData.pricing_info = body.pricingInfo
-    if (body.status) updateData.status = body.status
     if (body.isFeatured !== undefined) updateData.is_featured = body.isFeatured
-    if (body.rejectReason) updateData.reject_reason = body.rejectReason
+    if (body.rejectReason !== undefined) updateData.reject_reason = body.rejectReason
 
     const { data: updatedTool, error } = await client
       .from('ai_tools')
