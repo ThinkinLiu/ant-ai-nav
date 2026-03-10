@@ -13,8 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { formatRelativeTime } from '@/lib/utils'
-import { Edit, Trash2, Eye, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, MessageCircle, Heart, X, Filter } from 'lucide-react'
+import { Edit, Trash2, Eye, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, MessageCircle, Heart, X, Filter, Check, XCircle, Clock } from 'lucide-react'
 
 interface Tool {
   id: number
@@ -75,6 +85,15 @@ export default function PublisherDashboard() {
 
   // 状态筛选
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('')
+
+  // 审批对话框状态
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false)
+  const [selectedTool, setSelectedTool] = useState<Tool | null>(null)
+  const [newStatus, setNewStatus] = useState<'pending' | 'approved' | 'rejected'>('approved')
+  const [rejectReason, setRejectReason] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const isAdmin = user?.role === 'admin'
 
   // 获取统计数据
   const fetchStats = async () => {
@@ -173,6 +192,53 @@ export default function PublisherDashboard() {
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page)
+    }
+  }
+
+  // 打开审批对话框
+  const openApproveDialog = (tool: Tool, targetStatus: 'pending' | 'approved' | 'rejected') => {
+    setSelectedTool(tool)
+    setNewStatus(targetStatus)
+    setRejectReason(tool.reject_reason || '')
+    setApproveDialogOpen(true)
+  }
+
+  // 提交审批
+  const handleApprove = async () => {
+    if (!selectedTool) return
+    
+    // 如果是拒绝，必须填写原因
+    if (newStatus === 'rejected' && !rejectReason.trim()) {
+      alert('请填写拒绝原因')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const response = await fetch(`/api/tools/${selectedTool.id}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          rejectReason: newStatus === 'rejected' ? rejectReason : null,
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        setApproveDialogOpen(false)
+        fetchStats()
+        fetchMyTools()
+      } else {
+        alert(data.error || '操作失败')
+      }
+    } catch (error) {
+      console.error('审批失败:', error)
+      alert('操作失败')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -375,22 +441,106 @@ export default function PublisherDashboard() {
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" asChild>
+                    
+                    <div className="flex items-center gap-1">
+                      {/* 查看按钮 */}
+                      <Button variant="ghost" size="sm" asChild title="查看详情">
                         <Link href={`/tools/${tool.id}`}>
                           <Eye className="h-4 w-4" />
                         </Link>
                       </Button>
-                      <Button variant="ghost" size="sm" asChild>
+                      
+                      {/* 编辑按钮 */}
+                      <Button variant="ghost" size="sm" asChild title="编辑">
                         <Link href={`/publisher/tools/${tool.id}/edit`}>
                           <Edit className="h-4 w-4" />
                         </Link>
                       </Button>
+                      
+                      {/* 管理员审批按钮 */}
+                      {isAdmin && (
+                        <>
+                          {/* 待审核 -> 通过/拒绝 */}
+                          {tool.status === 'pending' && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                onClick={() => openApproveDialog(tool, 'approved')}
+                                title="通过"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => openApproveDialog(tool, 'rejected')}
+                                title="拒绝"
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          
+                          {/* 已通过 -> 拒绝/待审核 */}
+                          {tool.status === 'approved' && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => openApproveDialog(tool, 'rejected')}
+                                title="拒绝"
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                                onClick={() => openApproveDialog(tool, 'pending')}
+                                title="改为待审核"
+                              >
+                                <Clock className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          
+                          {/* 已拒绝 -> 通过/待审核 */}
+                          {tool.status === 'rejected' && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                onClick={() => openApproveDialog(tool, 'approved')}
+                                title="通过"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                                onClick={() => openApproveDialog(tool, 'pending')}
+                                title="改为待审核"
+                              >
+                                <Clock className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </>
+                      )}
+                      
+                      {/* 删除按钮 */}
                       <Button
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-600"
                         onClick={() => handleDelete(tool.id)}
+                        title="删除"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -483,6 +633,70 @@ export default function PublisherDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* 审批确认对话框 */}
+      <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {newStatus === 'approved' && '审批通过'}
+              {newStatus === 'rejected' && '拒绝工具'}
+              {newStatus === 'pending' && '改为待审核'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedTool && (
+                <span>
+                  工具名称：<strong>{selectedTool.name}</strong>
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            {newStatus === 'rejected' && (
+              <div className="space-y-2">
+                <Label htmlFor="rejectReason">拒绝原因 *</Label>
+                <Textarea
+                  id="rejectReason"
+                  placeholder="请填写拒绝原因，将反馈给发布者..."
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  rows={4}
+                />
+              </div>
+            )}
+            
+            {newStatus === 'approved' && (
+              <p className="text-sm text-muted-foreground">
+                确定要通过该工具的审批吗？通过后工具将在平台上展示。
+              </p>
+            )}
+            
+            {newStatus === 'pending' && (
+              <p className="text-sm text-muted-foreground">
+                确定将该工具改为待审核状态吗？
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setApproveDialogOpen(false)}
+              disabled={submitting}
+            >
+              取消
+            </Button>
+            <Button
+              variant={newStatus === 'rejected' ? 'destructive' : 'default'}
+              onClick={handleApprove}
+              disabled={submitting || (newStatus === 'rejected' && !rejectReason.trim())}
+            >
+              {submitting ? '处理中...' : '确认'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
