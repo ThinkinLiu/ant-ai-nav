@@ -13,14 +13,33 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Search, Menu, X, Plus, Settings, LogOut, User, LayoutDashboard } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+
+interface SiteSettings {
+  ranking_enabled: boolean
+}
 
 export function Header() {
   const { user, logout } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({ ranking_enabled: true })
   const router = useRouter()
+
+  useEffect(() => {
+    // 获取网站设置
+    fetch('/api/site-settings')
+      .then(res => res.json())
+      .then(data => {
+        setSiteSettings({
+          ranking_enabled: data.ranking_enabled ?? true
+        })
+      })
+      .catch(() => {
+        // 使用默认值
+      })
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,9 +79,11 @@ export function Header() {
           <Link href="/categories" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             分类浏览
           </Link>
-          <Link href="/ranking" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            排行榜
-          </Link>
+          {siteSettings.ranking_enabled && (
+            <Link href="/ranking" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              排行榜
+            </Link>
+          )}
         </nav>
 
         {/* Search */}
@@ -197,9 +218,46 @@ export function Header() {
               <Link href="/categories" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
                 分类浏览
               </Link>
-              <Link href="/ranking" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
-                排行榜
-              </Link>
+              {siteSettings.ranking_enabled && (
+                <Link href="/ranking" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                  排行榜
+                </Link>
+              )}
+              {user ? (
+                <>
+                  <Link href="/profile" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                    个人中心
+                  </Link>
+                  <Link href="/favorites" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                    我的收藏
+                  </Link>
+                  {(user.role === 'publisher' || user.role === 'admin') && (
+                    <Link href="/publisher" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                      发布者中心
+                    </Link>
+                  )}
+                  {user.role === 'admin' && (
+                    <Link href="/admin" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                      管理后台
+                    </Link>
+                  )}
+                  <button 
+                    onClick={() => { handleLogout(); setIsMenuOpen(false); }}
+                    className="text-sm font-medium py-2 text-left text-red-500"
+                  >
+                    退出登录
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                    登录
+                  </Link>
+                  <Link href="/register" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                    注册
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
         </div>

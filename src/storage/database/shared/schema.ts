@@ -229,6 +229,22 @@ export const seoSettings = pgTable("seo_settings", {
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 });
 
+// 网站功能设置表
+export const siteSettings = pgTable("site_settings", {
+	id: serial().primaryKey().notNull(),
+	// 排行榜设置
+	rankingEnabled: boolean("ranking_enabled").default(true),  // 是否启用排行榜
+	rankingTitle: varchar("ranking_title", { length: 100 }).default('AI工具排行榜'),
+	rankingDescription: text("ranking_description"),
+	
+	// 其他功能开关
+	commentsEnabled: boolean("comments_enabled").default(true),  // 是否启用评论
+	favoritesEnabled: boolean("favorites_enabled").default(true), // 是否启用收藏
+	
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+});
+
 // 流量数据源配置表
 export const trafficDataSources = pgTable("traffic_data_sources", {
 	id: serial().primaryKey().notNull(),

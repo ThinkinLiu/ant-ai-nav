@@ -1,4 +1,6 @@
 import { Metadata } from 'next'
+import { redirect } from 'next/navigation'
+import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { RankingList } from './RankingList'
 
 export const metadata: Metadata = {
@@ -6,7 +8,21 @@ export const metadata: Metadata = {
   description: '查看最热门的AI工具排行榜，了解各类AI工具的流量和受欢迎程度。每日更新。',
 }
 
-export default function RankingPage() {
+export default async function RankingPage() {
+  const supabase = getSupabaseClient()
+  
+  // 检查排行榜是否启用
+  const { data: settings } = await supabase
+    .from('site_settings')
+    .select('ranking_enabled')
+    .limit(1)
+    .single()
+  
+  // 如果禁用，重定向到首页
+  if (settings && settings.ranking_enabled === false) {
+    redirect('/')
+  }
+  
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
