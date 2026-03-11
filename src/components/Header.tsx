@@ -58,6 +58,9 @@ export function Header() {
           <Link href="/categories" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             分类浏览
           </Link>
+          <Link href="/ranking" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            排行榜
+          </Link>
         </nav>
 
         {/* Search */}
@@ -191,6 +194,9 @@ export function Header() {
               </Link>
               <Link href="/categories" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
                 分类浏览
+              </Link>
+              <Link href="/ranking" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                排行榜
               </Link>
             </nav>
           </div>
