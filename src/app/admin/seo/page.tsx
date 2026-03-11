@@ -27,6 +27,7 @@ interface SEOSettings {
   baidu_site_verification: string
   google_analytics_id: string
   baidu_analytics_id: string
+  la_analytics_id: string
   custom_head_scripts: string
   custom_body_scripts: string
 }
@@ -50,6 +51,7 @@ export default function SEOSettingsPage() {
     baidu_site_verification: '',
     google_analytics_id: '',
     baidu_analytics_id: '',
+    la_analytics_id: '',
     custom_head_scripts: '',
     custom_body_scripts: ''
   })
@@ -368,6 +370,18 @@ export default function SEOSettingsPage() {
                   onChange={(e) => updateField('baidu_analytics_id', e.target.value)}
                   placeholder="百度统计代码ID"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="la_analytics_id">51la统计ID</Label>
+                <Input
+                  id="la_analytics_id"
+                  value={settings.la_analytics_id}
+                  onChange={(e) => updateField('la_analytics_id', e.target.value)}
+                  placeholder="51la统计ID（如：K1xxxxxx）"
+                />
+                <p className="text-xs text-muted-foreground">
+                  获取方式：访问 <a href="https://www.51.la" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">51la官网</a> 注册并添加网站后获取统计ID
+                </p>
               </div>
             </CardContent>
           </Card>

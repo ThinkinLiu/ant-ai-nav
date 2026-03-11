@@ -4,6 +4,7 @@ import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
+import { AnalyticsScript } from '@/components/AnalyticsScript'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -101,6 +102,7 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className="antialiased min-h-screen flex flex-col">
         {isDev && <Inspector />}
+        <AnalyticsScript />
         <AuthProvider>
           <Header />
           <main className="flex-1">

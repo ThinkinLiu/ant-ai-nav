@@ -40,6 +40,7 @@ export async function GET() {
         baidu_site_verification: '',
         google_analytics_id: '',
         baidu_analytics_id: '',
+        la_analytics_id: '',
         custom_head_scripts: '',
         custom_body_scripts: ''
       }
@@ -85,6 +86,7 @@ export async function PUT(request: NextRequest) {
         baidu_site_verification: body.baidu_site_verification,
         google_analytics_id: body.google_analytics_id,
         baidu_analytics_id: body.baidu_analytics_id,
+        la_analytics_id: body.la_analytics_id,
         custom_head_scripts: body.custom_head_scripts,
         custom_body_scripts: body.custom_body_scripts,
         updated_at: new Date().toISOString()
@@ -114,6 +116,7 @@ export async function PUT(request: NextRequest) {
         baidu_site_verification: body.baidu_site_verification,
         google_analytics_id: body.google_analytics_id,
         baidu_analytics_id: body.baidu_analytics_id,
+        la_analytics_id: body.la_analytics_id,
         custom_head_scripts: body.custom_head_scripts,
         custom_body_scripts: body.custom_body_scripts
       })
