@@ -81,6 +81,7 @@ export const aiTools = pgTable(
     publisherId: varchar("publisher_id", { length: 36 }).notNull(),
     status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, approved, rejected
     isFeatured: boolean("is_featured").default(false),
+    isPinned: boolean("is_pinned").default(false),  // 置顶
     isFree: boolean("is_free").default(true),
     pricingInfo: text("pricing_info"),
     viewCount: integer("view_count").default(0),
@@ -95,6 +96,7 @@ export const aiTools = pgTable(
     index("ai_tools_publisher_id_idx").on(table.publisherId),
     index("ai_tools_status_idx").on(table.status),
     index("ai_tools_created_at_idx").on(table.createdAt),
+    index("ai_tools_is_pinned_idx").on(table.isPinned),
   ]
 );
 
@@ -123,6 +125,7 @@ export const comments = pgTable(
     content: text("content").notNull(),
     rating: integer("rating"), // 1-5 星评分
     parentId: integer("parent_id"), // 回复评论
+    isFeatured: boolean("is_featured").default(false),  // 精选评论
     isHidden: boolean("is_hidden").default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }),
@@ -131,6 +134,7 @@ export const comments = pgTable(
     index("comments_tool_id_idx").on(table.toolId),
     index("comments_user_id_idx").on(table.userId),
     index("comments_parent_id_idx").on(table.parentId),
+    index("comments_is_featured_idx").on(table.isFeatured),
   ]
 );
 

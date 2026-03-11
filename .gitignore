@@ -96,4 +96,19 @@ Desktop.ini
 .vercel
 .turbo
 
+# Coze specific (not needed for self-hosted deployment)
+.coze
 .coze-logs
+.cozeproj
+
+# Private keys and secrets - NEVER COMMIT THESE
+*.pem
+*.key
+*.crt
+secrets/
+private/
+
+# Database backups
+*.sql
+*.dump
+backup/

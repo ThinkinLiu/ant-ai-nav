@@ -1,33 +1,16 @@
 #!/bin/bash
-set -Eeuo pipefail
 
-PORT=5000
-COZE_WORKSPACE_PATH="${COZE_WORKSPACE_PATH:-$(pwd)}"
-NODE_ENV=development
-DEPLOY_RUN_PORT=5000
+# 蚂蚁AI导航 - 开发环境启动脚本
 
-cd "${COZE_WORKSPACE_PATH}"
+echo "🚀 Starting development server..."
 
-kill_port_if_listening() {
-    local pids
-    pids=$(ss -H -lntp 2>/dev/null | awk -v port="${DEPLOY_RUN_PORT}" '$4 ~ ":"port"$"' | grep -o 'pid=[0-9]*' | cut -d= -f2 | paste -sd' ' - || true)
-    if [[ -z "${pids}" ]]; then
-      echo "Port ${DEPLOY_RUN_PORT} is free."
-      return
-    fi
-    echo "Port ${DEPLOY_RUN_PORT} in use by PIDs: ${pids} (SIGKILL)"
-    echo "${pids}" | xargs -I {} kill -9 {}
-    sleep 1
-    pids=$(ss -H -lntp 2>/dev/null | awk -v port="${DEPLOY_RUN_PORT}" '$4 ~ ":"port"$"' | grep -o 'pid=[0-9]*' | cut -d= -f2 | paste -sd' ' - || true)
-    if [[ -n "${pids}" ]]; then
-      echo "Warning: port ${DEPLOY_RUN_PORT} still busy after SIGKILL, PIDs: ${pids}"
-    else
-      echo "Port ${DEPLOY_RUN_PORT} cleared."
-    fi
-}
+# 检查 .env.local 是否存在
+if [ ! -f .env.local ]; then
+    echo "⚠️  .env.local not found!"
+    echo "📝 Creating .env.local from .env.example..."
+    cp .env.example .env.local
+    echo "✅ Please edit .env.local with your actual values"
+fi
 
-echo "Clearing port ${PORT} before start."
-kill_port_if_listening
-echo "Starting HTTP service on port ${PORT} for dev..."
-
-npx next dev --webpack --port $PORT
+# 启动开发服务器
+pnpm dev

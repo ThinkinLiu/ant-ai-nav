@@ -1,14 +1,14 @@
 {
-  "name": "projects",
-  "version": "0.1.0",
+  "name": "ant-ai-nav",
+  "version": "1.0.0",
+  "description": "蚂蚁AI导航 - 现代化的 AI 工具导航平台",
   "private": true,
   "scripts": {
-    "build": "bash ./scripts/build.sh",
-    "dev": "bash ./scripts/dev.sh",
-    "preinstall": "npx only-allow pnpm",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "lint": "eslint",
-    "start": "bash ./scripts/start.sh",
-    "ts-check": "tsc -p tsconfig.json"
+    "ts-check": "tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",

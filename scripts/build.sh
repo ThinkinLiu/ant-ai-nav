@@ -1,14 +1,15 @@
 #!/bin/bash
-set -Eeuo pipefail
 
-COZE_WORKSPACE_PATH="${COZE_WORKSPACE_PATH:-$(pwd)}"
+# 蚂蚁AI导航 - 生产构建脚本
 
-cd "${COZE_WORKSPACE_PATH}"
+echo "📦 Building for production..."
 
-echo "Installing dependencies..."
-pnpm install --prefer-frozen-lockfile --prefer-offline --loglevel debug --reporter=append-only
+# 安装依赖
+echo "📥 Installing dependencies..."
+pnpm install --frozen-lockfile
 
-echo "Building the project..."
-npx next build
+# 构建
+echo "🔨 Building..."
+pnpm build
 
-echo "Build completed successfully!"
+echo "✅ Build completed!"

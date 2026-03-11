@@ -1,358 +1,331 @@
-# projects
+# 🐜 蚂蚁AI导航
 
-这是一个基于 [Next.js 16](https://nextjs.org) + [shadcn/ui](https://ui.shadcn.com) 的全栈应用项目，由扣子编程 CLI 创建。
+<div align="center">
 
-## 快速开始
+一个现代化的 AI 工具导航平台，支持工具发布、审核、浏览、评论和收藏。
 
-### 启动开发服务器
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green?style=flat-square&logo=supabase)](https://supabase.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+
+[在线演示](#) | [功能特性](#功能特性) | [快速开始](#快速开始) | [部署指南](#部署指南)
+
+</div>
+
+---
+
+## 📖 目录
+
+- [功能特性](#功能特性)
+- [技术栈](#技术栈)
+- [项目结构](#项目结构)
+- [快速开始](#快速开始)
+- [环境变量配置](#环境变量配置)
+- [数据库配置](#数据库配置)
+- [部署指南](#部署指南)
+  - [Vercel 部署](#vercel-部署)
+  - [Docker 部署](#docker-部署)
+  - [自托管部署](#自托管部署)
+- [开发指南](#开发指南)
+- [贡献指南](#贡献指南)
+- [开源协议](#开源协议)
+
+---
+
+## ✨ 功能特性
+
+### 🎯 核心功能
+
+- **工具展示** - 分类展示 AI 工具，支持搜索、筛选、排序
+- **工具发布** - 发布者可提交新工具，支持富文本描述
+- **审核系统** - 管理员审核工具，支持通过/拒绝/重新审核
+- **工具置顶** - 管理员可将优质工具置顶展示
+- **用户评论** - 用户可对工具进行评分和评论
+- **评论精选** - 管理员可将优质评论设为精选
+- **收藏功能** - 用户可收藏感兴趣的工具
+- **用户认证** - 支持邮箱注册/登录，角色权限管理
+
+### 👥 用户角色
+
+| 角色 | 权限 |
+|------|------|
+| 普通用户 | 浏览工具、评论、收藏 |
+| 发布者 | 普通用户权限 + 发布工具 |
+| 管理员 | 全部权限 + 审核管理 |
+
+### 🎨 界面特性
+
+- 响应式设计，完美适配移动端
+- 深色/浅色主题切换
+- 流畅的动画效果
+- SEO 优化
+
+---
+
+## 🛠 技术栈
+
+| 类别 | 技术 |
+|------|------|
+| 框架 | Next.js 16 (App Router) |
+| 前端 | React 19, TypeScript 5 |
+| 样式 | Tailwind CSS 4, shadcn/ui |
+| 数据库 | Supabase (PostgreSQL) |
+| 认证 | Supabase Auth |
+| 存储 | S3 兼容对象存储 (可选) |
+| 图标 | Lucide Icons |
+
+---
+
+## 📁 项目结构
+
+```
+├── public/                  # 静态资源
+├── scripts/                 # 部署脚本
+├── src/
+│   ├── app/                 # Next.js App Router
+│   │   ├── admin/           # 管理后台页面
+│   │   ├── api/             # API 路由
+│   │   ├── categories/      # 分类页面
+│   │   ├── favorites/       # 收藏页面
+│   │   ├── login/           # 登录页面
+│   │   ├── profile/         # 个人中心
+│   │   ├── publisher/       # 发布者页面
+│   │   ├── register/        # 注册页面
+│   │   ├── tools/           # 工具详情/列表
+│   │   ├── layout.tsx       # 根布局
+│   │   └── page.tsx         # 首页
+│   ├── components/          # React 组件
+│   │   └── ui/              # shadcn/ui 组件
+│   ├── contexts/            # React Context
+│   ├── hooks/               # 自定义 Hooks
+│   ├── lib/                 # 工具函数
+│   └── storage/             # 数据库相关
+├── .env.example             # 环境变量模板
+├── Dockerfile               # Docker 配置
+├── docker-compose.yml       # Docker Compose 配置
+├── next.config.ts           # Next.js 配置
+├── package.json             # 依赖配置
+├── tailwind.config.ts       # Tailwind 配置
+└── tsconfig.json            # TypeScript 配置
+```
+
+---
+
+## 🚀 快速开始
+
+### 前置要求
+
+- Node.js 18+
+- pnpm 9+ (推荐) 或 npm/yarn
+- Supabase 账号
+
+### 安装步骤
+
+1. **克隆项目**
 
 ```bash
-coze dev
+git clone https://github.com/your-username/ant-ai-nav.git
+cd ant-ai-nav
 ```
 
-启动后，在浏览器中打开 [http://localhost:5000](http://localhost:5000) 查看应用。
-
-开发服务器支持热更新，修改代码后页面会自动刷新。
-
-### 构建生产版本
+2. **安装依赖**
 
 ```bash
-coze build
+pnpm install
 ```
 
-### 启动生产服务器
+3. **配置环境变量**
 
 ```bash
-coze start
+cp .env.example .env.local
 ```
 
-## 项目结构
+编辑 `.env.local` 文件，填写必要的环境变量：
 
-```
-src/
-├── app/                      # Next.js App Router 目录
-│   ├── layout.tsx           # 根布局组件
-│   ├── page.tsx             # 首页
-│   ├── globals.css          # 全局样式（包含 shadcn 主题变量）
-│   └── [route]/             # 其他路由页面
-├── components/              # React 组件目录
-│   └── ui/                  # shadcn/ui 基础组件（优先使用）
-│       ├── button.tsx
-│       ├── card.tsx
-│       └── ...
-├── lib/                     # 工具函数库
-│   └── utils.ts            # cn() 等工具函数
-└── hooks/                   # 自定义 React Hooks（可选）
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-## 核心开发规范
+4. **初始化数据库**
 
-### 1. 组件开发
+在 Supabase 控制台的 SQL Editor 中执行 `database/schema.sql` 文件中的 SQL 语句。
 
-**优先使用 shadcn/ui 基础组件**
-
-本项目已预装完整的 shadcn/ui 组件库，位于 `src/components/ui/` 目录。开发时应优先使用这些组件作为基础：
-
-```tsx
-// ✅ 推荐：使用 shadcn 基础组件
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-
-export default function MyComponent() {
-  return (
-    <Card>
-      <CardHeader>标题</CardHeader>
-      <CardContent>
-        <Input placeholder="输入内容" />
-        <Button>提交</Button>
-      </CardContent>
-    </Card>
-  );
-}
-```
-
-**可用的 shadcn 组件清单**
-
-- 表单：`button`, `input`, `textarea`, `select`, `checkbox`, `radio-group`, `switch`, `slider`
-- 布局：`card`, `separator`, `tabs`, `accordion`, `collapsible`, `scroll-area`
-- 反馈：`alert`, `alert-dialog`, `dialog`, `toast`, `sonner`, `progress`
-- 导航：`dropdown-menu`, `menubar`, `navigation-menu`, `context-menu`
-- 数据展示：`table`, `avatar`, `badge`, `hover-card`, `tooltip`, `popover`
-- 其他：`calendar`, `command`, `carousel`, `resizable`, `sidebar`
-
-详见 `src/components/ui/` 目录下的具体组件实现。
-
-### 2. 路由开发
-
-Next.js 使用文件系统路由，在 `src/app/` 目录下创建文件夹即可添加路由：
+5. **启动开发服务器**
 
 ```bash
-# 创建新路由 /about
-src/app/about/page.tsx
-
-# 创建动态路由 /posts/[id]
-src/app/posts/[id]/page.tsx
-
-# 创建路由组（不影响 URL）
-src/app/(marketing)/about/page.tsx
-
-# 创建 API 路由
-src/app/api/users/route.ts
+pnpm dev
 ```
 
-**页面组件示例**
+访问 http://localhost:3000 查看效果。
 
-```tsx
-// src/app/about/page.tsx
-import { Button } from '@/components/ui/button';
+---
 
-export const metadata = {
-  title: '关于我们',
-  description: '关于页面描述',
-};
+## ⚙️ 环境变量配置
 
-export default function AboutPage() {
-  return (
-    <div>
-      <h1>关于我们</h1>
-      <Button>了解更多</Button>
-    </div>
-  );
-}
-```
+| 变量名 | 必需 | 说明 |
+|--------|------|------|
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase 项目 URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase 匿名密钥 |
+| `S3_ACCESS_KEY_ID` | ❌ | S3 访问密钥 ID (文件上传) |
+| `S3_SECRET_ACCESS_KEY` | ❌ | S3 访问密钥 (文件上传) |
+| `S3_BUCKET_NAME` | ❌ | S3 存储桶名称 |
+| `S3_REGION` | ❌ | S3 区域 |
+| `S3_ENDPOINT` | ❌ | S3 端点 URL |
 
-**动态路由示例**
+---
 
-```tsx
-// src/app/posts/[id]/page.tsx
-export default async function PostPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+## 🗄️ 数据库配置
 
-  return <div>文章 ID: {id}</div>;
-}
-```
+### 创建 Supabase 项目
 
-**API 路由示例**
+1. 访问 [Supabase](https://supabase.com) 创建账号
+2. 创建新项目，记录项目 URL 和 anon key
+3. 在 SQL Editor 中执行数据库初始化脚本
 
-```tsx
-// src/app/api/users/route.ts
-import { NextResponse } from 'next/server';
+### 数据表结构
 
-export async function GET() {
-  return NextResponse.json({ users: [] });
-}
+主要数据表：
 
-export async function POST(request: Request) {
-  const body = await request.json();
-  return NextResponse.json({ success: true });
-}
-```
+- `users` - 用户表
+- `categories` - 分类表
+- `ai_tools` - AI 工具表
+- `comments` - 评论表
+- `favorites` - 收藏表
 
-### 3. 依赖管理
+详细结构请参考 `database/schema.sql`。
 
-**必须使用 pnpm 管理依赖**
+---
+
+## 📦 部署指南
+
+### Vercel 部署
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/ant-ai-nav)
+
+1. Fork 本项目
+2. 在 Vercel 中导入项目
+3. 配置环境变量
+4. 点击部署
+
+### Docker 部署
 
 ```bash
-# ✅ 安装依赖
+# 构建镜像
+docker build -t ant-ai-nav .
+
+# 运行容器
+docker run -p 3000:3000 \
+  -e NEXT_PUBLIC_SUPABASE_URL=your-url \
+  -e NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key \
+  ant-ai-nav
+```
+
+或使用 Docker Compose：
+
+```bash
+# 配置环境变量
+cp .env.example .env
+
+# 启动服务
+docker-compose up -d
+```
+
+### 自托管部署
+
+```bash
+# 安装依赖
 pnpm install
 
-# ✅ 添加新依赖
-pnpm add package-name
+# 构建
+pnpm build
 
-# ✅ 添加开发依赖
-pnpm add -D package-name
-
-# ❌ 禁止使用 npm 或 yarn
-# npm install  # 错误！
-# yarn add     # 错误！
+# 启动生产服务
+pnpm start
 ```
 
-项目已配置 `preinstall` 脚本，使用其他包管理器会报错。
+建议使用 PM2 管理进程：
 
-### 4. 样式开发
+```bash
+pnpm add -g pm2
+pm2 start npm --name "ant-ai-nav" -- start
+```
 
-**使用 Tailwind CSS v4**
+---
 
-本项目使用 Tailwind CSS v4 进行样式开发，并已配置 shadcn 主题变量。
+## 🔧 开发指南
 
-```tsx
-// 使用 Tailwind 类名
-<div className="flex items-center gap-4 p-4 rounded-lg bg-background">
-  <Button className="bg-primary text-primary-foreground">
-    主要按钮
-  </Button>
+### 本地开发
+
+```bash
+# 启动开发服务器
+pnpm dev
+
+# 类型检查
+pnpm ts-check
+
+# 代码检查
+pnpm lint
+```
+
+### 添加新组件
+
+```bash
+# 使用 shadcn/ui 添加组件
+npx shadcn@latest add button
+```
+
+### 数据库迁移
+
+如需修改数据库结构，请在 Supabase 控制台执行 SQL，并同步更新 `src/storage/database/shared/schema.ts`。
+
+---
+
+## 🤝 贡献指南
+
+欢迎贡献代码！请遵循以下步骤：
+
+1. Fork 本项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'feat: Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 提交 Pull Request
+
+### 提交规范
+
+使用 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
+
+- `feat:` 新功能
+- `fix:` 修复 bug
+- `docs:` 文档更新
+- `style:` 代码格式调整
+- `refactor:` 代码重构
+- `test:` 测试相关
+- `chore:` 构建/工具相关
+
+---
+
+## 📄 开源协议
+
+本项目基于 [MIT](LICENSE) 协议开源。
+
+---
+
+## 🙏 致谢
+
+- [Next.js](https://nextjs.org/) - React 框架
+- [shadcn/ui](https://ui.shadcn.com/) - UI 组件库
+- [Supabase](https://supabase.com/) - 后端服务
+- [Tailwind CSS](https://tailwindcss.com/) - CSS 框架
+- [Lucide](https://lucide.dev/) - 图标库
+
+---
+
+<div align="center">
+
+如果这个项目对你有帮助，请给一个 ⭐️ 支持一下！
+
 </div>
-
-// 使用 cn() 工具函数合并类名
-import { cn } from '@/lib/utils';
-
-<div className={cn(
-  "base-class",
-  condition && "conditional-class",
-  className
-)}>
-  内容
-</div>
-```
-
-**主题变量**
-
-主题变量定义在 `src/app/globals.css` 中，支持亮色/暗色模式：
-
-- `--background`, `--foreground`
-- `--primary`, `--primary-foreground`
-- `--secondary`, `--secondary-foreground`
-- `--muted`, `--muted-foreground`
-- `--accent`, `--accent-foreground`
-- `--destructive`, `--destructive-foreground`
-- `--border`, `--input`, `--ring`
-
-### 5. 表单开发
-
-推荐使用 `react-hook-form` + `zod` 进行表单开发：
-
-```tsx
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-
-const formSchema = z.object({
-  username: z.string().min(2, '用户名至少 2 个字符'),
-  email: z.string().email('请输入有效的邮箱'),
-});
-
-export default function MyForm() {
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: { username: '', email: '' },
-  });
-
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data);
-  };
-
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      <Input {...form.register('username')} />
-      <Input {...form.register('email')} />
-      <Button type="submit">提交</Button>
-    </form>
-  );
-}
-```
-
-### 6. 数据获取
-
-**服务端组件（推荐）**
-
-```tsx
-// src/app/posts/page.tsx
-async function getPosts() {
-  const res = await fetch('https://api.example.com/posts', {
-    cache: 'no-store', // 或 'force-cache'
-  });
-  return res.json();
-}
-
-export default async function PostsPage() {
-  const posts = await getPosts();
-
-  return (
-    <div>
-      {posts.map(post => (
-        <div key={post.id}>{post.title}</div>
-      ))}
-    </div>
-  );
-}
-```
-
-**客户端组件**
-
-```tsx
-'use client';
-
-import { useEffect, useState } from 'react';
-
-export default function ClientComponent() {
-  const [data, setData] = useState(null);
-
-  useEffect(() => {
-    fetch('/api/data')
-      .then(res => res.json())
-      .then(setData);
-  }, []);
-
-  return <div>{JSON.stringify(data)}</div>;
-}
-```
-
-## 常见开发场景
-
-### 添加新页面
-
-1. 在 `src/app/` 下创建文件夹和 `page.tsx`
-2. 使用 shadcn 组件构建 UI
-3. 根据需要添加 `layout.tsx` 和 `loading.tsx`
-
-### 创建业务组件
-
-1. 在 `src/components/` 下创建组件文件（非 UI 组件）
-2. 优先组合使用 `src/components/ui/` 中的基础组件
-3. 使用 TypeScript 定义 Props 类型
-
-### 添加全局状态
-
-推荐使用 React Context 或 Zustand：
-
-```tsx
-// src/lib/store.ts
-import { create } from 'zustand';
-
-interface Store {
-  count: number;
-  increment: () => void;
-}
-
-export const useStore = create<Store>((set) => ({
-  count: 0,
-  increment: () => set((state) => ({ count: state.count + 1 })),
-}));
-```
-
-### 集成数据库
-
-推荐使用 Prisma 或 Drizzle ORM，在 `src/lib/db.ts` 中配置。
-
-## 技术栈
-
-- **框架**: Next.js 16.1.1 (App Router)
-- **UI 组件**: shadcn/ui (基于 Radix UI)
-- **样式**: Tailwind CSS v4
-- **表单**: React Hook Form + Zod
-- **图标**: Lucide React
-- **字体**: Geist Sans & Geist Mono
-- **包管理器**: pnpm 9+
-- **TypeScript**: 5.x
-
-## 参考文档
-
-- [Next.js 官方文档](https://nextjs.org/docs)
-- [shadcn/ui 组件文档](https://ui.shadcn.com)
-- [Tailwind CSS 文档](https://tailwindcss.com/docs)
-- [React Hook Form](https://react-hook-form.com)
-
-## 重要提示
-
-1. **必须使用 pnpm** 作为包管理器
-2. **优先使用 shadcn/ui 组件** 而不是从零开发基础组件
-3. **遵循 Next.js App Router 规范**，正确区分服务端/客户端组件
-4. **使用 TypeScript** 进行类型安全开发
-5. **使用 `@/` 路径别名** 导入模块（已配置）

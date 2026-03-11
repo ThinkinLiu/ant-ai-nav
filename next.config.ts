@@ -1,19 +1,24 @@
 import type { NextConfig } from 'next';
-import path from 'path';
 
 const nextConfig: NextConfig = {
-  // outputFileTracingRoot: path.resolve(__dirname, '../../'),
-  /* config options here */
-  allowedDevOrigins: ['*.dev.coze.site'],
+  // 启用 standalone 输出模式，用于 Docker 部署
+  output: 'standalone',
+  
+  // 图片配置
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'lf-coze-web-cdn.coze.cn',
-        pathname: '/**',
+        hostname: '**',
       },
     ],
   },
+  
+  // 生产环境优化
+  poweredByHeader: false,
+  
+  // 严格模式
+  reactStrictMode: true,
 };
 
 export default nextConfig;
