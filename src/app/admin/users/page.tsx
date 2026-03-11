@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,6 +27,18 @@ interface User {
 }
 
 export default function AdminUsersPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <AdminUsersContent />
+    </Suspense>
+  )
+}
+
+function AdminUsersContent() {
   const { token } = useAuth()
   const searchParams = useSearchParams()
   const [users, setUsers] = useState<User[]>([])

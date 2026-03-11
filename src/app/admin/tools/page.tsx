@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -71,6 +71,22 @@ const SORT_OPTIONS = [
 ]
 
 export default function AdminToolsPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <AdminToolsContent />
+    </Suspense>
+  )
+}
+
+function AdminToolsContent() {
   const { token } = useAuth()
   const searchParams = useSearchParams()
   const [tools, setTools] = useState<Tool[]>([])
