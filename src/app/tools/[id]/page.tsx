@@ -15,6 +15,7 @@ import {
   ExternalLink, Star, Heart, Share2, MessageCircle, 
   Eye, Clock, ArrowLeft, Send, ThumbsUp, Award
 } from 'lucide-react'
+import RelatedTools from '@/components/tools/RelatedTools'
 
 interface Tool {
   id: number
@@ -409,6 +410,9 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               </CardContent>
             </Card>
+
+            {/* Related Tools */}
+            <RelatedTools toolId={tool.id} />
           </div>
 
           {/* Sidebar */}
