@@ -24,8 +24,16 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: '蚂蚁AI导航' }],
   icons: {
-    icon: '/favicon.png',
-    apple: '/favicon.png',
+    icon: [
+      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/favicon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    other: [
+      { rel: 'mask-icon', url: '/favicon.png' },
+    ],
   },
   openGraph: {
     title: '蚂蚁AI导航 - 发现最好的AI工具',
