@@ -165,21 +165,35 @@ export default function GenerateToolsPage() {
         
         if (!generateResult.success) {
           batchResult.error = generateResult.error || '生成失败'
+          batchResult.generated = 0
           totalFailed += batchSize
           allBatchResults.push(batchResult)
           
           setStatus(prev => ({
             ...prev,
+            completed: prev.completed + batchSize,
             failed: totalFailed,
             batchResults: [...allBatchResults]
           }))
           continue
         }
 
-        batchResult.generated = generateResult.tools?.length || 0
+        batchResult.generated = generateResult.generated || generateResult.tools?.length || 0
+        
+        // 如果生成数量为0，记录警告但继续
+        if (batchResult.generated === 0) {
+          batchResult.error = 'LLM未返回有效数据'
+          allBatchResults.push(batchResult)
+          setStatus(prev => ({
+            ...prev,
+            completed: prev.completed + batchSize,
+            batchResults: [...allBatchResults]
+          }))
+          continue
+        }
 
         // 插入数据库
-        const insertResult = await insertBatch(generateResult.tools)
+        const insertResult = await insertBatch(generateResult.tools || [])
         
         batchResult.inserted = insertResult.inserted || 0
         batchResult.skipped = insertResult.skipped || 0
@@ -188,20 +202,18 @@ export default function GenerateToolsPage() {
         totalSkipped += insertResult.skipped || 0
 
         // 记录每个工具的导入结果
-        if (generateResult.tools) {
+        if (generateResult.tools && generateResult.tools.length > 0) {
           const insertedSet = new Set(insertResult.insertedTools || [])
           const skippedSet = new Set(insertResult.skippedTools || [])
           
           generateResult.tools.forEach((tool: any) => {
-            let toolStatus: 'success' | 'skipped' | 'error' = 'error'
+            let toolStatus: 'success' | 'skipped' | 'error' = 'skipped'
             if (insertedSet.has(tool.name)) {
               toolStatus = 'success'
             } else if (skippedSet.has(tool.name)) {
               toolStatus = 'skipped'
-            } else if (insertResult.inserted > 0) {
+            } else if (insertResult.inserted > 0 && !skippedSet.has(tool.name)) {
               toolStatus = 'success'
-            } else {
-              toolStatus = 'skipped'
             }
             
             batchResult.tools.push({
@@ -231,11 +243,13 @@ export default function GenerateToolsPage() {
 
       } catch (error) {
         batchResult.error = (error as Error).message
+        batchResult.generated = 0
         totalFailed += batchSize
         allBatchResults.push(batchResult)
         
         setStatus(prev => ({
           ...prev,
+          completed: prev.completed + batchSize,
           failed: totalFailed,
           batchResults: [...allBatchResults]
         }))
