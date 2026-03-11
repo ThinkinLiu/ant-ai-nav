@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
+import { batchFetchTrafficData } from '@/lib/traffic-service'
 
-// 生成模拟的排行榜数据
+// 生成排行榜数据
 async function generateRankingData(supabase: ReturnType<typeof getSupabaseClient>) {
+  // 获取当前激活的数据源
+  const { data: dataSources } = await supabase
+    .from('traffic_data_sources')
+    .select('*')
+    .eq('is_active', true)
+    .order('priority', { ascending: false })
+    .limit(1)
+  
+  const dataSource = dataSources?.[0] || {
+    name: 'mock',
+    display_name: '模拟数据',
+    api_key: null,
+    api_endpoint: null,
+    is_active: true,
+    priority: 0,
+    config: null
+  }
+  
   // 获取所有已审核通过的工具
   const { data: tools, error: toolsError } = await supabase
     .from('ai_tools')
-    .select('id, name, slug, website, logo, category_id, view_count, is_featured, is_top')
+    .select('id, name, slug, website, logo, category_id, view_count, is_featured, is_pinned')
     .eq('status', 'approved')
     .order('view_count', { ascending: false })
     .limit(200)
@@ -15,31 +34,51 @@ async function generateRankingData(supabase: ReturnType<typeof getSupabaseClient
     console.error('获取工具列表失败:', toolsError)
     return
   }
+  
+  // 批量获取流量数据
+  const websites = tools.map((t: any) => t.website)
+  const trafficDataMap = await batchFetchTrafficData(websites, dataSource, 10)
 
-  // 为每个工具生成模拟的流量数据
+  // 获取昨天的排名
   const today = new Date().toISOString().split('T')[0]
-  const rankingData = tools.map((tool: any, index: number) => {
-    // 基于现有数据生成模拟流量
-    const baseVisits = Math.floor(Math.random() * 10000000) + 100000
-    const featuredBonus = tool.is_featured ? 500000 : 0
-    const topBonus = tool.is_top ? 1000000 : 0
-    const viewBonus = (tool.view_count || 0) * 100
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  const { data: yesterdayRankings } = await supabase
+    .from('ai_tool_rankings')
+    .select('tool_id, rank')
+    .eq('ranking_date', yesterday)
+  
+  const yesterdayRankMap = new Map(
+    (yesterdayRankings || []).map((r: any) => [r.tool_id, r.rank])
+  )
+
+  // 为每个工具构建排行榜数据
+  const rankingData = tools.map((tool: any) => {
+    const trafficData = trafficDataMap.get(tool.website)
     
-    const monthlyVisits = baseVisits + featuredBonus + topBonus + viewBonus
-    const previousRank = index + Math.floor(Math.random() * 20) - 10
+    // 获取流量数据
+    let monthlyVisits = trafficData?.monthlyVisits || 0
+    let monthlyVisitsChange = trafficData?.monthlyVisitsChange || 0
+    
+    // 如果是模拟数据，添加权重
+    if (dataSource.name === 'mock' || !dataSource.api_key) {
+      const featuredBonus = tool.is_featured ? 500000 : 0
+      const pinnedBonus = tool.is_pinned ? 1000000 : 0
+      const viewBonus = (tool.view_count || 0) * 100
+      monthlyVisits = trafficData?.monthlyVisits || 0
+      monthlyVisits += featuredBonus + pinnedBonus + viewBonus
+    }
     
     return {
       tool_id: tool.id,
-      rank: index + 1,
-      previous_rank: previousRank > 0 ? previousRank : null,
       monthly_visits: monthlyVisits,
-      monthly_visits_change: parseFloat((Math.random() * 40 - 10).toFixed(2)),
+      monthly_visits_change: monthlyVisitsChange,
       category_id: tool.category_id,
-      ranking_date: today
+      ranking_date: today,
+      previous_rank: yesterdayRankMap.get(tool.id) || null
     }
   })
 
-  // 按流量重新排序
+  // 按流量排序并设置排名
   rankingData.sort((a: any, b: any) => b.monthly_visits - a.monthly_visits)
   rankingData.forEach((item: any, index: number) => {
     item.rank = index + 1
@@ -53,6 +92,17 @@ async function generateRankingData(supabase: ReturnType<typeof getSupabaseClient
   if (insertError) {
     console.error('插入排行榜数据失败:', insertError)
     return
+  }
+
+  // 更新数据源同步状态
+  if (dataSource.id) {
+    await supabase
+      .from('traffic_data_sources')
+      .update({
+        last_sync_at: new Date().toISOString(),
+        sync_status: 'success'
+      })
+      .eq('id', dataSource.id)
   }
 
   // 记录更新日志
@@ -128,10 +178,9 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 获取工具详情 - 由于Supabase客户端的.in()方法问题，使用Promise.all并行查询
+    // 获取工具详情 - 使用Promise.all并行查询当前页所有工具
     const toolIds = rankings.map((r: any) => r.tool_id).filter(Boolean)
     
-    // 使用Promise.all并行查询当前页所有工具
     const toolPromises = toolIds.map(id => 
       supabase
         .from('ai_tools')
@@ -164,11 +213,18 @@ export async function GET(request: NextRequest) {
       tool: toolMap.get(r.tool_id) || null
     }))
 
-    // 获取更新时间
+    // 获取更新时间和数据源信息
     const { data: updateLog } = await supabase
       .from('ranking_update_log')
       .select('completed_at')
       .eq('update_date', today)
+      .single()
+    
+    const { data: activeSource } = await supabase
+      .from('traffic_data_sources')
+      .select('name, display_name')
+      .eq('is_active', true)
+      .limit(1)
       .single()
 
     return NextResponse.json({
@@ -179,7 +235,8 @@ export async function GET(request: NextRequest) {
         total: count || 0,
         totalPages: Math.ceil((count || 0) / limit)
       },
-      lastUpdated: updateLog?.completed_at || new Date().toISOString()
+      lastUpdated: updateLog?.completed_at || new Date().toISOString(),
+      dataSource: activeSource || { name: 'mock', display_name: '模拟数据' }
     })
   } catch (error) {
     console.error('排行榜API错误:', error)

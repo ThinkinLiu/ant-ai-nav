@@ -228,3 +228,20 @@ export const seoSettings = pgTable("seo_settings", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 });
+
+// 流量数据源配置表
+export const trafficDataSources = pgTable("traffic_data_sources", {
+	id: serial().primaryKey().notNull(),
+	name: varchar({ length: 100 }).notNull(),           // 数据源名称 (similarweb, semrush, etc.)
+	displayName: varchar("display_name", { length: 200 }), // 显示名称
+	apiKey: varchar("api_key", { length: 500 }),        // API密钥
+	apiEndpoint: varchar("api_endpoint", { length: 500 }), // API端点
+	isActive: boolean("is_active").default(false),      // 是否启用
+	priority: integer().default(0),                     // 优先级（数字越大优先级越高）
+	config: jsonb(),                                    // 额外配置
+	lastSyncAt: timestamp("last_sync_at", { withTimezone: true, mode: 'string' }),
+	syncStatus: varchar("sync_status", { length: 20 }), // pending, success, failed
+	syncError: text("sync_error"),                      // 同步错误信息
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+});
