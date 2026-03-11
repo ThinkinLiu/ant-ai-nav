@@ -161,6 +161,12 @@ export async function GET(request: NextRequest) {
           totalPages: Math.ceil((count || 0) / pageSize)
         }
       }
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
     })
   } catch (error) {
     console.error('获取评论列表错误:', error)

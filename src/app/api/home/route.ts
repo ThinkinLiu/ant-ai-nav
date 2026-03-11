@@ -166,6 +166,12 @@ export async function GET() {
         hotTools,
         latestTools,
       },
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
     })
   } catch (error) {
     console.error('获取首页数据错误:', error)

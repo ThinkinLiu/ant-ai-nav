@@ -88,7 +88,10 @@ function HomePageContent() {
     const fetchHomeData = async () => {
       setLoading(true)
       try {
-        const response = await fetch('/api/home')
+        // 添加时间戳参数避免缓存
+        const response = await fetch(`/api/home?t=${Date.now()}`, {
+          cache: 'no-store'
+        })
         const data = await response.json()
         if (data.success) {
           setCategories(data.data.categories)
@@ -108,7 +111,7 @@ function HomePageContent() {
     if (!searchQuery && !categoryId && !isFeatured && activeCategory === 'all') {
       fetchHomeData()
     }
-  }, []) // 仅首次加载
+  }, [searchQuery, categoryId, isFeatured, activeCategory])
 
   // 搜索/筛选时单独请求
   useEffect(() => {

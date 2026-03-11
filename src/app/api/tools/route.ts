@@ -243,6 +243,12 @@ export async function GET(request: NextRequest) {
         limit,
         totalPages: Math.ceil((toolsResult.count || 0) / limit),
       },
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
     })
   } catch (error) {
     console.error('获取工具列表错误:', error)
