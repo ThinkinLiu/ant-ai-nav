@@ -64,8 +64,9 @@ export async function GET(request: NextRequest) {
     const from = (page - 1) * pageSize
     const to = from + pageSize - 1
 
-    // 排序
+    // 排序 - 先按置顶排序，再按指定字段排序
     const ascending = sortOrder === 'asc'
+    query = query.order('is_pinned', { ascending: false })
     query = query.order(sortBy, { ascending })
 
     const { data: tools, error, count } = await query.range(from, to)

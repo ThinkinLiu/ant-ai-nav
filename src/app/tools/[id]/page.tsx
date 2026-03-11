@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { formatRelativeTime } from '@/lib/utils'
 import { 
   ExternalLink, Star, Heart, Share2, MessageCircle, 
-  Eye, Clock, ArrowLeft, Send, ThumbsUp
+  Eye, Clock, ArrowLeft, Send, ThumbsUp, Award
 } from 'lucide-react'
 
 interface Tool {
@@ -43,6 +43,7 @@ interface Comment {
   content: string
   rating: number | null
   created_at: string
+  is_featured: boolean
   user: { id: string; name: string; avatar: string | null } | null
   replies: Comment[]
 }
@@ -371,6 +372,12 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{comment.user?.name || '匿名用户'}</span>
+                            {comment.is_featured && (
+                              <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-xs">
+                                <Award className="h-3 w-3 mr-0.5" />
+                                精选
+                              </Badge>
+                            )}
                             {comment.rating && (
                               <div className="flex items-center">
                                 {[1, 2, 3, 4, 5].map((star) => (

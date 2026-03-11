@@ -26,7 +26,8 @@ import {
 import { formatRelativeTime } from '@/lib/utils'
 import { 
   Check, X, Eye, ExternalLink, Search, EyeOff, ChevronLeft, 
-  ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw, ArrowUpDown
+  ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw, ArrowUpDown,
+  Pin, PinOff
 } from 'lucide-react'
 
 interface Tool {
@@ -38,6 +39,7 @@ interface Tool {
   view_count: number
   created_at: string
   reject_reason: string | null
+  is_pinned: boolean
   publisher: { id: string; name: string; email: string } | null
   category: { id: number; name: string } | null
   favorite_count: number
@@ -285,6 +287,27 @@ function AdminToolsContent() {
     }
   }
 
+  const handleTogglePin = async (tool: Tool) => {
+    try {
+      const response = await fetch(`/api/tools/${tool.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          isPinned: !tool.is_pinned
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        fetchTools()
+      }
+    } catch (error) {
+      console.error('置顶操作失败:', error)
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
@@ -418,6 +441,12 @@ function AdminToolsContent() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-medium">{tool.name}</h3>
+                        {tool.is_pinned && (
+                          <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                            <Pin className="h-3 w-3 mr-1" />
+                            置顶
+                          </Badge>
+                        )}
                         {getStatusBadge(tool.status)}
                         {tool.category && (
                           <Badge variant="outline" className="text-xs">{tool.category.name}</Badge>
@@ -477,14 +506,36 @@ function AdminToolsContent() {
                       )}
                       
                       {(tool.status === 'approved' || tool.status === 'rejected') && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setReviewDialog({ open: true, tool })}
-                        >
-                          <RotateCcw className="h-4 w-4 mr-1" />
-                          重新审核
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setReviewDialog({ open: true, tool })}
+                          >
+                            <RotateCcw className="h-4 w-4 mr-1" />
+                            重新审核
+                          </Button>
+                          {tool.status === 'approved' && (
+                            <Button
+                              size="sm"
+                              variant={tool.is_pinned ? "secondary" : "outline"}
+                              onClick={() => handleTogglePin(tool)}
+                              title={tool.is_pinned ? "取消置顶" : "置顶显示"}
+                            >
+                              {tool.is_pinned ? (
+                                <>
+                                  <PinOff className="h-4 w-4 mr-1" />
+                                  取消置顶
+                                </>
+                              ) : (
+                                <>
+                                  <Pin className="h-4 w-4 mr-1" />
+                                  置顶
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>

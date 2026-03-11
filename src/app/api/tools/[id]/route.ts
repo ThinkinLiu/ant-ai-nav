@@ -161,6 +161,7 @@ export async function PUT(
     if (body.isFree !== undefined) updateData.is_free = body.isFree
     if (body.pricingInfo) updateData.pricing_info = body.pricingInfo
     if (body.isFeatured !== undefined) updateData.is_featured = body.isFeatured
+    if (body.isPinned !== undefined) updateData.is_pinned = body.isPinned
     if (body.rejectReason !== undefined) updateData.reject_reason = body.rejectReason
 
     const { data: updatedTool, error } = await client

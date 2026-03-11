@@ -55,8 +55,9 @@ export async function GET(request: NextRequest) {
     // 构建基础查询 - 只获取主评论
     let query = client
       .from('comments')
-      .select('id, content, rating, created_at, parent_id, user_id, tool_id', { count: 'exact' })
+      .select('id, content, rating, created_at, parent_id, user_id, tool_id, is_featured', { count: 'exact' })
       .is('parent_id', null)
+      .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false })
 
     // 按工具筛选
@@ -135,6 +136,7 @@ export async function GET(request: NextRequest) {
         content: comment.content,
         rating: comment.rating,
         created_at: comment.created_at,
+        is_featured: comment.is_featured || false,
         reply_count: replyCounts[comment.id] || 0,
         user: user ? {
           id: user.id,

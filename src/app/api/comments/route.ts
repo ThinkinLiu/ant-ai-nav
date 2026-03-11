@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       .eq('tool_id', parseInt(toolId))
       .eq('is_hidden', false)
       .is('parent_id', null)
+      .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false })
       .range(from, to)
 

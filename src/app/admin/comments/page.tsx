@@ -27,7 +27,7 @@ import { formatRelativeTime } from '@/lib/utils'
 import { 
   MessageCircle, Trash2, ChevronLeft, ChevronRight, 
   ChevronsLeft, ChevronsRight, Star, ExternalLink,
-  Search, Eye, X
+  Search, Eye, X, Award
 } from 'lucide-react'
 
 interface Comment {
@@ -36,6 +36,7 @@ interface Comment {
   rating: number | null
   created_at: string
   reply_count: number
+  is_featured: boolean
   user: {
     id: string
     name: string | null
@@ -162,6 +163,31 @@ export default function AdminCommentsPage() {
     }
   }
 
+  const handleToggleFeatured = async (comment: Comment) => {
+    try {
+      const response = await fetch(`/api/comments/${comment.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          isFeatured: !comment.is_featured 
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        setComments(prev => prev.map(c => 
+          c.id === comment.id 
+            ? { ...c, is_featured: !c.is_featured }
+            : c
+        ))
+      }
+    } catch (error) {
+      console.error('精选操作失败:', error)
+    }
+  }
+
   const handlePageChange = (page: number) => {
     setPagination(prev => ({ ...prev, page }))
   }
@@ -259,6 +285,12 @@ export default function AdminCommentsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium">{comment.user?.name || '未知用户'}</span>
+                        {comment.is_featured && (
+                          <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                            <Award className="h-3 w-3 mr-1" />
+                            精选
+                          </Badge>
+                        )}
                         {comment.rating && (
                           <div className="flex items-center gap-1">
                             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -290,6 +322,15 @@ export default function AdminCommentsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      variant={comment.is_featured ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => handleToggleFeatured(comment)}
+                      title={comment.is_featured ? "取消精选" : "设为精选"}
+                    >
+                      <Award className={`h-4 w-4 mr-1 ${comment.is_featured ? 'text-amber-600' : ''}`} />
+                      {comment.is_featured ? '取消精选' : '精选'}
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"

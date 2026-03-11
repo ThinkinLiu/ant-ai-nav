@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
     // 普通排序逻辑
     let query = client
       .from('ai_tools')
-      .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id, status, reject_reason', { count: 'exact' })
+      .select('id, name, slug, description, website, logo, is_featured, is_free, is_pinned, view_count, favorite_count, created_at, category_id, status, reject_reason', { count: 'exact' })
 
     // 筛选条件
     if (categoryId) {
@@ -177,8 +177,9 @@ export async function GET(request: NextRequest) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
     }
 
-    // 排序
+    // 排序 - 先按置顶排序，再按指定字段排序
     const ascending = sortOrder === 'asc'
+    query = query.order('is_pinned', { ascending: false })
     query = query.order(sortBy, { ascending })
 
     // 分页

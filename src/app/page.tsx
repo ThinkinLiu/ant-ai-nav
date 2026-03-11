@@ -18,7 +18,7 @@ import {
 import { 
   TrendingUp, Clock, Star, ChevronRight,
   PenTool, Palette, MessageCircle, Code, Music, Video, Briefcase, GraduationCap,
-  Flame, Eye, Heart, Zap
+  Flame, Eye, Heart, Zap, Pin
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatRelativeTime } from '@/lib/utils'
@@ -52,6 +52,7 @@ interface Tool {
   website: string
   logo: string | null
   is_featured: boolean
+  is_pinned: boolean
   is_free: boolean
   view_count: number
   favorite_count: number
@@ -432,6 +433,12 @@ function HomePageContent() {
                             <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
                               {tool.name}
                             </h3>
+                            {tool.is_pinned && (
+                              <Badge className="shrink-0 text-xs bg-purple-100 text-purple-700 border-purple-200">
+                                <Pin className="h-3 w-3 mr-0.5" />
+                                置顶
+                              </Badge>
+                            )}
                             {tool.is_featured && (
                               <Badge variant="default" className="shrink-0 text-xs">精选</Badge>
                             )}
