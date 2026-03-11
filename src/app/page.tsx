@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatRelativeTime } from '@/lib/utils'
+import { ToolLogoNext } from '@/components/tools/ToolLogo'
 
 const iconMap: Record<string, any> = {
   PenTool,
@@ -232,15 +233,14 @@ function HomePageContent() {
                 <Link key={tool.id} href={`/tools/${tool.id}`}>
                   <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
                     <CardContent className="p-4 text-center">
-                      <div 
-                        className="h-12 w-12 mx-auto rounded-lg flex items-center justify-center text-white font-bold text-lg mb-3"
-                        style={{ backgroundColor: tool.category?.color || '#EF4444' }}
-                      >
-                        {tool.logo ? (
-                          <img src={tool.logo} alt={tool.name} className="h-full w-full rounded-lg object-cover" />
-                        ) : (
-                          tool.name[0]
-                        )}
+                      <div className="h-12 w-12 mx-auto rounded-lg overflow-hidden mb-3">
+                        <ToolLogoNext 
+                          logo={tool.logo} 
+                          name={tool.name} 
+                          className="h-full w-full rounded-lg"
+                          size={48}
+                          fallbackBgColor={tool.category?.color || '#EF4444'}
+                        />
                       </div>
                       <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
                         {tool.name}
@@ -271,15 +271,14 @@ function HomePageContent() {
                 <Link key={tool.id} href={`/tools/${tool.id}`}>
                   <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
                     <CardContent className="p-4 text-center">
-                      <div 
-                        className="h-12 w-12 mx-auto rounded-lg flex items-center justify-center text-white font-bold text-lg mb-3"
-                        style={{ backgroundColor: tool.category?.color || '#3B82F6' }}
-                      >
-                        {tool.logo ? (
-                          <img src={tool.logo} alt={tool.name} className="h-full w-full rounded-lg object-cover" />
-                        ) : (
-                          tool.name[0]
-                        )}
+                      <div className="h-12 w-12 mx-auto rounded-lg overflow-hidden mb-3">
+                        <ToolLogoNext 
+                          logo={tool.logo} 
+                          name={tool.name} 
+                          className="h-full w-full rounded-lg"
+                          size={48}
+                          fallbackBgColor={tool.category?.color || '#3B82F6'}
+                        />
                       </div>
                       <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
                         {tool.name}
@@ -423,15 +422,14 @@ function HomePageContent() {
                   <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
                     <CardContent className="p-6">
                       <div className="flex items-start gap-3">
-                        <div 
-                          className="h-12 w-12 rounded-lg flex items-center justify-center text-white font-bold text-lg shrink-0"
-                          style={{ backgroundColor: tool.category?.color || '#6366F1' }}
-                        >
-                          {tool.logo ? (
-                            <img src={tool.logo} alt={tool.name} className="h-full w-full rounded-lg object-cover" />
-                          ) : (
-                            tool.name[0]
-                          )}
+                        <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
+                          <ToolLogoNext 
+                            logo={tool.logo} 
+                            name={tool.name} 
+                            className="h-full w-full rounded-lg"
+                            size={48}
+                            fallbackBgColor={tool.category?.color || '#6366F1'}
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
