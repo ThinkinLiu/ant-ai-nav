@@ -26,11 +26,18 @@ export async function POST(request: NextRequest) {
       return !existingNames.has(tool.name) && !existingSlugs.has(tool.slug)
     })
 
+    // 被跳过的工具名称
+    const skippedTools = tools
+      .filter((tool: any) => existingNames.has(tool.name) || existingSlugs.has(tool.slug))
+      .map((tool: any) => tool.name)
+
     if (uniqueTools.length === 0) {
       return NextResponse.json({ 
         success: true, 
         inserted: 0, 
         skipped: tools.length,
+        insertedTools: [],
+        skippedTools,
         message: '所有工具已存在，跳过插入' 
       })
     }
@@ -38,6 +45,7 @@ export async function POST(request: NextRequest) {
     // 批量插入，每次最多500条
     const batchSize = 500
     let totalInserted = 0
+    const insertedToolNames: string[] = []
     const errors: string[] = []
 
     for (let i = 0; i < uniqueTools.length; i += batchSize) {
@@ -46,12 +54,13 @@ export async function POST(request: NextRequest) {
       const { data, error } = await supabase
         .from('ai_tools')
         .insert(batch)
-        .select('id')
+        .select('id, name')
 
       if (error) {
         errors.push(`批次 ${Math.floor(i / batchSize) + 1} 插入失败: ${error.message}`)
       } else {
         totalInserted += data?.length || 0
+        insertedToolNames.push(...(data?.map(t => t.name) || []))
       }
     }
 
@@ -60,6 +69,8 @@ export async function POST(request: NextRequest) {
       inserted: totalInserted,
       skipped: tools.length - uniqueTools.length,
       total: tools.length,
+      insertedTools: insertedToolNames,
+      skippedTools,
       errors: errors.length > 0 ? errors : undefined
     })
 
