@@ -3,7 +3,7 @@ import { getSupabaseClient } from '@/storage/database/supabase-client'
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const supabase = getSupabaseClient()
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://antai.example.com'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://mayiai.site'
   
   // 从数据库获取自定义robots.txt配置
   const { data: seoSettings } = await supabase

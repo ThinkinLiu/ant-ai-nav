@@ -16,7 +16,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://antai.example.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://mayiai.site'),
   title: {
     default: '蚂蚁AI导航 - 发现最好的AI工具',
     template: '%s | 蚂蚁AI导航',

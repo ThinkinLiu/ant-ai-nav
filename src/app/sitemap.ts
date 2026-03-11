@@ -3,7 +3,7 @@ import { getSupabaseClient } from '@/storage/database/supabase-client'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = getSupabaseClient()
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://antai.example.com'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://mayiai.site'
   
   // 获取所有已审核通过的工具
   const { data: tools } = await supabase
