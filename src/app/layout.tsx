@@ -23,6 +23,10 @@ export const metadata: Metadata = {
     '人工智能',
   ],
   authors: [{ name: '蚂蚁AI导航' }],
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
   openGraph: {
     title: '蚂蚁AI导航 - 发现最好的AI工具',
     description: '蚂蚁AI导航是一个专注于AI工具的资源导航平台，帮助用户发现和使用最优秀的AI产品。',
