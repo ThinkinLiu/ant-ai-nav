@@ -73,7 +73,7 @@ export async function GET() {
       // 国内火爆AI工具（按名称匹配，最多8个）
       client
         .from('ai_tools')
-        .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id')
+        .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
         .eq('status', 'approved')
         .in('name', domesticHotTools)
         .limit(8),
@@ -81,7 +81,7 @@ export async function GET() {
       // 国外火爆AI工具（按名称匹配，最多8个）
       client
         .from('ai_tools')
-        .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id')
+        .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
         .eq('status', 'approved')
         .in('name', foreignHotTools)
         .limit(8),
@@ -89,18 +89,19 @@ export async function GET() {
       // 热门工具（按浏览量排序）
       client
         .from('ai_tools')
-        .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id')
+        .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
         .eq('status', 'approved')
         .order('view_count', { ascending: false })
         .order('created_at', { ascending: false })
         .order('favorite_count', { ascending: false })
         .limit(6),
       
-      // 最新上架（16个，2排）
+      // 最新上架（16个，2排，优先展示置顶工具）
       client
         .from('ai_tools')
-        .select('id, name, slug, description, website, logo, is_featured, is_free, view_count, favorite_count, created_at, category_id')
+        .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
         .eq('status', 'approved')
+        .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(16)
     ])
