@@ -93,7 +93,10 @@ function AdminToolsContent() {
   const [loading, setLoading] = useState(true)
   
   // 筛选状态 - 支持URL参数
-  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || 'pending')
+  const [statusFilter, setStatusFilter] = useState(() => {
+    const status = searchParams.get('status')
+    return status === 'all' ? '' : (status || 'pending')
+  })
   const [categoryId, setCategoryId] = useState('')
   const [publisherId, setPublisherId] = useState('')
   const [keyword, setKeyword] = useState('')
@@ -186,7 +189,7 @@ function AdminToolsContent() {
   }
 
   const handleStatusChange = (value: string) => {
-    setStatusFilter(value)
+    setStatusFilter(value === 'all' ? '' : value)
     setPagination(prev => ({ ...prev, page: 1 }))
   }
 
@@ -308,7 +311,7 @@ function AdminToolsContent() {
           {/* 筛选栏 */}
           <div className="flex flex-wrap items-center gap-4 mb-6 pb-6 border-b">
             {/* 状态筛选 */}
-            <Select value={statusFilter} onValueChange={handleStatusChange}>
+            <Select value={statusFilter || 'all'} onValueChange={handleStatusChange}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
