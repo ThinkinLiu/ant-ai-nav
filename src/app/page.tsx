@@ -131,7 +131,9 @@ function HomePageContent() {
         const cat = categories.find(c => c.slug === activeCategory)
         if (cat) params.append('categoryId', cat.id.toString())
       }
-      params.append('limit', '20')
+      // 精选推荐显示所有工具，其他情况显示20个
+      const limit = isFeatured === 'true' ? '500' : '20'
+      params.append('limit', limit)
 
       const response = await fetch(`/api/tools?${params}`)
       const data = await response.json()
