@@ -1,11 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 
+// 默认数据源配置
+const DEFAULT_SOURCES = [
+  {
+    name: 'similarweb',
+    display_name: 'SimilarWeb',
+    is_active: false,
+    priority: 100,
+    config: {
+      description: 'SimilarWeb提供网站流量分析数据',
+      required_fields: ['api_key'],
+      api_documentation: 'https://developer.similarweb.com/',
+      pricing: '付费API，有免费试用'
+    }
+  },
+  {
+    name: 'semrush',
+    display_name: 'SEMrush',
+    is_active: false,
+    priority: 90,
+    config: {
+      description: 'SEMrush提供SEO和流量分析数据',
+      required_fields: ['api_key'],
+      api_documentation: 'https://www.semrush.com/api-documentation/',
+      pricing: '付费API'
+    }
+  },
+  {
+    name: 'ahrefs',
+    display_name: 'Ahrefs',
+    is_active: false,
+    priority: 80,
+    config: {
+      description: 'Ahrefs提供SEO和反向链接分析',
+      required_fields: ['api_key'],
+      api_documentation: 'https://ahrefs.com/api',
+      pricing: '付费API'
+    }
+  },
+  {
+    name: 'mock',
+    display_name: '模拟数据（默认）',
+    is_active: true,
+    priority: 0,
+    config: {
+      description: '使用模拟数据生成排行榜，用于测试和演示',
+      required_fields: [],
+      pricing: '免费'
+    }
+  }
+]
+
 // 获取所有流量数据源配置
 export async function GET() {
   const supabase = getSupabaseClient()
   
-  const { data, error } = await supabase
+  const { data: dbData, error } = await supabase
     .from('traffic_data_sources')
     .select('*')
     .order('priority', { ascending: false })
@@ -17,75 +68,38 @@ export async function GET() {
     )
   }
   
-  // 如果数据库中有数据，返回数据库数据
-  if (data && data.length > 0) {
-    return NextResponse.json({ data })
-  }
-  
-  // 如果没有配置，初始化默认数据源
-  const defaultSources = [
-    {
-      name: 'similarweb',
-      display_name: 'SimilarWeb',
-      is_active: false,
-      priority: 100,
-      config: {
-        description: 'SimilarWeb提供网站流量分析数据',
-        required_fields: ['api_key'],
-        api_documentation: 'https://developer.similarweb.com/',
-        pricing: '付费API，有免费试用'
-      }
-    },
-    {
-      name: 'semrush',
-      display_name: 'SEMrush',
-      is_active: false,
-      priority: 90,
-      config: {
-        description: 'SEMrush提供SEO和流量分析数据',
-        required_fields: ['api_key'],
-        api_documentation: 'https://www.semrush.com/api-documentation/',
-        pricing: '付费API'
-      }
-    },
-    {
-      name: 'ahrefs',
-      display_name: 'Ahrefs',
-      is_active: false,
-      priority: 80,
-      config: {
-        description: 'Ahrefs提供SEO和反向链接分析',
-        required_fields: ['api_key'],
-        api_documentation: 'https://ahrefs.com/api',
-        pricing: '付费API'
-      }
-    },
-    {
-      name: 'mock',
-      display_name: '模拟数据（默认）',
-      is_active: true,
-      priority: 0,
-      config: {
-        description: '使用模拟数据生成排行榜，用于测试和演示',
-        required_fields: [],
-        pricing: '免费'
+  // 合并默认数据源和数据库数据
+  // 数据库数据优先（有配置的数据覆盖默认数据）
+  const mergedSources = DEFAULT_SOURCES.map(defaultSource => {
+    const dbSource = dbData?.find(d => d.name === defaultSource.name)
+    if (dbSource) {
+      // 合并数据库数据和默认配置
+      return {
+        ...defaultSource,
+        ...dbSource,
+        config: {
+          ...defaultSource.config,
+          ...(dbSource.config || {})
+        }
       }
     }
-  ]
+    // 如果数据库中没有，返回默认数据
+    return { ...defaultSource, id: null }
+  })
   
-  // 批量插入默认数据源
-  const { data: insertedData, error: insertError } = await supabase
-    .from('traffic_data_sources')
-    .insert(defaultSources)
-    .select()
+  // 如果数据库中缺少某些数据源，插入它们
+  const missingSources = DEFAULT_SOURCES.filter(
+    ds => !dbData?.some(d => d.name === ds.name)
+  )
   
-  if (insertError) {
-    console.error('初始化数据源失败:', insertError)
-    // 即使插入失败也返回默认数据（无ID）
-    return NextResponse.json({ data: defaultSources.map(s => ({ ...s, id: null })) })
+  if (missingSources.length > 0) {
+    // 批量插入缺失的数据源
+    await supabase
+      .from('traffic_data_sources')
+      .insert(missingSources)
   }
   
-  return NextResponse.json({ data: insertedData || defaultSources })
+  return NextResponse.json({ data: mergedSources })
 }
 
 // 更新数据源配置
