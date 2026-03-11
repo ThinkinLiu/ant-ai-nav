@@ -124,7 +124,7 @@ export default function PrivacyPage() {
           我们非常重视您的隐私保护。本隐私政策说明了蚂蚁AI导航如何收集、使用、存储和保护您的个人信息。
         </p>
         <p className="text-sm text-muted-foreground mt-4">
-          最后更新日期：2024年1月1日
+          最后更新日期：2026年3月10日
         </p>
       </div>
 

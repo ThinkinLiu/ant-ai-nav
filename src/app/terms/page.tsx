@@ -164,7 +164,7 @@ export default function TermsPage() {
           使用本平台即表示您同意遵守这些条款。
         </p>
         <p className="text-sm text-muted-foreground mt-4">
-          最后更新日期：2024年1月1日
+          最后更新日期：2026年3月10日
         </p>
       </div>
 

@@ -37,7 +37,7 @@ async function fetchFromSimilarWeb(
     const baseUrl = endpoint || 'https://api.similarweb.com/v1/website'
     
     const response = await fetch(
-      `${baseUrl}/${domain}/total-traffic-and-engagement/visits?api_key=${apiKey}&start_date=2024-01&end_date=2024-03&country=world&granularity=monthly`,
+      `${baseUrl}/${domain}/total-traffic-and-engagement/visits?api_key=${apiKey}&start_date=2026-01&end_date=2026-03&country=world&granularity=monthly`,
       {
         method: 'GET',
         headers: {
