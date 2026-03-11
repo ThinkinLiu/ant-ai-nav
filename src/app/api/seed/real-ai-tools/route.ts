@@ -529,7 +529,7 @@ export async function POST(request: Request) {
         slug: slug,
         description: `${tool.name}是一款${tool.isDomestic ? '国内' : '国外'}优秀的AI工具`,
         website: tool.website,
-        logo: `https://www.google.com/s2/favicons?domain=${new URL(tool.website).hostname}&sz=128`,
+        logo: `https://icons.duckduckgo.com/ip3/${new URL(tool.website).hostname}.ico`,
         category_id: categoryId,
         publisher_id: publisherId,
         status: 'approved',

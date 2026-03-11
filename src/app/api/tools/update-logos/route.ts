@@ -3,7 +3,7 @@ import { getSupabaseClient } from '@/storage/database/supabase-client'
 
 /**
  * 批量更新所有AI工具的官方logo
- * 使用Google Favicon服务获取网站图标
+ * 使用DuckDuckGo Favicon服务获取网站图标（国内外均可访问）
  */
 export async function POST(request: Request) {
   try {
@@ -71,8 +71,8 @@ export async function POST(request: Request) {
         const url = new URL(tool.website)
         const domain = url.hostname
         
-        // 使用Google Favicon服务获取logo
-        const logoUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+        // 使用DuckDuckGo Favicon服务获取logo（国内外均可访问）
+        const logoUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`
         
         updates.push({
           id: tool.id,
