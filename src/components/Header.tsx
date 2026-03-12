@@ -69,7 +69,7 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
+        <nav className="hidden md:flex items-center space-x-4">
           <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             首页
           </Link>
@@ -84,6 +84,9 @@ export function Header() {
               排行榜
             </Link>
           )}
+          <Link href="/news" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            AI资讯
+          </Link>
           <Link href="/hall-of-fame" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             AI名人堂
           </Link>
@@ -229,6 +232,9 @@ export function Header() {
                   排行榜
                 </Link>
               )}
+              <Link href="/news" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                AI资讯
+              </Link>
               <Link href="/hall-of-fame" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
                 AI名人堂
               </Link>
