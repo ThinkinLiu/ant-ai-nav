@@ -28,13 +28,13 @@ export default async function HallOfFamePage() {
     }
   })
   
-  // 获取精选人物
+  // 获取精选人物（影响力最大的20个）
   const { data: featuredPeople } = await supabase
     .from('ai_hall_of_fame')
     .select('id, name, name_en, photo, title, summary, category')
     .eq('is_featured', true)
     .order('created_at', { ascending: false })
-    .limit(6)
+    .limit(20)
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -93,8 +93,9 @@ export default async function HallOfFamePage() {
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <span>⭐</span>
             <span>精选人物</span>
+            <span className="text-sm font-normal text-muted-foreground">（影响力最大的{featuredPeople.length}位）</span>
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {featuredPeople.map((person) => (
               <a
                 key={person.id}
