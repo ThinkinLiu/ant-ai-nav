@@ -28,12 +28,12 @@ export default async function HallOfFamePage() {
     }
   })
   
-  // 获取精选人物（按收录时间倒序）
+  // 获取精选人物（按收录时间正序，最早收录的在前）
   const { data: featuredPeople } = await supabase
     .from('ai_hall_of_fame')
     .select('id, name, name_en, photo, title, summary, category')
     .eq('is_featured', true)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: true })
     .limit(20)
   
   return (
