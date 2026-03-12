@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { categoryConfig } from '../config'
+import { getCategoryConfig } from '../config'
 
 interface Person {
   id: number
@@ -39,9 +39,7 @@ interface Props {
 }
 
 export function PersonDetail({ person, relatedPeople }: Props) {
-  const categoryInfo = person.category && categoryConfig[person.category]
-    ? categoryConfig[person.category]
-    : null
+  const categoryInfo = getCategoryConfig(person.category)
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -209,12 +207,12 @@ export function PersonDetail({ person, relatedPeople }: Props) {
           <div className="bg-card border rounded-xl p-6">
             <h3 className="font-semibold mb-4">快速信息</h3>
             <div className="space-y-3 text-sm">
-              {person.category && categoryConfig[person.category] && (
+              {categoryInfo && (
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">类型</span>
                   <span className="flex items-center gap-1.5">
-                    <span>{categoryConfig[person.category].icon}</span>
-                    <span>{categoryConfig[person.category].label}</span>
+                    <span>{categoryInfo.icon}</span>
+                    <span>{categoryInfo.label}</span>
                   </span>
                 </div>
               )}

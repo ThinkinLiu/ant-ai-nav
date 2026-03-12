@@ -1,8 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
-import { categoryConfig } from '../config'
 import { PersonDetail } from './PersonDetail'
 
 interface Props {

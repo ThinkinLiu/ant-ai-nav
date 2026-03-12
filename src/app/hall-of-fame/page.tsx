@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { HallOfFameList } from './HallOfFameList'
-import { categoryConfig } from './config'
+import { categoryConfig, categoryOrder } from './config'
 
 export const metadata: Metadata = {
   title: 'AI名人堂 - 蚂蚁AI导航',
@@ -54,25 +54,35 @@ export default async function HallOfFamePage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        {/* 团队 */}
+        <div className="bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border rounded-xl p-4 text-center">
+          <div className="text-3xl mb-1">👥</div>
+          <div className="text-2xl font-bold">{categoryCounts['team'] || 0}</div>
+          <div className="text-sm text-muted-foreground">团队</div>
+        </div>
+        {/* 先驱者 */}
         <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border rounded-xl p-4 text-center">
           <div className="text-3xl mb-1">🌟</div>
           <div className="text-2xl font-bold">{categoryCounts['pioneer'] || 0}</div>
           <div className="text-sm text-muted-foreground">先驱者</div>
         </div>
+        {/* 研究者 */}
         <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border rounded-xl p-4 text-center">
           <div className="text-3xl mb-1">🔬</div>
-          <div className="text-2xl font-bold">{categoryCounts['researcher'] || 0}</div>
+          <div className="text-2xl font-bold">{(categoryCounts['research'] || 0) + (categoryCounts['researcher'] || 0)}</div>
           <div className="text-sm text-muted-foreground">研究者</div>
         </div>
+        {/* 企业家 */}
         <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border rounded-xl p-4 text-center">
           <div className="text-3xl mb-1">💼</div>
           <div className="text-2xl font-bold">{categoryCounts['entrepreneur'] || 0}</div>
           <div className="text-sm text-muted-foreground">企业家</div>
         </div>
+        {/* 工程师 */}
         <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border rounded-xl p-4 text-center">
           <div className="text-3xl mb-1">⚙️</div>
-          <div className="text-2xl font-bold">{categoryCounts['engineer'] || 0}</div>
+          <div className="text-2xl font-bold">{(categoryCounts['engineering'] || 0) + (categoryCounts['engineer'] || 0)}</div>
           <div className="text-sm text-muted-foreground">工程师</div>
         </div>
       </div>

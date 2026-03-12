@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { categoryConfig } from './config'
+import { categoryConfig, categoryOrder, getCategoryConfig } from './config'
 
 interface Person {
   id: number
@@ -112,20 +112,24 @@ export function HallOfFameList({ totalCount }: Props) {
           >
             全部
           </button>
-          {Object.entries(categoryConfig).map(([key, config]) => (
-            <button
-              key={key}
-              onClick={() => handleCategoryChange(key)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                selectedCategory === key
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted hover:bg-muted/80'
-              }`}
-            >
-              <span>{config.icon}</span>
-              <span>{config.label}</span>
-            </button>
-          ))}
+          {categoryOrder.map((key) => {
+            const config = categoryConfig[key]
+            if (!config) return null
+            return (
+              <button
+                key={key}
+                onClick={() => handleCategoryChange(key)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  selectedCategory === key
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                <span>{config.icon}</span>
+                <span>{config.label}</span>
+              </button>
+            )
+          })}
         </div>
 
         {/* Search and Sort */}
@@ -194,12 +198,17 @@ export function HallOfFameList({ totalCount }: Props) {
                       </p>
                     )}
                   </div>
-                  {person.category && categoryConfig[person.category] && (
-                    <span className="text-lg" title={categoryConfig[person.category].label}>
-                      {categoryConfig[person.category].icon}
-                    </span>
-                  )}
                 </div>
+                
+                {/* 分类标签 */}
+                {person.category && (
+                  <div className="mt-1">
+                    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gradient-to-r ${getCategoryConfig(person.category)?.color || 'bg-muted'} text-foreground`}>
+                      <span>{getCategoryConfig(person.category)?.icon}</span>
+                      <span>{getCategoryConfig(person.category)?.label}</span>
+                    </span>
+                  </div>
+                )}
                 
                 {person.title && (
                   <p className="text-sm font-medium text-primary/80 mt-1 line-clamp-1">
