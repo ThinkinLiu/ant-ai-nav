@@ -29,6 +29,7 @@ interface Category {
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
+  const [totalToolCount, setTotalToolCount] = useState<number>(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function CategoriesPage() {
       const data = await response.json()
       if (data.success) {
         setCategories(data.data)
+        setTotalToolCount(data.totalToolCount || 0)
       }
     } catch (error) {
       console.error('获取分类失败:', error)
@@ -59,7 +61,12 @@ export default function CategoriesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">分类浏览</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-3xl font-bold">分类浏览</h1>
+        <Badge variant="secondary" className="text-base px-3 py-1">
+          共 {totalToolCount} 个工具
+        </Badge>
+      </div>
       <p className="text-muted-foreground mb-8">
         按分类发现最适合你的AI工具
       </p>

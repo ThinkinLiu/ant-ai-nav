@@ -130,6 +130,9 @@ export async function GET() {
       (categories || []).map(c => [c.id, c])
     )
 
+    // 计算总工具数量
+    const totalToolCount = Array.from(countMap.values()).reduce((sum, count) => sum + count, 0)
+
     // 组装分类数据
     const categoriesWithCount = (categories || []).map(category => ({
       ...category,
@@ -161,6 +164,7 @@ export async function GET() {
       success: true,
       data: {
         categories: categoriesWithCount,
+        totalToolCount,
         domesticTools,
         foreignTools,
         hotTools,

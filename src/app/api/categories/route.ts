@@ -31,6 +31,9 @@ export async function GET() {
       }
     }
 
+    // 计算总工具数量
+    const totalToolCount = Array.from(countMap.values()).reduce((sum, count) => sum + count, 0)
+
     // 组装分类数据
     const categoriesWithCount = (categories || []).map(category => ({
       ...category,
@@ -40,6 +43,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       data: categoriesWithCount,
+      totalToolCount,
     })
   } catch (error) {
     console.error('获取分类错误:', error)

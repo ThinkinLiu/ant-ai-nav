@@ -63,6 +63,7 @@ interface Tool {
 
 interface HomeData {
   categories: Category[]
+  totalToolCount: number
   domesticTools: Tool[]
   foreignTools: Tool[]
   hotTools: Tool[]
@@ -76,6 +77,7 @@ function HomePageContent() {
   const isFeatured = searchParams.get('isFeatured')
   
   const [categories, setCategories] = useState<Category[]>([])
+  const [totalToolCount, setTotalToolCount] = useState<number>(0)
   const [tools, setTools] = useState<Tool[]>([])
   const [domesticTools, setDomesticTools] = useState<Tool[]>([])
   const [foreignTools, setForeignTools] = useState<Tool[]>([])
@@ -96,6 +98,7 @@ function HomePageContent() {
         const data = await response.json()
         if (data.success) {
           setCategories(data.data.categories)
+          setTotalToolCount(data.data.totalToolCount || 0)
           setDomesticTools(data.data.domesticTools)
           setForeignTools(data.data.foreignTools)
           setHotTools(data.data.hotTools)
@@ -197,6 +200,9 @@ function HomePageContent() {
                 className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 全部
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  {totalToolCount}
+                </Badge>
               </TabsTrigger>
               {categories.map((category) => {
                 const Icon = category.icon ? iconMap[category.icon] : Star
