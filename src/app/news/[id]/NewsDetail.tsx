@@ -226,7 +226,7 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">发布时间</span>
-                <span>{new Date(news.published_at).toLocaleDateString('zh-CN')}</span>
+                <span>{formatDate(news.published_at)}</span>
               </div>
               {categoryInfo && (
                 <div className="flex justify-between items-center">
@@ -281,7 +281,7 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
                           {item.title}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(item.published_at).toLocaleDateString('zh-CN')}
+                          {formatDate(item.published_at)}
                         </p>
                       </div>
                     </Link>

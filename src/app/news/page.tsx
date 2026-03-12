@@ -3,6 +3,17 @@ import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { NewsList } from './NewsList'
 import { categoryConfig, getCategoryConfig } from './config'
 
+// 格式化时间，精确到分钟
+function formatDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 export const metadata: Metadata = {
   title: 'AI资讯 - 蚂蚁AI导航',
   description: '最新AI行业资讯，涵盖产品发布、行业动态、学术研究、政策法规等领域，每日更新。',
@@ -113,7 +124,7 @@ export default async function NewsPage() {
                     <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">
                       {getCategoryConfig(news.category)?.label || '资讯'}
                     </span>
-                    <span>{new Date(news.published_at).toLocaleDateString('zh-CN')}</span>
+                    <span>{formatDateTime(news.published_at)}</span>
                   </div>
                   <h3 className="font-medium line-clamp-2 group-hover:text-primary transition-colors">
                     {news.title}
@@ -158,7 +169,7 @@ export default async function NewsPage() {
                         {news.title}
                       </h4>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                        <span>{new Date(news.published_at).toLocaleDateString('zh-CN')}</span>
+                        <span>{formatDateTime(news.published_at)}</span>
                         <span>·</span>
                         <span>{news.view_count || 0} 阅读</span>
                       </div>

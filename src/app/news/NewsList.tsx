@@ -4,6 +4,28 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { categoryConfig, getCategoryConfig } from './config'
 
+// 格式化时间，精确到分钟
+function formatDateTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// 格式化日期（用于分组）
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
 interface NewsItem {
   id: number
   title: string
@@ -108,11 +130,7 @@ export function NewsList({ totalCount }: Props) {
 
   // 按日期分组
   const groupedNews = news.reduce((acc, item) => {
-    const date = new Date(item.published_at).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+    const date = formatDate(item.published_at)
     if (!acc[date]) {
       acc[date] = []
     }
@@ -239,9 +257,12 @@ export function NewsList({ totalCount }: Props) {
                             🔥 热门
                           </span>
                         )}
+                        <span className="text-xs text-muted-foreground">
+                          🕐 {formatDateTime(item.published_at)}
+                        </span>
                         {item.source && (
                           <span className="text-xs text-muted-foreground">
-                            {item.source}
+                            · {item.source}
                           </span>
                         )}
                       </div>

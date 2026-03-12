@@ -40,9 +40,7 @@ export async function GET(request: NextRequest) {
       query = query.lte('published_at', dateTo)
     }
 
-    // 按发布时间降序排序
-    query = query.order('is_featured', { ascending: false })
-    query = query.order('is_hot', { ascending: false })
+    // 按发布时间降序排序（严格按时间倒序）
     query = query.order('published_at', { ascending: false })
 
     // 分页
