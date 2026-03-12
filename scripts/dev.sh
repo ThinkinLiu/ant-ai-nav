@@ -12,5 +12,5 @@ if [ ! -f .env.local ]; then
     echo "✅ Please edit .env.local with your actual values"
 fi
 
-# 启动开发服务器
-pnpm dev
+# 启动开发服务器 (端口5000)
+pnpm dev --port 5000
