@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { categoryConfig, categoryOrder, getCategoryConfig } from './config'
+import { Avatar } from './components/Avatar'
 
 interface Person {
   id: number
@@ -172,18 +173,11 @@ export function HallOfFameList({ totalCount }: Props) {
           >
             <div className="flex p-4 gap-4">
               {/* Photo */}
-              <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
-                {person.photo ? (
-                  <img
-                    src={person.photo}
-                    alt={person.name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <span className="text-3xl">👤</span>
-                )}
-              </div>
+              <Avatar 
+                src={person.photo} 
+                name={person.name_en || person.name} 
+                size="md"
+              />
 
               {/* Info */}
               <div className="flex-1 min-w-0">

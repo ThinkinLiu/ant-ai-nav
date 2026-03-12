@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { HallOfFameList } from './HallOfFameList'
 import { categoryConfig, categoryOrder } from './config'
+import { FeaturedAvatar } from './components/Avatar'
 
 export const metadata: Metadata = {
   title: 'AI名人堂 - 蚂蚁AI导航',
@@ -102,18 +103,10 @@ export default async function HallOfFamePage() {
                   href={`/hall-of-fame/${person.id}`}
                   className="flex-shrink-0 w-36 group bg-gradient-to-br from-primary/5 to-primary/10 border rounded-xl p-4 text-center hover:shadow-lg hover:border-primary/30 transition-all duration-300"
                 >
-                  <div className="w-14 h-14 mx-auto mb-2 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center">
-                    {person.photo ? (
-                      <img
-                        src={person.photo}
-                        alt={person.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <span className="text-xl">👤</span>
-                    )}
-                  </div>
+                  <FeaturedAvatar 
+                    src={person.photo} 
+                    name={person.name_en || person.name} 
+                  />
                   <h3 className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-1">
                     {person.name}
                   </h3>

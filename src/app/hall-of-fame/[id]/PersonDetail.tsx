@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { getCategoryConfig } from '../config'
+import { Avatar } from '../components/Avatar'
 
 interface Person {
   id: number
@@ -64,17 +65,12 @@ export function PersonDetail({ person, relatedPeople }: Props) {
             <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 md:p-8">
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Photo */}
-                <div className="w-32 h-32 md:w-40 md:h-40 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center shadow-lg">
-                  {person.photo ? (
-                    <img
-                      src={person.photo}
-                      alt={person.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-5xl">👤</span>
-                  )}
-                </div>
+                <Avatar 
+                  src={person.photo} 
+                  name={person.name_en || person.name} 
+                  size="lg"
+                  className="shadow-lg"
+                />
 
                 {/* Basic Info */}
                 <div className="flex-1">
@@ -248,17 +244,11 @@ export function PersonDetail({ person, relatedPeople }: Props) {
                     href={`/hall-of-fame/${related.id}`}
                     className="flex items-center gap-3 group"
                   >
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center flex-shrink-0">
-                      {related.photo ? (
-                        <img
-                          src={related.photo}
-                          alt={related.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-lg">👤</span>
-                      )}
-                    </div>
+                    <Avatar 
+                      src={related.photo} 
+                      name={related.name_en || related.name} 
+                      size="sm"
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium group-hover:text-primary transition-colors line-clamp-1">
                         {related.name}
