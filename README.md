@@ -29,6 +29,7 @@
   - [Vercel 部署](#vercel-部署)
   - [Docker 部署](#docker-部署)
   - [自托管部署](#自托管部署)
+  - [宝塔部署](#宝塔部署)
 - [开发指南](#开发指南)
 - [贡献指南](#贡献指南)
 - [开源协议](#开源协议)
@@ -253,6 +254,320 @@ pnpm start
 pnpm add -g pm2
 pm2 start npm --name "ant-ai-nav" -- start
 ```
+
+### 宝塔部署
+
+宝塔面板是一款流行的Linux服务器管理面板，以下是详细的部署步骤。
+
+#### 1. 环境准备
+
+**宝塔面板要求**：
+- 宝塔面板 7.0+
+- 操作系统：CentOS 7+ / Ubuntu 18+ / Debian 10+
+
+**安装宝塔面板**（如已安装可跳过）：
+```bash
+# CentOS
+yum install -y wget && wget -O install.sh https://download.bt.cn/install/install_6.0.sh && sh install.sh
+
+# Ubuntu/Debian
+wget -O install.sh https://download.bt.cn/install/install-ubuntu_6.0.sh && bash install.sh
+```
+
+#### 2. 安装必要软件
+
+在宝塔面板【软件商店】中安装：
+- **Nginx** 1.20+（必装）
+- **PM2管理器** 4.0+（必装，用于Node.js进程管理）
+- **PostgreSQL** 14+（可选，如自建数据库）
+
+#### 3. 安装 Node.js
+
+在宝塔面板中：
+
+1. 进入【软件商店】→【PM2管理器】→【设置】
+2. 点击【版本管理】，安装 **Node.js 18+** 或 **Node.js 20 LTS**
+3. 或通过终端安装：
+```bash
+# 使用宝塔的一键安装脚本
+bash <(curl -s https://nodejs.org/dist/latest-v20.x/SHASUMS256.txt)
+```
+
+验证安装：
+```bash
+node -v   # 应显示 v20.x.x
+npm -v    # 应显示 10.x.x
+pnpm -v   # 如未安装pnpm，执行：npm install -g pnpm
+```
+
+#### 4. 上传项目代码
+
+**方式一：Git克隆（推荐）**
+```bash
+# SSH连接服务器，进入网站目录
+cd /www/wwwroot
+
+# 克隆项目
+git clone https://github.com/your-username/ant-ai-nav.git
+
+# 进入项目目录
+cd ant-ai-nav
+```
+
+**方式二：宝塔文件管理器**
+1. 在宝塔面板【文件】中，进入 `/www/wwwroot`
+2. 创建项目文件夹 `ant-ai-nav`
+3. 上传本地打包好的项目文件（包含 `package.json`、`src/` 等）
+
+#### 5. 安装依赖并构建
+
+通过SSH终端或宝塔【终端】执行：
+
+```bash
+cd /www/wwwroot/ant-ai-nav
+
+# 安装 pnpm（如未安装）
+npm install -g pnpm
+
+# 安装依赖
+pnpm install
+
+# 配置环境变量
+cp .env.example .env.local
+```
+
+编辑环境变量文件：
+```bash
+nano .env.local
+# 或使用宝塔文件编辑器
+```
+
+填写必要的环境变量：
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+# 如需文件上传功能，配置S3相关信息
+S3_ACCESS_KEY_ID=your-access-key
+S3_SECRET_ACCESS_KEY=your-secret-key
+S3_BUCKET_NAME=your-bucket
+S3_REGION=auto
+S3_ENDPOINT=https://your-endpoint.com
+```
+
+构建项目：
+```bash
+# 执行构建
+pnpm build
+```
+
+#### 6. 配置 PM2 进程管理
+
+**方式一：通过宝塔面板**
+1. 进入【软件商店】→【PM2管理器】→【设置】
+2. 点击【添加项目】
+3. 填写配置：
+   - **项目名称**：`ant-ai-nav`
+   - **运行目录**：`/www/wwwroot/ant-ai-nav`
+   - **启动文件**：留空（使用npm脚本）
+   - **启动命令**：`pnpm start`
+   - **端口**：`3000`（或自定义端口如5000）
+
+**方式二：通过终端**
+```bash
+cd /www/wwwroot/ant-ai-nav
+
+# 启动项目
+pm2 start npm --name "ant-ai-nav" -- run start
+
+# 保存PM2配置（开机自启）
+pm2 save
+
+# 查看运行状态
+pm2 status
+
+# 查看日志
+pm2 logs ant-ai-nav
+```
+
+常用PM2命令：
+```bash
+pm2 restart ant-ai-nav   # 重启项目
+pm2 stop ant-ai-nav      # 停止项目
+pm2 delete ant-ai-nav    # 删除项目
+pm2 monit                # 监控面板
+```
+
+#### 7. 配置 Nginx 反向代理
+
+在宝塔面板中：
+
+1. 进入【网站】→【添加站点】
+2. 填写域名（如 `example.com`）
+3. 点击站点设置，进入【配置文件】
+
+修改Nginx配置：
+```nginx
+server {
+    listen 80;
+    server_name example.com www.example.com;
+
+    # 访问日志
+    access_log /www/wwwlogs/ant-ai-nav.log;
+    error_log /www/wwwlogs/ant-ai-nav.error.log;
+
+    # 反向代理到 Next.js
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+
+        # 超时配置
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # 静态资源缓存
+    location /_next/static {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_cache_valid 200 30d;
+        add_header Cache-Control "public, max-age=2592000, immutable";
+    }
+
+    # 图片等静态文件
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        proxy_pass http://127.0.0.1:3000;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+4. 保存配置后，点击【重载配置】
+
+#### 8. 配置 SSL 证书（HTTPS）
+
+**方式一：宝塔免费证书（推荐）**
+1. 在站点设置中，进入【SSL】→【Let's Encrypt】
+2. 勾选域名，点击【申请】
+3. 申请成功后，开启【强制HTTPS】
+
+**方式二：自有证书**
+1. 在站点设置中，进入【SSL】→【其他证书】
+2. 粘贴证书内容（PEM格式）和私钥
+3. 保存并开启【强制HTTPS】
+
+**方式三：通配符证书**
+```bash
+# 使用 acme.sh 申请通配符证书
+curl https://get.acme.sh | sh
+acme.sh --issue -d example.com -d "*.example.com" --dns dns_cf
+```
+
+#### 9. 防火墙与安全配置
+
+在宝塔面板中：
+
+1. 进入【安全】，确保以下端口开放：
+   - `80`（HTTP）
+   - `443`（HTTPS）
+   - `22`（SSH）
+
+2. 配置应用防火墙（可选）：
+   - 安装【Nginx防火墙】插件
+   - 配置CC防护、SQL注入防护等
+
+#### 10. 更新部署
+
+当代码更新后，执行以下步骤：
+
+```bash
+cd /www/wwwroot/ant-ai-nav
+
+# 拉取最新代码
+git pull origin main
+
+# 安装新依赖（如有）
+pnpm install
+
+# 重新构建
+pnpm build
+
+# 重启PM2进程
+pm2 restart ant-ai-nav
+
+# 查看日志确认
+pm2 logs ant-ai-nav --lines 50
+```
+
+#### 11. 常见问题
+
+**Q1: 端口被占用**
+```bash
+# 查看端口占用
+netstat -tunlp | grep 3000
+
+# 结束占用进程
+kill -9 <PID>
+```
+
+**Q2: 构建内存不足**
+```bash
+# 临时增加交换空间
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+```
+
+**Q3: 环境变量未生效**
+```bash
+# 确保 .env.local 文件存在且格式正确
+cat .env.local
+
+# 重启PM2进程
+pm2 restart ant-ai-nav
+```
+
+**Q4: Nginx 502 Bad Gateway**
+```bash
+# 检查PM2进程是否运行
+pm2 status
+
+# 检查端口是否监听
+netstat -tunlp | grep 3000
+
+# 查看错误日志
+pm2 logs ant-ai-nav --err
+```
+
+#### 12. 性能优化建议
+
+1. **开启 Nginx Gzip 压缩**
+   ```nginx
+   gzip on;
+   gzip_vary on;
+   gzip_min_length 1024;
+   gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+   ```
+
+2. **配置 CDN 加速**
+   - 使用宝塔的【CDN加速】插件
+   - 或接入第三方CDN（如阿里云CDN、腾讯云CDN）
+
+3. **数据库优化**
+   - 定期备份 Supabase 数据
+   - 添加必要的索引
+
+4. **监控告警**
+   - 安装宝塔【监控报表】插件
+   - 配置 CPU/内存/磁盘告警阈值
 
 ---
 
