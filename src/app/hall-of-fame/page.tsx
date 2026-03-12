@@ -28,7 +28,7 @@ export default async function HallOfFamePage() {
     }
   })
   
-  // 获取精选人物（影响力最大的20个）
+  // 获取精选人物（按收录时间倒序）
   const { data: featuredPeople } = await supabase
     .from('ai_hall_of_fame')
     .select('id, name, name_en, photo, title, summary, category')
@@ -87,46 +87,47 @@ export default async function HallOfFamePage() {
         </div>
       </div>
 
-      {/* Featured Section */}
+      {/* Featured Section - 横向滚动 */}
       {featuredPeople && featuredPeople.length > 0 && (
         <div className="mb-10">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <span>⭐</span>
             <span>精选人物</span>
-            <span className="text-sm font-normal text-muted-foreground">（影响力最大的{featuredPeople.length}位）</span>
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {featuredPeople.map((person) => (
-              <a
-                key={person.id}
-                href={`/hall-of-fame/${person.id}`}
-                className="group bg-gradient-to-br from-primary/5 to-primary/10 border rounded-xl p-4 text-center hover:shadow-lg hover:border-primary/30 transition-all duration-300"
-              >
-                <div className="w-16 h-16 mx-auto mb-3 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center">
-                  {person.photo ? (
-                    <img
-                      src={person.photo}
-                      alt={person.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span className="text-2xl">👤</span>
+          <div className="relative overflow-hidden">
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+              {featuredPeople.map((person) => (
+                <a
+                  key={person.id}
+                  href={`/hall-of-fame/${person.id}`}
+                  className="flex-shrink-0 w-36 group bg-gradient-to-br from-primary/5 to-primary/10 border rounded-xl p-4 text-center hover:shadow-lg hover:border-primary/30 transition-all duration-300"
+                >
+                  <div className="w-14 h-14 mx-auto mb-2 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center">
+                    {person.photo ? (
+                      <img
+                        src={person.photo}
+                        alt={person.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-xl">👤</span>
+                    )}
+                  </div>
+                  <h3 className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-1">
+                    {person.name}
+                  </h3>
+                  {person.name_en && (
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                      {person.name_en}
+                    </p>
                   )}
-                </div>
-                <h3 className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-1">
-                  {person.name}
-                </h3>
-                {person.name_en && (
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                    {person.name_en}
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                    {person.title}
                   </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                  {person.title}
-                </p>
-              </a>
-            ))}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       )}
