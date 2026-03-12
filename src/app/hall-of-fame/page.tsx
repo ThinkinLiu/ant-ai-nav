@@ -1,0 +1,127 @@
+import { Metadata } from 'next'
+import { getSupabaseClient } from '@/storage/database/supabase-client'
+import { HallOfFameList } from './HallOfFameList'
+import { categoryConfig } from './config'
+
+export const metadata: Metadata = {
+  title: 'AI名人堂 - 蚂蚁AI导航',
+  description: '致敬为人工智能发展做出杰出贡献的先驱者、研究者、企业家和工程师。探索AI领域最具影响力的人物故事。',
+}
+
+export default async function HallOfFamePage() {
+  const supabase = getSupabaseClient()
+  
+  // 获取统计信息
+  const { count: totalCount } = await supabase
+    .from('ai_hall_of_fame')
+    .select('*', { count: 'exact', head: true })
+  
+  // 获取各分类数量
+  const { data: categoryStats } = await supabase
+    .from('ai_hall_of_fame')
+    .select('category')
+  
+  const categoryCounts: Record<string, number> = {}
+  categoryStats?.forEach(item => {
+    if (item.category) {
+      categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1
+    }
+  })
+  
+  // 获取精选人物
+  const { data: featuredPeople } = await supabase
+    .from('ai_hall_of_fame')
+    .select('id, name, name_en, photo, title, summary, category')
+    .eq('is_featured', true)
+    .order('created_at', { ascending: false })
+    .limit(6)
+  
+  return (
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+              <span className="text-4xl">🏆</span>
+              AI名人堂
+            </h1>
+            <p className="text-muted-foreground">
+              致敬为人工智能发展做出杰出贡献的先驱者、研究者、企业家和工程师
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border rounded-xl p-4 text-center">
+          <div className="text-3xl mb-1">🌟</div>
+          <div className="text-2xl font-bold">{categoryCounts['pioneer'] || 0}</div>
+          <div className="text-sm text-muted-foreground">先驱者</div>
+        </div>
+        <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border rounded-xl p-4 text-center">
+          <div className="text-3xl mb-1">🔬</div>
+          <div className="text-2xl font-bold">{categoryCounts['researcher'] || 0}</div>
+          <div className="text-sm text-muted-foreground">研究者</div>
+        </div>
+        <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border rounded-xl p-4 text-center">
+          <div className="text-3xl mb-1">💼</div>
+          <div className="text-2xl font-bold">{categoryCounts['entrepreneur'] || 0}</div>
+          <div className="text-sm text-muted-foreground">企业家</div>
+        </div>
+        <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border rounded-xl p-4 text-center">
+          <div className="text-3xl mb-1">⚙️</div>
+          <div className="text-2xl font-bold">{categoryCounts['engineer'] || 0}</div>
+          <div className="text-sm text-muted-foreground">工程师</div>
+        </div>
+      </div>
+
+      {/* Featured Section */}
+      {featuredPeople && featuredPeople.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <span>⭐</span>
+            <span>精选人物</span>
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {featuredPeople.map((person) => (
+              <a
+                key={person.id}
+                href={`/hall-of-fame/${person.id}`}
+                className="group bg-gradient-to-br from-primary/5 to-primary/10 border rounded-xl p-4 text-center hover:shadow-lg hover:border-primary/30 transition-all duration-300"
+              >
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center">
+                  {person.photo ? (
+                    <img
+                      src={person.photo}
+                      alt={person.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="text-2xl">👤</span>
+                  )}
+                </div>
+                <h3 className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-1">
+                  {person.name}
+                </h3>
+                {person.name_en && (
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                    {person.name_en}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                  {person.title}
+                </p>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <HallOfFameList totalCount={totalCount || 0} />
+    </div>
+  )
+}

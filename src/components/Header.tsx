@@ -84,6 +84,9 @@ export function Header() {
               排行榜
             </Link>
           )}
+          <Link href="/hall-of-fame" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            AI名人堂
+          </Link>
         </nav>
 
         {/* Search */}
@@ -223,6 +226,9 @@ export function Header() {
                   排行榜
                 </Link>
               )}
+              <Link href="/hall-of-fame" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                AI名人堂
+              </Link>
               {user ? (
                 <>
                   <Link href="/profile" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
