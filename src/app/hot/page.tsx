@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
+
+// 强制动态渲染，避免 SSR 问题
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -56,6 +58,7 @@ function HotToolsContent() {
 
   const [data, setData] = useState<HotToolsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchHotTools()
@@ -63,14 +66,18 @@ function HotToolsContent() {
 
   const fetchHotTools = async () => {
     setLoading(true)
+    setError(null)
     try {
       const response = await fetch(`/api/hot-tools?type=${type}&page=${page}&limit=16`)
       const result = await response.json()
       if (result.success) {
         setData(result.data)
+      } else {
+        setError(result.error || '获取数据失败')
       }
-    } catch (error) {
-      console.error('获取火爆工具失败:', error)
+    } catch (err) {
+      console.error('获取火爆工具失败:', err)
+      setError('网络错误，请稍后重试')
     } finally {
       setLoading(false)
     }
@@ -150,6 +157,11 @@ function HotToolsContent() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button onClick={fetchHotTools}>重试</Button>
           </div>
         ) : data && data.data.length > 0 ? (
           <>
