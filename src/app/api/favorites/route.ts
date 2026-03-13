@@ -41,19 +41,52 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 获取收藏列表
-    const { data: favorites, error } = await client
+    // 获取收藏列表（使用分步查询以确保兼容性）
+    // 第一步：获取收藏记录
+    const { data: favoritesData, error: favError } = await client
       .from('favorites')
-      .select('*, ai_tools(*)')
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
-    if (error) {
+    if (favError) {
+      console.error('获取收藏记录错误:', JSON.stringify(favError))
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: `查询错误: ${favError.message}` },
         { status: 400 }
       )
     }
+
+    // 如果没有收藏，直接返回空数组
+    if (!favoritesData || favoritesData.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+      })
+    }
+
+    // 第二步：获取对应的工具信息
+    const toolIds = favoritesData.map(f => f.tool_id)
+    const { data: toolsData, error: toolsError } = await client
+      .from('ai_tools')
+      .select('id, name, description, website, logo, is_free, category_id')
+      .in('id', toolIds)
+
+    if (toolsError) {
+      console.error('获取工具信息错误:', JSON.stringify(toolsError))
+      return NextResponse.json(
+        { success: false, error: `查询工具错误: ${toolsError.message}` },
+        { status: 400 }
+      )
+    }
+
+    // 第三步：合并数据
+    const toolsMap = new Map(toolsData?.map(t => [t.id, t]) || [])
+    const favorites = favoritesData.map(f => ({
+      id: f.id,
+      created_at: f.created_at,
+      ai_tools: toolsMap.get(f.tool_id) || null
+    }))
 
     return NextResponse.json({
       success: true,

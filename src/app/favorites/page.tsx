@@ -46,6 +46,13 @@ export default function FavoritesPage() {
       const data = await response.json()
       if (data.success) {
         setFavorites(data.data)
+      } else if (response.status === 401) {
+        // Token 无效或过期，清除登录状态并重定向
+        localStorage.removeItem('auth_token')
+        router.push('/login?redirect=/favorites')
+        return
+      } else {
+        console.error('获取收藏失败:', data.error)
       }
     } catch (error) {
       console.error('获取收藏失败:', error)
