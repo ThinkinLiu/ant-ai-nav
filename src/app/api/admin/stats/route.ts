@@ -26,49 +26,80 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: '无权限' }, { status: 403 })
     }
 
-    // 获取统计数据
-    const { count: totalUsers } = await client
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-
-    const { count: totalTools } = await client
-      .from('ai_tools')
-      .select('*', { count: 'exact', head: true })
-
-    const { count: pendingTools } = await client
-      .from('ai_tools')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending')
-
-    const { count: approvedTools } = await client
-      .from('ai_tools')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'approved')
-
-    const { count: rejectedTools } = await client
-      .from('ai_tools')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'rejected')
-
-    const { count: totalComments } = await client
-      .from('comments')
-      .select('*', { count: 'exact', head: true })
-
-    const { count: publisherCount } = await client
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .eq('role', 'publisher')
+    // 并行获取所有统计数据
+    const [
+      usersCount,
+      toolsCount,
+      pendingToolsCount,
+      approvedToolsCount,
+      rejectedToolsCount,
+      commentsCount,
+      publishersCount,
+      hallOfFameCount,
+      featuredPeopleCount,
+      timelineCount,
+      landmarkEventsCount,
+      newsCount,
+      publishedNewsCount,
+      pendingNewsCount,
+    ] = await Promise.all([
+      // 用户统计
+      client.from('users').select('*', { count: 'exact', head: true }),
+      
+      // 工具统计
+      client.from('ai_tools').select('*', { count: 'exact', head: true }),
+      client.from('ai_tools').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      client.from('ai_tools').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
+      client.from('ai_tools').select('*', { count: 'exact', head: true }).eq('status', 'rejected'),
+      
+      // 评论统计
+      client.from('comments').select('*', { count: 'exact', head: true }),
+      
+      // 发布者统计
+      client.from('users').select('*', { count: 'exact', head: true }).eq('role', 'publisher'),
+      
+      // 名人堂统计
+      client.from('ai_hall_of_fame').select('*', { count: 'exact', head: true }),
+      client.from('ai_hall_of_fame').select('*', { count: 'exact', head: true }).eq('is_featured', true),
+      
+      // 大事纪统计
+      client.from('ai_timeline').select('*', { count: 'exact', head: true }),
+      client.from('ai_timeline').select('*', { count: 'exact', head: true }).eq('importance', 'landmark'),
+      
+      // 资讯统计
+      client.from('ai_news').select('*', { count: 'exact', head: true }),
+      client.from('ai_news').select('*', { count: 'exact', head: true }).eq('status', 'published'),
+      client.from('ai_news').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    ])
 
     return NextResponse.json({
       success: true,
       data: {
-        totalUsers: totalUsers || 0,
-        totalTools: totalTools || 0,
-        pendingTools: pendingTools || 0,
-        approvedTools: approvedTools || 0,
-        rejectedTools: rejectedTools || 0,
-        totalComments: totalComments || 0,
-        publisherCount: publisherCount || 0,
+        // 用户相关
+        totalUsers: usersCount.count || 0,
+        publisherCount: publishersCount.count || 0,
+        
+        // 工具相关
+        totalTools: toolsCount.count || 0,
+        pendingTools: pendingToolsCount.count || 0,
+        approvedTools: approvedToolsCount.count || 0,
+        rejectedTools: rejectedToolsCount.count || 0,
+        
+        // 评论相关
+        totalComments: commentsCount.count || 0,
+        
+        // 名人堂相关
+        hallOfFameCount: hallOfFameCount.count || 0,
+        featuredPeopleCount: featuredPeopleCount.count || 0,
+        
+        // 大事纪相关
+        timelineCount: timelineCount.count || 0,
+        landmarkEventsCount: landmarkEventsCount.count || 0,
+        
+        // 资讯相关
+        newsCount: newsCount.count || 0,
+        publishedNewsCount: publishedNewsCount.count || 0,
+        pendingNewsCount: pendingNewsCount.count || 0,
       },
     })
   } catch (error) {
