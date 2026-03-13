@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -191,7 +192,7 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
       }
     } else {
       navigator.clipboard.writeText(window.location.href)
-      alert('链接已复制到剪贴板')
+      toast.success('链接已复制到剪贴板')
     }
   }
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -26,6 +27,7 @@ import { Input } from '@/components/ui/input'
 import { Plus, Search, Edit, Trash2, Eye, Check, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import { useConfirm } from '@/hooks/use-confirm'
 
 const statusConfig = {
   draft: { label: '草稿', color: 'bg-gray-500' },
@@ -45,6 +47,7 @@ const categoryConfig = {
 export default function NewsManagementPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [news, setNews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
@@ -88,7 +91,14 @@ export default function NewsManagementPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定要删除这条资讯吗？')) return
+    const confirmed = await confirm({
+      title: '删除确认',
+      description: '确定要删除这条资讯吗？此操作不可撤销。',
+      confirmText: '删除',
+      destructive: true,
+    })
+
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/news/${id}`, {
@@ -98,13 +108,14 @@ export default function NewsManagementPage() {
       const result = await response.json()
 
       if (result.success) {
+        toast.success('删除成功')
         fetchNews()
       } else {
-        alert(result.error || '删除失败')
+        toast.error(result.error || '删除失败')
       }
     } catch (error) {
       console.error('删除失败:', error)
-      alert('删除失败')
+      toast.error('删除失败')
     }
   }
 
@@ -125,13 +136,14 @@ export default function NewsManagementPage() {
       const result = await response.json()
 
       if (result.success) {
+        toast.success('审核成功')
         fetchNews()
       } else {
-        alert(result.error || '审核失败')
+        toast.error(result.error || '审核失败')
       }
     } catch (error) {
       console.error('审核失败:', error)
-      alert('审核失败')
+      toast.error('审核失败')
     }
   }
 
@@ -141,6 +153,7 @@ export default function NewsManagementPage() {
 
   return (
     <div className="space-y-6">
+      {ConfirmDialog}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -25,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { formatRelativeTime } from '@/lib/utils'
 import { Edit, Trash2, Eye, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, MessageCircle, Heart, X, Filter, Check, XCircle, Clock } from 'lucide-react'
+import { useConfirm } from '@/hooks/use-confirm'
 
 interface Tool {
   id: number
@@ -69,6 +71,7 @@ const STATUS_LABELS: Record<StatusFilter, string> = {
 
 export default function PublisherDashboard() {
   const { user, token } = useAuth()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [tools, setTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, approved: 0, rejected: 0 })
@@ -209,7 +212,7 @@ export default function PublisherDashboard() {
     
     // 如果是拒绝，必须填写原因
     if (newStatus === 'rejected' && !rejectReason.trim()) {
-      alert('请填写拒绝原因')
+      toast.error('请填写拒绝原因')
       return
     }
 
@@ -228,22 +231,30 @@ export default function PublisherDashboard() {
       })
       const data = await response.json()
       if (data.success) {
+        toast.success('操作成功')
         setApproveDialogOpen(false)
         fetchStats()
         fetchMyTools()
       } else {
-        alert(data.error || '操作失败')
+        toast.error(data.error || '操作失败')
       }
     } catch (error) {
       console.error('审批失败:', error)
-      alert('操作失败')
+      toast.error('操作失败')
     } finally {
       setSubmitting(false)
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定要删除这个工具吗？')) return
+    const confirmed = await confirm({
+      title: '删除确认',
+      description: '确定要删除这个工具吗？此操作不可撤销。',
+      confirmText: '删除',
+      destructive: true,
+    })
+
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/tools/${id}`, {
@@ -252,12 +263,14 @@ export default function PublisherDashboard() {
       })
       const data = await response.json()
       if (data.success) {
+        toast.success('删除成功')
         // 重新获取统计数据和工具列表
         fetchStats()
         fetchMyTools()
       }
     } catch (error) {
       console.error('删除失败:', error)
+      toast.error('删除失败')
     }
   }
 
@@ -286,6 +299,7 @@ export default function PublisherDashboard() {
 
   return (
     <div className="space-y-8">
+      {ConfirmDialog}
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card 

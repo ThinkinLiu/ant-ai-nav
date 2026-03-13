@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatRelativeTime } from '@/lib/utils'
+import { useConfirm } from '@/hooks/use-confirm'
 
 interface Favorite {
   id: number
@@ -58,6 +60,7 @@ interface UserStats {
 export default function ProfilePage() {
   const router = useRouter()
   const { user, token, logout, isLoading } = useAuth()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [comments, setComments] = useState<Comment[]>([])
   const [stats, setStats] = useState<UserStats>({ favoritesCount: 0, commentsCount: 0, joinedDays: 0 })
@@ -162,13 +165,13 @@ export default function ProfilePage() {
 
     // 验证文件类型
     if (!file.type.startsWith('image/')) {
-      alert('请选择图片文件')
+      toast.error('请选择图片文件')
       return
     }
 
     // 验证文件大小 (最大 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      alert('图片大小不能超过 2MB')
+      toast.error('图片大小不能超过 2MB')
       return
     }
 
@@ -191,16 +194,17 @@ export default function ProfilePage() {
         
         const data = await response.json()
         if (data.success) {
+          toast.success('头像上传成功')
           setAvatarPreview(base64)
           window.location.reload() // 刷新页面更新头像
         } else {
-          alert(data.error || '上传失败')
+          toast.error(data.error || '上传失败')
         }
       }
       reader.readAsDataURL(file)
     } catch (error) {
       console.error('上传头像失败:', error)
-      alert('上传失败')
+      toast.error('上传失败')
     } finally {
       setAvatarUploading(false)
     }
@@ -220,14 +224,24 @@ export default function ProfilePage() {
       if (response.ok) {
         setFavorites(favorites.filter(f => f.ai_tools?.id !== toolId))
         setStats(prev => ({ ...prev, favoritesCount: prev.favoritesCount - 1 }))
+        toast.success('已取消收藏')
       }
     } catch (error) {
       console.error('取消收藏失败:', error)
+      toast.error('取消收藏失败')
     }
   }
 
   const handleDeleteComment = async (commentId: number) => {
-    if (!token || !confirm('确定要删除这条评论吗？')) return
+    const confirmed = await confirm({
+      title: '删除确认',
+      description: '确定要删除这条评论吗？此操作不可撤销。',
+      confirmText: '删除',
+      destructive: true,
+    })
+
+    if (!confirmed || !token) return
+
     try {
       const response = await fetch(`/api/comments/${commentId}`, {
         method: 'DELETE',
@@ -235,10 +249,11 @@ export default function ProfilePage() {
       })
       if (response.ok) {
         setComments(comments.filter(c => c.id !== commentId))
-        setStats(prev => ({ ...prev, commentsCount: prev.commentsCount - 1 }))
+        toast.success('评论已删除')
       }
     } catch (error) {
       console.error('删除评论失败:', error)
+      toast.error('删除失败')
     }
   }
 
@@ -282,6 +297,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      {ConfirmDialog}
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">

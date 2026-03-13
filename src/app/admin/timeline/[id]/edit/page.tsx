@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import TimelineForm, { TimelineFormData } from '@/components/timeline/TimelineForm'
 
@@ -35,12 +36,12 @@ export default function EditTimelinePage() {
             tags: result.data.tags || [],
           })
         } else {
-          alert('数据不存在')
+          toast.error('数据不存在')
           router.push('/admin/timeline')
         }
       } catch (error) {
         console.error('获取数据失败:', error)
-        alert('获取数据失败')
+        toast.error('获取数据失败')
         router.push('/admin/timeline')
       } finally {
         setLoading(false)

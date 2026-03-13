@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -91,12 +92,13 @@ export default function HallOfFameForm({ mode, initialData, id }: HallOfFameForm
   const generateAvatar = () => {
     const name = formData.nameEn || formData.name
     if (!name) {
-      alert('请先填写姓名或英文名')
+      toast.warning('请先填写姓名或英文名')
       return
     }
     const color = avatarColors[formData.category] || '6366F1'
     const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${color}&color=fff&size=256&bold=true`
     setFormData(prev => ({ ...prev, photo: avatarUrl }))
+    toast.success('头像已生成')
   }
 
   // 添加标签
@@ -136,7 +138,7 @@ export default function HallOfFameForm({ mode, initialData, id }: HallOfFameForm
     e.preventDefault()
 
     if (!formData.name || !formData.category) {
-      alert('请填写必填字段：姓名和分类')
+      toast.error('请填写必填字段：姓名和分类')
       return
     }
 
@@ -174,15 +176,15 @@ export default function HallOfFameForm({ mode, initialData, id }: HallOfFameForm
       const result = await response.json()
 
       if (result.success) {
-        alert(mode === 'create' ? '创建成功' : '更新成功')
+        toast.success(mode === 'create' ? '创建成功' : '更新成功')
         router.push('/admin/hall-of-fame')
         router.refresh()
       } else {
-        alert(result.error || '操作失败')
+        toast.error(result.error || '操作失败')
       }
     } catch (error) {
       console.error('提交失败:', error)
-      alert('提交失败，请重试')
+      toast.error('提交失败，请重试')
     } finally {
       setLoading(false)
     }

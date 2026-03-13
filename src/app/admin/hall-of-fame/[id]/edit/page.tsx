@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import HallOfFameForm, { HallOfFameFormData } from '@/components/hall-of-fame/HallOfFameForm'
 
@@ -37,12 +38,12 @@ export default function EditHallOfFamePage() {
             deathYear: result.data.death_year,
           })
         } else {
-          alert('数据不存在')
+          toast.error('数据不存在')
           router.push('/admin/hall-of-fame')
         }
       } catch (error) {
         console.error('获取数据失败:', error)
-        alert('获取数据失败')
+        toast.error('获取数据失败')
         router.push('/admin/hall-of-fame')
       } finally {
         setLoading(false)

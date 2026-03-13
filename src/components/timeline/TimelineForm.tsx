@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -99,14 +100,14 @@ export default function TimelineForm({ mode, initialData, id }: TimelineFormProp
     e.preventDefault()
 
     if (!formData.year || !formData.title || !formData.description) {
-      alert('请填写必填字段：年份、标题和描述')
+      toast.error('请填写必填字段：年份、标题和描述')
       return
     }
 
     // 验证年份不能是未来
     const currentYear = new Date().getFullYear()
     if (formData.year > currentYear) {
-      alert('年份不能是未来年份')
+      toast.error('年份不能是未来年份')
       return
     }
 
@@ -142,15 +143,15 @@ export default function TimelineForm({ mode, initialData, id }: TimelineFormProp
       const result = await response.json()
 
       if (result.success) {
-        alert(mode === 'create' ? '创建成功' : '更新成功')
+        toast.success(mode === 'create' ? '创建成功' : '更新成功')
         router.push('/admin/timeline')
         router.refresh()
       } else {
-        alert(result.error || '操作失败')
+        toast.error(result.error || '操作失败')
       }
     } catch (error) {
       console.error('提交失败:', error)
-      alert('提交失败，请重试')
+      toast.error('提交失败，请重试')
     } finally {
       setLoading(false)
     }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Plus, Search, Edit, Trash2 } from 'lucide-react'
+import { useConfirm } from '@/hooks/use-confirm'
 
 const categoryConfig = {
   breakthrough: { label: '技术突破', icon: '💡' },
@@ -40,6 +42,7 @@ const importanceConfig = {
 
 export default function TimelineManagementPage() {
   const router = useRouter()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [events, setEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
@@ -80,7 +83,14 @@ export default function TimelineManagementPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定要删除这个事件吗？')) return
+    const confirmed = await confirm({
+      title: '删除确认',
+      description: '确定要删除这个事件吗？此操作不可撤销。',
+      confirmText: '删除',
+      destructive: true,
+    })
+
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/admin/timeline/${id}`, {
@@ -90,18 +100,20 @@ export default function TimelineManagementPage() {
       const result = await response.json()
 
       if (result.success) {
+        toast.success('删除成功')
         fetchEvents()
       } else {
-        alert(result.error || '删除失败')
+        toast.error(result.error || '删除失败')
       }
     } catch (error) {
       console.error('删除失败:', error)
-      alert('删除失败')
+      toast.error('删除失败')
     }
   }
 
   return (
     <div className="space-y-6">
+      {ConfirmDialog}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

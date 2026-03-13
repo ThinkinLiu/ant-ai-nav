@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -81,12 +82,12 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
           isPinned: news.is_pinned || false,
         })
       } else {
-        alert(result.error || '加载失败')
+        toast.error(result.error || '加载失败')
         router.push(returnUrl)
       }
     } catch (error) {
       console.error('加载失败:', error)
-      alert('加载失败')
+      toast.error('加载失败')
       router.push(returnUrl)
     } finally {
       setFetchingData(false)
@@ -113,15 +114,15 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
 
     // 验证必填字段
     if (!formData.title.trim()) {
-      alert('请填写标题')
+      toast.error('请填写标题')
       return
     }
     if (!formData.summary.trim()) {
-      alert('请填写摘要')
+      toast.error('请填写摘要')
       return
     }
     if (!formData.content.trim()) {
-      alert('请填写正文内容')
+      toast.error('请填写正文内容')
       return
     }
 
@@ -173,13 +174,14 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
             method: 'PUT',
           })
         }
+        toast.success('保存成功')
         router.push(returnUrl)
       } else {
-        alert(result.error || '保存失败')
+        toast.error(result.error || '保存失败')
       }
     } catch (error) {
       console.error('保存失败:', error)
-      alert('保存失败')
+      toast.error('保存失败')
     } finally {
       setLoading(false)
     }
