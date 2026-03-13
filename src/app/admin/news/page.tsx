@@ -169,13 +169,13 @@ export default function NewsManagementPage() {
             </div>
             <Select
               value={filters.status}
-              onValueChange={(value) => setFilters({ ...filters, status: value })}
+              onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}
             >
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="状态" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">全部状态</SelectItem>
+                <SelectItem value="all">全部状态</SelectItem>
                 {Object.entries(statusConfig).map(([key, value]) => (
                   <SelectItem key={key} value={key}>
                     {value.label}
@@ -185,13 +185,13 @@ export default function NewsManagementPage() {
             </Select>
             <Select
               value={filters.category}
-              onValueChange={(value) => setFilters({ ...filters, category: value })}
+              onValueChange={(value) => setFilters({ ...filters, category: value === 'all' ? '' : value })}
             >
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="分类" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">全部分类</SelectItem>
+                <SelectItem value="all">全部分类</SelectItem>
                 {Object.entries(categoryConfig).map(([key, value]) => (
                   <SelectItem key={key} value={key}>
                     {value}

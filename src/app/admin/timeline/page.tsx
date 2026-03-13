@@ -130,13 +130,13 @@ export default function TimelineManagementPage() {
             </div>
             <Select
               value={filters.category}
-              onValueChange={(value) => setFilters({ ...filters, category: value })}
+              onValueChange={(value) => setFilters({ ...filters, category: value === 'all' ? '' : value })}
             >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="分类" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">全部分类</SelectItem>
+                <SelectItem value="all">全部分类</SelectItem>
                 {Object.entries(categoryConfig).map(([key, value]) => (
                   <SelectItem key={key} value={key}>
                     {value.icon} {value.label}
@@ -146,13 +146,13 @@ export default function TimelineManagementPage() {
             </Select>
             <Select
               value={filters.importance}
-              onValueChange={(value) => setFilters({ ...filters, importance: value })}
+              onValueChange={(value) => setFilters({ ...filters, importance: value === 'all' ? '' : value })}
             >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="重要性" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">全部</SelectItem>
+                <SelectItem value="all">全部</SelectItem>
                 {Object.entries(importanceConfig).map(([key, value]) => (
                   <SelectItem key={key} value={key}>
                     {value.label}
