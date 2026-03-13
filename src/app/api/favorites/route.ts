@@ -25,9 +25,12 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const toolId = searchParams.get('toolId')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '24')
+    const categoryId = searchParams.get('categoryId')
 
+    // 如果有 toolId 参数，检查是否已收藏
     if (toolId) {
-      // 检查是否已收藏
       const { data: favorite } = await client
         .from('favorites')
         .select('*')
@@ -41,11 +44,19 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 获取收藏列表（使用分步查询以确保兼容性）
-    // 第一步：获取收藏记录
-    const { data: favoritesData, error: favError } = await client
+    // 获取分类映射
+    const { data: categories } = await client
+      .from('categories')
+      .select('id, name, slug, color')
+
+    const categoryMap = new Map(
+      (categories || []).map(c => [c.id, c])
+    )
+
+    // 第一步：获取所有收藏记录
+    const { data: allFavorites, error: favError } = await client
       .from('favorites')
-      .select('*')
+      .select('id, tool_id, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
@@ -57,20 +68,59 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 如果没有收藏，直接返回空数组
-    if (!favoritesData || favoritesData.length === 0) {
+    // 如果没有收藏，直接返回空结果
+    if (!allFavorites || allFavorites.length === 0) {
       return NextResponse.json({
         success: true,
-        data: [],
+        data: {
+          favorites: [],
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
       })
     }
 
-    // 第二步：获取对应的工具信息
-    const toolIds = favoritesData.map(f => f.tool_id)
+    // 获取所有工具ID
+    const allToolIds = allFavorites.map(f => f.tool_id)
+
+    // 第二步：获取工具信息（带分类筛选）
+    let toolsQuery = client
+      .from('ai_tools')
+      .select('id, name, description, website, logo, is_free, category_id')
+      .in('id', allToolIds)
+
+    // 如果有分类筛选，先获取符合分类的工具
+    let filteredToolIds = allToolIds
+    if (categoryId) {
+      const { data: filteredTools } = await client
+        .from('ai_tools')
+        .select('id')
+        .in('id', allToolIds)
+        .eq('category_id', parseInt(categoryId))
+      
+      filteredToolIds = (filteredTools || []).map(t => t.id)
+    }
+
+    if (filteredToolIds.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          favorites: [],
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
+      })
+    }
+
+    // 获取筛选后的工具详情
     const { data: toolsData, error: toolsError } = await client
       .from('ai_tools')
       .select('id, name, description, website, logo, is_free, category_id')
-      .in('id', toolIds)
+      .in('id', filteredToolIds)
 
     if (toolsError) {
       console.error('获取工具信息错误:', JSON.stringify(toolsError))
@@ -80,17 +130,36 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 第三步：合并数据
+    // 第三步：合并数据并保持收藏顺序
     const toolsMap = new Map(toolsData?.map(t => [t.id, t]) || [])
-    const favorites = favoritesData.map(f => ({
-      id: f.id,
-      created_at: f.created_at,
-      ai_tools: toolsMap.get(f.tool_id) || null
-    }))
+    
+    // 按收藏时间顺序组装数据
+    const allFavoritesWithTools = allFavorites
+      .filter(f => toolsMap.has(f.tool_id))
+      .map(f => ({
+        id: f.id,
+        created_at: f.created_at,
+        ai_tools: {
+          ...toolsMap.get(f.tool_id),
+          category: categoryMap.get(toolsMap.get(f.tool_id)?.category_id) || null
+        }
+      }))
+
+    // 分页处理
+    const total = allFavoritesWithTools.length
+    const totalPages = Math.ceil(total / limit)
+    const offset = (page - 1) * limit
+    const paginatedFavorites = allFavoritesWithTools.slice(offset, offset + limit)
 
     return NextResponse.json({
       success: true,
-      data: favorites,
+      data: {
+        favorites: paginatedFavorites,
+        total,
+        page,
+        limit,
+        totalPages,
+      },
     })
   } catch (error) {
     console.error('获取收藏错误:', error)
