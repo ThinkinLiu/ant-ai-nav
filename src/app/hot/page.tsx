@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
-  Flame, TrendingUp, ChevronRight, Eye, Heart, 
+  Flame, TrendingUp, Eye, Heart, 
   ArrowLeft, Loader2
 } from 'lucide-react'
 import { ToolLogoNext } from '@/components/tools/ToolLogo'
@@ -48,7 +48,7 @@ interface HotToolsData {
   typeName: string
 }
 
-export default function HotToolsPage() {
+function HotToolsContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const type = searchParams.get('type') || 'domestic'
@@ -283,5 +283,27 @@ export default function HotToolsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <div className="py-12 bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50 dark:from-red-950/20 dark:via-orange-950/20 dark:to-yellow-950/20">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function HotToolsPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <HotToolsContent />
+    </Suspense>
   )
 }
