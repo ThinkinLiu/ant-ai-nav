@@ -229,11 +229,19 @@ function HomePageContent() {
       {!searchQuery && !categoryId && !isFeatured && activeCategory === 'all' && domesticTools.length > 0 && (
         <section className="py-8 bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50 dark:from-red-950/20 dark:via-orange-950/20 dark:to-yellow-950/20">
           <div className="container mx-auto px-4">
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
                 <Flame className="h-6 w-6 text-red-500" />
                 <h2 className="text-2xl font-bold">国内火爆AI工具</h2>
                 <Badge variant="destructive" className="ml-2">HOT</Badge>
               </div>
+              <Button variant="outline" size="sm" asChild className="gap-1 hover:bg-red-50 hover:text-red-600 hover:border-red-300 dark:hover:bg-red-950 dark:hover:text-red-400">
+                <Link href="/hot?type=domestic">
+                  查看更多
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
               {domesticTools.map((tool) => (
                 <Link key={tool.id} href={`/tools/${tool.id}`}>
@@ -267,11 +275,19 @@ function HomePageContent() {
       {!searchQuery && !categoryId && !isFeatured && activeCategory === 'all' && foreignTools.length > 0 && (
         <section className="py-8 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20">
           <div className="container mx-auto px-4">
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
                 <TrendingUp className="h-6 w-6 text-blue-500" />
                 <h2 className="text-2xl font-bold">国外火爆AI工具</h2>
                 <Badge className="ml-2 bg-blue-500 hover:bg-blue-600">GLOBAL</Badge>
               </div>
+              <Button variant="outline" size="sm" asChild className="gap-1 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 dark:hover:bg-blue-950 dark:hover:text-blue-400">
+                <Link href="/hot?type=foreign">
+                  查看更多
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
               {foreignTools.map((tool) => (
                 <Link key={tool.id} href={`/tools/${tool.id}`}>
