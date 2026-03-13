@@ -60,8 +60,6 @@ export async function PUT(
       }
     })
 
-    updateData.updated_at = new Date().toISOString()
-
     // 更新数据
     const { data, error } = await client
       .from('ai_timeline')
