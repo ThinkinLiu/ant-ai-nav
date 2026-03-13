@@ -145,12 +145,20 @@ export default function NewsManagementPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>AI资讯管理</CardTitle>
-            <Button asChild>
-              <Link href="/admin/news/new">
-                <Plus className="mr-2 h-4 w-4" />
-                新建资讯
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" asChild>
+                <Link href="/news" target="_blank">
+                  <Eye className="mr-2 h-4 w-4" />
+                  查看前端
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link href="/admin/news/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  新建资讯
+                </Link>
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
