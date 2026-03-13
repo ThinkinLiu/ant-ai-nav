@@ -155,6 +155,83 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // 精选推荐特殊处理：置顶在前，其余随机排序
+    if (isFeatured === 'true') {
+      // 获取所有精选工具
+      let featuredQuery = client
+        .from('ai_tools')
+        .select('id, name, slug, description, website, logo, is_featured, is_free, is_pinned, view_count, favorite_count, created_at, category_id, status, reject_reason')
+
+      if (categoryId) {
+        featuredQuery = featuredQuery.eq('category_id', parseInt(categoryId))
+      }
+      if (search) {
+        featuredQuery = featuredQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+      }
+      
+      featuredQuery = featuredQuery.eq('is_featured', true).eq('status', 'approved')
+
+      const { data: allFeaturedTools, error: featuredError } = await featuredQuery
+
+      if (featuredError) {
+        return NextResponse.json(
+          { success: false, error: featuredError.message },
+          { status: 400 }
+        )
+      }
+
+      // 分离置顶和非置顶工具
+      const pinnedTools = (allFeaturedTools || []).filter(t => t.is_pinned)
+      const unpinnedTools = (allFeaturedTools || []).filter(t => !t.is_pinned)
+
+      // Fisher-Yates 洗牌算法随机排序非置顶工具
+      for (let i = unpinnedTools.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [unpinnedTools[i], unpinnedTools[j]] = [unpinnedTools[j], unpinnedTools[i]]
+      }
+
+      // 合并：置顶在前，随机排序在后
+      const sortedTools = [...pinnedTools, ...unpinnedTools]
+
+      // 分页
+      const total = sortedTools.length
+      const from = (page - 1) * limit
+      const to = from + limit
+      const paginatedTools = sortedTools.slice(from, to)
+
+      // 获取分类信息
+      const { data: categoriesData } = await client
+        .from('categories')
+        .select('id, name, slug, description, icon, color')
+      
+      const categoryMap = new Map(
+        (categoriesData || []).map(c => [c.id, c])
+      )
+
+      // 组装工具数据
+      const toolsWithCategory = paginatedTools.map(tool => ({
+        ...tool,
+        category: categoryMap.get(tool.category_id) || null,
+      }))
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          data: toolsWithCategory,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      })
+    }
+
     // 普通排序逻辑
     let query = client
       .from('ai_tools')
@@ -169,9 +246,6 @@ export async function GET(request: NextRequest) {
     }
     if (status) {
       query = query.eq('status', status)
-    }
-    if (isFeatured === 'true') {
-      query = query.eq('is_featured', true)
     }
     if (search) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
