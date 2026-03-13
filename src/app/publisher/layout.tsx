@@ -5,7 +5,12 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
-import { Plus, List, LayoutDashboard, ArrowLeft } from 'lucide-react'
+import { Plus, List, LayoutDashboard, ArrowLeft, Newspaper, Wrench } from 'lucide-react'
+
+const navItems = [
+  { href: '/publisher', label: '我的工具', icon: Wrench },
+  { href: '/publisher/news', label: 'AI资讯', icon: Newspaper },
+]
 
 export default function PublisherLayout({
   children,
@@ -51,19 +56,33 @@ export default function PublisherLayout({
                 <span className="font-semibold">发布者中心</span>
               </div>
             </div>
-            <Button asChild>
-              <Link href="/publisher/tools/new">
-                <Plus className="mr-2 h-4 w-4" />
-                发布工具
-              </Link>
-            </Button>
           </div>
         </div>
       </div>
 
-      {/* Content */}
       <div className="container mx-auto px-4 py-8">
-        {children}
+        <div className="flex gap-8">
+          {/* Sidebar */}
+          <aside className="w-48 shrink-0">
+            <nav className="space-y-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </aside>
+
+          {/* Content */}
+          <main className="flex-1">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   )

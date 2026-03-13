@@ -261,3 +261,39 @@ export const trafficDataSources = pgTable("traffic_data_sources", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 });
+
+// AI资讯表
+export const aiNews = pgTable("ai_news", {
+	id: serial().primaryKey().notNull(),
+	title: varchar({ length: 200 }).notNull(),          // 标题
+	slug: varchar({ length: 200 }).notNull(),           // URL slug
+	summary: text().notNull(),                          // 摘要
+	content: text().notNull(),                          // 正文内容
+	coverImage: text("cover_image"),                    // 封面图片
+	category: varchar({ length: 50 }),                  // 分类 (industry, research, product, tutorial, other)
+	tags: jsonb(),                                      // 标签数组
+	source: varchar({ length: 200 }),                   // 来源
+	sourceUrl: text("source_url"),                      // 来源链接
+	authorId: varchar("author_id", { length: 36 }).notNull().references(() => users.id), // 作者ID
+	status: varchar({ length: 20 }).default('draft').notNull(), // 状态: draft, pending, approved, rejected
+	isFeatured: boolean("is_featured").default(false),  // 是否推荐
+	isPinned: boolean("is_pinned").default(false),      // 是否置顶
+	viewCount: integer("view_count").default(0),        // 浏览次数
+	likeCount: integer("like_count").default(0),        // 点赞数
+	commentCount: integer("comment_count").default(0),  // 评论数
+	reviewedBy: varchar("reviewed_by", { length: 36 }).references(() => users.id), // 审核人ID
+	reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: 'string' }), // 审核时间
+	rejectReason: text("reject_reason"),                // 拒绝原因
+	publishedAt: timestamp("published_at", { withTimezone: true, mode: 'string' }), // 发布时间
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
+}, (table) => [
+	index("ai_news_slug_idx").using("btree", table.slug.asc().nullsLast().op("text_ops")),
+	index("ai_news_status_idx").using("btree", table.status.asc().nullsLast().op("text_ops")),
+	index("ai_news_category_idx").using("btree", table.category.asc().nullsLast().op("text_ops")),
+	index("ai_news_author_id_idx").using("btree", table.authorId.asc().nullsLast().op("text_ops")),
+	index("ai_news_published_at_idx").using("btree", table.publishedAt.desc().nullsFirst().op("timestamptz_ops")),
+	index("ai_news_is_featured_idx").using("btree", table.isFeatured.asc().nullsLast().op("bool_ops")),
+	index("ai_news_is_pinned_idx").using("btree", table.isPinned.asc().nullsLast().op("bool_ops")),
+	unique("ai_news_slug_unique").on(table.slug),
+]);
