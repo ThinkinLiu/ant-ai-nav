@@ -24,7 +24,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, Edit, Trash2, Eye, Check, X } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Plus, Search, Edit, Trash2, Eye, Check, X, Sparkles, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { useConfirm } from '@/hooks/use-confirm'
@@ -44,6 +52,25 @@ const categoryConfig = {
   other: '其他',
 }
 
+// 搜索结果项类型
+interface SearchNewsItem {
+  title: string
+  title_en: string
+  summary: string
+  content: string
+  source: string
+  source_url: string
+  author: string
+  category: string
+  tags: string[]
+  cover_image: string
+  is_featured: boolean
+  is_hot: boolean
+  view_count: number
+  like_count: number
+  published_at: string
+}
+
 export default function NewsManagementPage() {
   const { user } = useAuth()
   const router = useRouter()
@@ -57,6 +84,15 @@ export default function NewsManagementPage() {
     category: '',
     search: '',
   })
+
+  // 自动发布相关状态
+  const [autoPublishOpen, setAutoPublishOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchTimeRange, setSearchTimeRange] = useState('1w')
+  const [searching, setSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<SearchNewsItem[]>([])
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
+  const [importing, setImporting] = useState(false)
 
   useEffect(() => {
     if (user && (user.role === 'admin' || user.role === 'publisher')) {
@@ -147,6 +183,110 @@ export default function NewsManagementPage() {
     }
   }
 
+  // 搜索AI资讯
+  const handleSearchNews = async () => {
+    if (!searchQuery.trim()) {
+      toast.error('请输入搜索关键词')
+      return
+    }
+
+    setSearching(true)
+    setSelectedItems(new Set())
+
+    try {
+      const response = await fetch('/api/admin/news/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: searchQuery,
+          count: 20,
+          timeRange: searchTimeRange,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success && result.data) {
+        setSearchResults(result.data)
+        if (result.data.length === 0) {
+          toast.info('未找到相关资讯')
+        } else {
+          toast.success(`找到 ${result.data.length} 条相关资讯`)
+        }
+      } else {
+        toast.error(result.error || '搜索失败')
+        setSearchResults([])
+      }
+    } catch (error) {
+      console.error('搜索失败:', error)
+      toast.error('搜索失败，请稍后重试')
+      setSearchResults([])
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  // 切换选中状态
+  const toggleSelect = (index: number) => {
+    const newSelected = new Set(selectedItems)
+    if (newSelected.has(index)) {
+      newSelected.delete(index)
+    } else {
+      newSelected.add(index)
+    }
+    setSelectedItems(newSelected)
+  }
+
+  // 全选/取消全选
+  const toggleSelectAll = () => {
+    if (selectedItems.size === searchResults.length) {
+      setSelectedItems(new Set())
+    } else {
+      setSelectedItems(new Set(searchResults.map((_, i) => i)))
+    }
+  }
+
+  // 导入选中的资讯
+  const handleImport = async () => {
+    if (selectedItems.size === 0) {
+      toast.error('请选择要导入的资讯')
+      return
+    }
+
+    setImporting(true)
+
+    try {
+      const itemsToImport = Array.from(selectedItems).map((index) => searchResults[index])
+
+      const response = await fetch('/api/admin/news/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newsItems: itemsToImport }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success(`成功导入 ${result.data.importedCount} 条资讯`)
+        if (result.data.errors && result.data.errors.length > 0) {
+          toast.warning(`部分导入存在问题:\n${result.data.errors.slice(0, 3).join('\n')}`)
+        }
+        setAutoPublishOpen(false)
+        setSearchResults([])
+        setSelectedItems(new Set())
+        setSearchQuery('')
+        fetchNews()
+      } else {
+        toast.error(result.error || '导入失败')
+      }
+    } catch (error) {
+      console.error('导入失败:', error)
+      toast.error('导入失败，请稍后重试')
+    } finally {
+      setImporting(false)
+    }
+  }
+
   if (!user || (user.role !== 'admin' && user.role !== 'publisher')) {
     return null
   }
@@ -164,6 +304,14 @@ export default function NewsManagementPage() {
                   <Eye className="mr-2 h-4 w-4" />
                   查看前端
                 </Link>
+              </Button>
+              <Button
+                variant="outline"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600"
+                onClick={() => setAutoPublishOpen(true)}
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                自动发布
               </Button>
               <Button asChild>
                 <Link href="/admin/news/new">
@@ -332,6 +480,140 @@ export default function NewsManagementPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* 自动发布对话框 */}
+      <Dialog open={autoPublishOpen} onOpenChange={setAutoPublishOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-500" />
+              自动发布AI资讯
+            </DialogTitle>
+            <DialogDescription>
+              输入关键词搜索网络上的AI资讯，选择后一键导入
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* 搜索区域 */}
+          <div className="flex gap-3 py-4 border-b">
+            <div className="flex-1">
+              <Input
+                placeholder="输入搜索关键词，如：GPT-5、大模型、AI产品..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearchNews()}
+              />
+            </div>
+            <Select value={searchTimeRange} onValueChange={setSearchTimeRange}>
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1d">最近1天</SelectItem>
+                <SelectItem value="1w">最近1周</SelectItem>
+                <SelectItem value="1m">最近1月</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={handleSearchNews} disabled={searching}>
+              {searching ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="mr-2 h-4 w-4" />
+              )}
+              搜索
+            </Button>
+          </div>
+
+          {/* 搜索结果 */}
+          <div className="flex-1 overflow-auto">
+            {searchResults.length > 0 ? (
+              <div className="space-y-3">
+                {/* 全选操作栏 */}
+                <div className="flex items-center justify-between py-2 px-1 bg-muted/50 rounded">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={selectedItems.size === searchResults.length}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      已选择 {selectedItems.size} / {searchResults.length} 条
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleImport}
+                    disabled={selectedItems.size === 0 || importing}
+                  >
+                    {importing ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="mr-2 h-4 w-4" />
+                    )}
+                    导入选中
+                  </Button>
+                </div>
+
+                {/* 结果列表 */}
+                {searchResults.map((item, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedItems.has(index) ? 'bg-purple-50 border-purple-300' : 'hover:bg-muted/50'
+                    }`}
+                    onClick={() => toggleSelect(index)}
+                  >
+                    <div className="flex gap-3">
+                      <Checkbox
+                        checked={selectedItems.has(index)}
+                        onCheckedChange={() => toggleSelect(index)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm line-clamp-2">{item.title}</h4>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {item.summary}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                          <span className="bg-muted px-1.5 py-0.5 rounded">{item.source}</span>
+                          <span>•</span>
+                          <span>{item.published_at ? format(new Date(item.published_at), 'yyyy-MM-dd') : '未知时间'}</span>
+                          {item.tags && item.tags.length > 0 && (
+                            <>
+                              <span>•</span>
+                              <div className="flex gap-1">
+                                {item.tags.slice(0, 3).map((tag, i) => (
+                                  <span key={i} className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : searching ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <p className="mt-3 text-sm text-muted-foreground">正在搜索AI资讯...</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Search className="h-12 w-12 text-muted-foreground/50" />
+                <p className="mt-3 text-sm text-muted-foreground">
+                  输入关键词搜索AI相关资讯
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground/70">
+                  支持搜索最新AI行业动态、产品发布、技术进展等
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
