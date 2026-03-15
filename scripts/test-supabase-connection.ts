@@ -8,8 +8,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // 从环境变量读取配置
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.COZE_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.COZE_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.COZE_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.COZE_SUPABASE_ANON_KEY || '';
 
 console.log('🔍 检查 Supabase 配置...\n');
 
@@ -38,7 +38,7 @@ async function testConnection() {
   console.log('\n🔌 测试数据库连接...');
   
   try {
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl!, supabaseKey!);
     
     // 测试查询 - 获取分类列表
     const { data, error } = await supabase
