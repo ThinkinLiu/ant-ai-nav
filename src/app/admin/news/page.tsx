@@ -87,8 +87,10 @@ export default function NewsManagementPage() {
 
   // 自动发布相关状态
   const [autoPublishOpen, setAutoPublishOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchTimeRange, setSearchTimeRange] = useState('1w')
+  const [publishDate, setPublishDate] = useState(() => {
+    // 默认使用今天日期
+    return format(new Date(), 'yyyy-MM-dd')
+  })
   const [searching, setSearching] = useState(false)
   const [searchResults, setSearchResults] = useState<SearchNewsItem[]>([])
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
@@ -185,8 +187,8 @@ export default function NewsManagementPage() {
 
   // 搜索AI资讯
   const handleSearchNews = async () => {
-    if (!searchQuery.trim()) {
-      toast.error('请输入搜索关键词')
+    if (!publishDate) {
+      toast.error('请选择发布日期')
       return
     }
 
@@ -198,9 +200,8 @@ export default function NewsManagementPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: searchQuery,
+          publishDate,
           count: 20,
-          timeRange: searchTimeRange,
         }),
       })
 
@@ -274,7 +275,6 @@ export default function NewsManagementPage() {
         setAutoPublishOpen(false)
         setSearchResults([])
         setSelectedItems(new Set())
-        setSearchQuery('')
         fetchNews()
       } else {
         toast.error(result.error || '导入失败')
@@ -490,38 +490,30 @@ export default function NewsManagementPage() {
               自动发布AI资讯
             </DialogTitle>
             <DialogDescription>
-              输入关键词搜索网络上的AI资讯，选择后一键导入
+              选择发布日期，系统将自动搜索该日期相关的AI资讯
             </DialogDescription>
           </DialogHeader>
 
           {/* 搜索区域 */}
           <div className="flex gap-3 py-4 border-b">
             <div className="flex-1">
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">发布日期</label>
               <Input
-                placeholder="输入搜索关键词，如：GPT-5、大模型、AI产品..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearchNews()}
+                type="date"
+                value={publishDate}
+                onChange={(e) => setPublishDate(e.target.value)}
               />
             </div>
-            <Select value={searchTimeRange} onValueChange={setSearchTimeRange}>
-              <SelectTrigger className="w-28">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1d">最近1天</SelectItem>
-                <SelectItem value="1w">最近1周</SelectItem>
-                <SelectItem value="1m">最近1月</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={handleSearchNews} disabled={searching}>
-              {searching ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="mr-2 h-4 w-4" />
-              )}
-              搜索
-            </Button>
+            <div className="flex items-end">
+              <Button onClick={handleSearchNews} disabled={searching}>
+                {searching ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="mr-2 h-4 w-4" />
+                )}
+                搜索
+              </Button>
+            </div>
           </div>
 
           {/* 搜索结果 */}

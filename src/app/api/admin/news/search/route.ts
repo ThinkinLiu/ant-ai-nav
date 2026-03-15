@@ -1,32 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { SearchClient, Config, HeaderUtils } from 'coze-coding-dev-sdk'
 
-// AI资讯搜索API
+// AI资讯搜索API - 根据发布日期自动查询AI资讯
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { query, count = 10, timeRange } = body
+    const { publishDate, count = 20 } = body
 
-    if (!query) {
+    if (!publishDate) {
       return NextResponse.json(
-        { success: false, error: '搜索关键词不能为空' },
+        { success: false, error: '发布日期不能为空' },
         { status: 400 }
       )
     }
+
+    // 解析日期，格式化为搜索查询
+    const date = new Date(publishDate)
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    
+    // 构建日期相关的搜索查询
+    // 使用多种AI相关关键词组合搜索
+    const searchQuery = `AI人工智能 ${year}年${month}月${day}日 最新动态`
 
     // 使用Web Search SDK搜索AI资讯
     const customHeaders = HeaderUtils.extractForwardHeaders(request.headers)
     const config = new Config()
     const client = new SearchClient(config, customHeaders)
 
-    // 构建搜索查询，添加AI相关前缀
-    const searchQuery = `AI人工智能 ${query}`
-
     const response = await client.advancedSearch(searchQuery, {
       searchType: 'web',
       count: count,
       needSummary: false,
-      timeRange: timeRange || '1w', // 默认搜索最近一周
       needContent: true,
     })
 
@@ -54,13 +60,14 @@ export async function POST(request: NextRequest) {
       is_hot: false,
       view_count: 0,
       like_count: 0,
-      published_at: item.publish_time || new Date().toISOString(),
+      published_at: item.publish_time || publishDate,
     }))
 
     return NextResponse.json({
       success: true,
       data: newsItems,
       total: newsItems.length,
+      searchQuery, // 返回实际使用的搜索查询
     })
   } catch (error) {
     console.error('搜索AI资讯错误:', error)
