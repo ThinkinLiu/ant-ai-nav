@@ -10,13 +10,9 @@
 
 然而，面对海量的AI工具，如何找到最适合自己的那一款？国内外的优秀工具分散在各处，信息不对称让选择变得困难。**蚂蚁AI导航**应运而生——一个汇聚全球优质AI工具的专业导航平台。
 
-![首页展示](/assets/home.png)
-
 ---
 
-## 产品介绍：三端架构，一站式AI工具门户
-
-蚂蚁AI导航采用**用户端、发布者端、管理端**三端分离架构，为不同角色的用户提供精准服务。
+## 产品介绍：一站式AI工具门户
 
 ### 🏠 用户端：发现与探索
 
@@ -35,8 +31,6 @@
 | 💼 AI办公 | 办公助手，提升效率 | Notion AI、飞书AI、Gamma |
 | 📚 AI学习 | 智能教育辅助 | Khanmigo、知网研学 |
 
-![分类浏览](/assets/categories.png)
-
 #### 2. 国内外工具分栏展示
 
 首页独特设计了**国内火爆AI工具**与**国外火爆AI工具**双栏展示：
@@ -44,16 +38,12 @@
 - 🔥 **国内火爆**：DeepSeek、Kimi、通义千问、文心一言、讯飞星火、豆包等国产AI神器
 - 🌍 **国外火爆**：ChatGPT、Claude、Gemini、Midjourney、GitHub Copilot等国际顶尖工具
 
-![国内外工具分栏](/assets/area.png)
-
 #### 3. 智能搜索与筛选
 
 支持多维度筛选：
 - **关键词搜索**：快速定位目标工具
 - **分类筛选**：按8大分类精准筛选
 - **排序方式**：发布时间、浏览量、收藏量、评论量
-
-![搜索筛选](/assets/search.png)
 
 #### 4. 工具详情页：全方位了解
 
@@ -64,16 +54,27 @@
 - 💬 评论互动区
 - ❤️ 一键收藏功能
 
-![工具详情页](/assets/details.png)
+---
 
-#### 5. 个人中心：管理你的AI工具库
+### 📰 内容频道
 
-注册用户可享受个性化服务：
-- **我的收藏**：一键收藏喜欢的工具，随时查看
-- **个人资料**：管理账户信息
-- **发布者申请**：申请成为工具发布者
+#### AI资讯
+- 行业最新动态
+- 技术突破报道
+- 产品发布资讯
+- 支持AI自动发布
 
-![个人中心](/assets/person.png)
+#### AI名人堂
+- AI领域杰出人物
+- 先驱者、研究者、企业家、工程师
+- 详细成就介绍
+- 支持AI自动生成
+
+#### AI大事纪
+- AI发展里程碑事件
+- 时间轴展示
+- 分类浏览
+- 支持AI自动生成
 
 ---
 
@@ -81,19 +82,8 @@
 
 成为发布者，你可以：
 - **发布工具**：提交优质AI工具，丰富平台内容
-- **管理工具**：查看发布工具的数据统计
-- **编辑更新**：随时更新工具信息
-
-![发布者中心](/assets/publish.png)
-
-#### 数据面板
-
-清晰的数据统计让你了解工具表现：
-- 📊 总发布数、待审核、已通过、已拒绝
-- 👁️ 浏览量、收藏量、评论量追踪
-- 📅 多维度排序与分页
-
-![发布者数据](/assets/publishdata.png)
+- **发布资讯**：分享AI行业动态
+- **管理内容**：查看发布内容的数据统计
 
 ---
 
@@ -101,31 +91,27 @@
 
 管理员拥有完整的后台管理能力：
 
-#### 数据概览
-- 总用户数、总工具数、待审核工具
-- 用户增长趋势、工具发布趋势
+#### 核心管理
+- 数据概览
+- 工具审核
+- 用户管理
+- 评论管理
 
-![管理后台](/assets/manage.png)
+#### 内容管理
+- AI资讯管理
+- 名人堂管理
+- 大事纪管理
+- 友情链接管理
 
-#### 工具审核
-- 一键审批/拒绝
-- 拒绝原因填写
-- 批量操作支持
-
-#### 用户管理
-- 用户角色分配（普通用户/发布者/管理员）
-- 用户状态管理
-
-#### 评论管理
-- 查看所有用户评论
-- 删除违规评论
-- 评论数据统计
+#### 系统管理
+- 数据迁移（导出/导入）
+- SEO设置
+- SMTP邮件服务
+- 排行榜配置
 
 ---
 
-## 技术架构：现代、高效、可扩展
-
-蚂蚁AI导航采用业界领先的技术栈构建，确保平台的稳定性与可扩展性。
+## 🔧 技术架构
 
 ### 前端技术
 
@@ -137,190 +123,87 @@
 ├─────────────────────────────────────────┤
 │              Tailwind CSS 4              │
 │              shadcn/ui 组件库             │
-├─────────────────────────────────────────┤
-│         Radix UI (无障碍组件基础)          │
-│              Lucide Icons                │
 └─────────────────────────────────────────┘
 ```
-
-**技术亮点：**
-
-1. **App Router 架构**：采用 Next.js 16 的 App Router，支持服务端渲染（SSR）和增量静态再生（ISR），首屏加载速度提升 40%
-
-2. **React 19 并发特性**：利用最新的并发渲染和 Suspense，实现流畅的用户体验
-
-3. **TypeScript 全栈类型安全**：从 API 到组件，全链路类型检查，减少 90% 的运行时错误
-
-4. **shadcn/ui 组件系统**：基于 Radix UI 构建的精美组件，支持深色模式，完全可定制
 
 ### 后端技术
 
 ```
 ┌─────────────────────────────────────────┐
 │           Next.js API Routes             │
-│          (Serverless Functions)          │
 ├─────────────────────────────────────────┤
 │            Supabase (PostgreSQL)         │
 │         ├── 数据库存储                    │
 │         ├── 用户认证 (Auth)               │
 │         └── 行级安全策略 (RLS)            │
+├─────────────────────────────────────────┤
+│            Coze SDK                      │
+│         ├── Web Search                   │
+│         └── LLM (AI智能功能)              │
 └─────────────────────────────────────────┘
 ```
 
-**架构优势：**
+---
 
-1. **Supabase 一体化方案**：
-   - PostgreSQL 数据库，支持复杂查询
-   - 内置用户认证系统，支持 JWT
-   - 行级安全策略（RLS），数据安全有保障
+## ✨ 特色功能
 
-2. **API 设计**：
-   - RESTful 风格 API
-   - 统一的错误处理
-   - 分页、搜索、筛选支持
+### 🤖 AI智能能力
 
-### 数据模型
+- **自动发布AI资讯**：输入日期，自动搜索生成资讯
+- **自动生成名人堂**：输入姓名，自动生成人物信息
+- **自动生成大事纪**：自动搜索生成历史事件
 
-```sql
--- 核心数据表
-users          -- 用户表（角色、权限）
-categories     -- 分类表（8大分类）
-ai_tools       -- 工具表（名称、描述、状态）
-comments       -- 评论表（评分、内容）
-favorites      -- 收藏表（用户-工具关联）
-tags           -- 标签表（工具标签）
+### 📦 数据迁移
+
+- 多模式导出：全部/业务数据/内容数据/设置数据/自定义
+- 灵活导入：合并模式/替换模式
+- 表级选择：精确控制导出内容
+
+### 📧 邮件服务
+
+- 邮箱验证码注册
+- SMTP配置管理
+- 邮件发送状态追踪
+
+---
+
+## 📊 数据统计
+
+| 数据类型 | 数量 |
+|----------|------|
+| AI工具 | 1,000+ |
+| AI资讯 | 130+ |
+| AI名人堂人物 | 120+ |
+| AI大事纪事件 | 100+ |
+| 工具分类 | 8 |
+| 友情链接 | 3 |
+
+---
+
+## 🚀 快速开始
+
+```bash
+# 克隆项目
+git clone https://github.com/your-username/ant-ai-nav.git
+
+# 安装依赖
+pnpm install
+
+# 配置环境变量
+cp .env.example .env.local
+
+# 启动开发服务器
+pnpm dev
 ```
 
----
-
-## 核心功能代码示例
-
-### 工具列表 API
-
-```typescript
-// src/app/api/tools/route.ts
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const search = searchParams.get('search')
-  const categoryId = searchParams.get('categoryId')
-  const sortBy = searchParams.get('sortBy') || 'created_at'
-  
-  let query = client
-    .from('ai_tools')
-    .select('*, category:categories(*), publisher:users(*)')
-    .eq('status', 'approved')
-  
-  if (search) {
-    query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
-  }
-  
-  if (categoryId) {
-    query = query.eq('category_id', categoryId)
-  }
-  
-  const { data } = await query.order(sortBy, { ascending: false })
-  
-  return NextResponse.json({ success: true, data })
-}
-```
-
-### 收藏功能实现
-
-```typescript
-// 添加收藏
-const toggleFavorite = async (toolId: number) => {
-  const response = await fetch('/api/favorites', {
-    method: isFavorited ? 'DELETE' : 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}` 
-    },
-    body: JSON.stringify({ toolId })
-  })
-  
-  setIsFavorited(!isFavorited)
-}
-```
+访问 http://localhost:5000 查看效果。
 
 ---
 
-## 性能优化
+## 📄 开源协议
 
-### 首页加载优化
-
-```typescript
-// 聚合 API 减少请求次数
-export async function GET() {
-  const [categories, domesticTools, foreignTools, hotTools, latestTools] = 
-    await Promise.all([
-      fetchCategories(),
-      fetchDomesticTools(),
-      fetchForeignTools(),
-      fetchHotTools(),
-      fetchLatestTools()
-    ])
-  
-  return { categories, domesticTools, foreignTools, hotTools, latestTools }
-}
-```
-
-### 图片懒加载
-
-```tsx
-<img 
-  src={tool.logo} 
-  alt={tool.name}
-  loading="lazy"
-  className="rounded-lg object-cover"
-/>
-```
+本项目采用 MIT 协议开源。
 
 ---
 
-## 数据规模
-
-平台已收录 **1700+ 真实AI工具**，覆盖：
-
-- 🌍 **国内外混合**：国产工具与国际工具并重
-- 📊 **分类均衡**：8大分类均有丰富收录
-- 🔄 **持续更新**：定期添加最新AI工具
-
----
-
-## 结语：让AI工具触手可及
-
-蚂蚁AI导航不仅是一个工具导航网站，更是AI时代的效率加速器。无论你是：
-
-- 🧑‍💻 **开发者**：寻找AI编程助手
-- ✍️ **内容创作者**：探索AI写作与设计工具
-- 🎨 **设计师**：发现AI绘画与创意工具
-- 👔 **职场人士**：提升办公效率
-
-蚂蚁AI导航都能帮你找到最适合的AI工具。
-
-**立即访问，开启你的AI效率之旅！**
-
----
-
-## 技术栈清单
-
-| 类别 | 技术 | 版本 |
-|------|------|------|
-| 框架 | Next.js | 16.x |
-| 前端 | React | 19.x |
-| 语言 | TypeScript | 5.x |
-| 样式 | Tailwind CSS | 4.x |
-| 组件 | shadcn/ui | latest |
-| 数据库 | Supabase (PostgreSQL) | - |
-| 图标 | Lucide Icons | latest |
-| 认证 | JWT + Supabase Auth | - |
-
----
-
-> **蚂蚁AI导航** - 发现最好的AI工具，释放无限创造力
-> 
-> 🌐 技术驱动 · 💡 用户体验 · 🚀 持续进化
-
----
-
-*本文由蚂蚁AI导航团队出品*
+**更新时间**: 2026-03-15

@@ -4,122 +4,82 @@
 
 ## 📜 脚本列表
 
-### export-database.ts
-**用途**: 从Supabase数据库导出所有表数据到JSON文件
+### prepare.sh
+**用途**: 项目准备脚本，在开发前执行
 
 **使用方法**:
 ```bash
-npx tsx scripts/export-database.ts
+bash scripts/prepare.sh
 ```
 
-**输出**:
-- `database/export-data.json` - 包含所有表数据的JSON文件
+**功能**:
+- 检查并创建必要的目录
+- 设置环境变量
 
-**说明**:
-- 自动连接到Supabase数据库
-- 导出所有定义的表数据
-- 包含错误处理和进度提示
-
-### generate-sql-inserts.ts
-**用途**: 将JSON数据转换为SQL INSERT语句
+### dev.sh
+**用途**: 启动开发服务器
 
 **使用方法**:
 ```bash
-npx tsx scripts/generate-sql-inserts.ts
+bash scripts/dev.sh
 ```
 
-**前置条件**:
-- 需要先运行 `export-database.ts` 生成JSON文件
+### build.sh
+**用途**: 构建生产版本
 
-**输出**:
-- `database/01_categories.sql` - 分类数据
-- `database/02_tags.sql` - 标签数据
-- `database/03_ai_hall_of_fame.sql` - AI名人堂数据
-- `database/04_users.sql` - 用户数据
-- `database/05_ai_tools.sql` - AI工具数据
-- `database/06_ai_timeline.sql` - AI大事纪数据
-- `database/07_tool_tags.sql` - 工具标签关联
-- `database/08_comments.sql` - 评论数据
-- `database/09_publisher_applications.sql` - 发布者申请
-- `database/10_ai_tool_rankings.sql` - 排行榜数据
-- `database/11_ranking_update_log.sql` - 排行榜日志
-- `database/12_seo_settings.sql` - SEO设置
-- `database/13_site_settings.sql` - 网站设置
-- `database/14_traffic_data_sources.sql` - 流量数据源
-
-**说明**:
-- 自动处理SQL特殊字符转义
-- 支持PostgreSQL数组类型
-- 支持JSONB类型转换
-- 生成带注释的SQL文件
-
-## 🔄 完整工作流程
-
-### 从数据库导出并生成SQL文件
-
+**使用方法**:
 ```bash
-# 1. 导出数据到JSON
-npx tsx scripts/export-database.ts
-
-# 2. 生成SQL插入语句
-npx tsx scripts/generate-sql-inserts.ts
+bash scripts/build.sh
 ```
 
-### 初始化新数据库
+### start.sh
+**用途**: 启动生产服务器
 
+**使用方法**:
 ```bash
-# Linux/Mac
-cd database
-./init.sh postgresql://username:password@localhost:5432/database_name
-
-# Windows
-cd database
-init.bat postgresql://username:password@localhost:5432/database_name
+bash scripts/start.sh
 ```
 
-## ⚙️ 配置要求
+---
 
-### 环境变量
+## 📦 数据迁移
 
-确保以下环境变量已设置（在 `.env.local` 文件中）:
+推荐使用管理后台的数据迁移功能，无需手动执行脚本：
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+### 导出数据
+1. 访问 `/admin/data-migration`
+2. 选择导出模式：
+   - **全部导出**: 包含所有数据（含用户信息）
+   - **业务数据**: 不含用户信息（推荐迁移）
+   - **内容数据**: 核心内容（工具/资讯/名人堂等）
+   - **设置数据**: 系统配置
+   - **自定义**: 手动选择表
+3. 点击导出下载JSON文件
 
-### 依赖包
+### 导入数据
+1. 访问 `/admin/data-migration`
+2. 选择导入模式：
+   - **合并模式**: 保留现有数据，更新/新增
+   - **替换模式**: 清空现有数据后导入
+3. 上传JSON备份文件
 
-- `@supabase/supabase-js` - Supabase客户端
-- `tsx` - TypeScript执行器
-
-## 📝 维护说明
-
-### 添加新表
-
-1. 在 `src/storage/database/shared/schema.ts` 中定义新表
-2. 在 `export-database.ts` 的 `tables` 数组中添加表名
-3. 运行导出脚本
-
-### 修改表结构
-
-1. 更新 `schema.ts` 中的表定义
-2. 手动更新 `database/00_schema.sql`
-3. 重新导出数据
+---
 
 ## 🔧 故障排除
 
-### 问题: 导出失败，提示权限错误
-**解决**: 检查Supabase的RLS策略，确保匿名密钥有读取权限
+### 问题: 数据库连接失败
+**解决**: 检查 `.env.local` 中的 Supabase 配置是否正确
 
-### 问题: 生成的SQL无法执行
-**解决**: 检查数据中是否包含特殊字符，脚本已处理大部分情况
+### 问题: 导入失败
+**解决**: 
+1. 检查JSON文件格式是否正确
+2. 尝试使用合并模式而非替换模式
+3. 查看管理后台日志
 
-### 问题: JSON文件过大
-**解决**: 可以分表导出，修改 `export-database.ts` 中的 `tables` 数组
+---
 
 ## 📚 相关文档
 
 - [数据库结构说明](../database/README.md)
-- [数据库导出报告](../database/SUMMARY.md)
+- [内容管理文档](../docs/CONTENT_MANAGEMENT.md)
 - [Supabase文档](https://supabase.com/docs)
