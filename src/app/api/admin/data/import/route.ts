@@ -8,13 +8,20 @@ const IMPORT_ORDER = [
   'ai_tools',
   'tool_tags',
   'ai_tool_rankings',
+  'ranking_update_log',
+  'traffic_data_sources',
   'ai_news',
   'ai_hall_of_fame',
   'ai_timeline',
+  'comments',
+  'favorites',
   'friend_links',
   'site_settings',
   'smtp_settings',
   'seo_settings',
+  'users',
+  'email_verification_codes',
+  'publisher_applications',
 ]
 
 // 数据导入API - 管理员专用
@@ -42,8 +49,17 @@ export async function POST(request: NextRequest) {
     const client = getSupabaseClient()
     const results: Record<string, { imported: number; skipped: number; errors: string[] }> = {}
 
+    // 获取所有要导入的表名
+    const tablesToImport = Object.keys(data).filter(key => key !== '_meta')
+    
+    // 按顺序导入（先处理IMPORT_ORDER中的表，再处理其他表）
+    const orderedTables = [
+      ...IMPORT_ORDER.filter(t => tablesToImport.includes(t)),
+      ...tablesToImport.filter(t => !IMPORT_ORDER.includes(t))
+    ]
+
     // 按顺序导入每个表
-    for (const tableName of IMPORT_ORDER) {
+    for (const tableName of orderedTables) {
       const tableData = data[tableName]
       
       if (!tableData || !Array.isArray(tableData) || tableData.length === 0) {
