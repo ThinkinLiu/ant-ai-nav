@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Mail, Send } from 'lucide-react'
 import Image from 'next/image'
+import { toast } from 'sonner'
 
 // 英文错误信息翻译为中文
 const translateError = (error: string): string => {
@@ -47,19 +48,100 @@ const translateError = (error: string): string => {
 function RegisterForm() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [verificationCode, setVerificationCode] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isSendingCode, setIsSendingCode] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const [emailVerified, setEmailVerified] = useState(false)
   const { register } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/'
 
+  // 倒计时效果
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [countdown])
+
+  // 发送验证码
+  const handleSendCode = async () => {
+    if (!email) {
+      toast.error('请输入邮箱地址')
+      return
+    }
+
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      toast.error('邮箱格式不正确')
+      return
+    }
+
+    setIsSendingCode(true)
+    try {
+      const response = await fetch('/api/email/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, type: 'register' }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        toast.success('验证码已发送，请查收邮件')
+        setCountdown(60) // 60秒倒计时
+      } else {
+        toast.error(data.error || '发送失败')
+      }
+    } catch {
+      toast.error('发送失败，请稍后重试')
+    } finally {
+      setIsSendingCode(false)
+    }
+  }
+
+  // 验证验证码
+  const handleVerifyCode = async () => {
+    if (!verificationCode) {
+      toast.error('请输入验证码')
+      return false
+    }
+
+    try {
+      const response = await fetch('/api/email/send-verification', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: verificationCode, type: 'register' }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        setEmailVerified(true)
+        toast.success('邮箱验证成功')
+        return true
+      } else {
+        toast.error(data.error || '验证码无效')
+        return false
+      }
+    } catch {
+      toast.error('验证失败，请稍后重试')
+      return false
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    // 验证邮箱
+    if (!emailVerified) {
+      const verified = await handleVerifyCode()
+      if (!verified) return
+    }
 
     if (password !== confirmPassword) {
       setError('两次输入的密码不一致')
@@ -111,6 +193,8 @@ function RegisterForm() {
               {error}
             </div>
           )}
+          
+          {/* 用户名 */}
           <div className="space-y-2">
             <Label htmlFor="name">用户名</Label>
             <Input
@@ -121,19 +205,78 @@ function RegisterForm() {
               onChange={(e) => setName(e.target.value)}
             />
           </div>
+          
+          {/* 邮箱 */}
           <div className="space-y-2">
-            <Label htmlFor="email">邮箱</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="请输入邮箱"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <Label htmlFor="email">
+              邮箱 <span className="text-red-500">*</span>
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                id="email"
+                type="email"
+                placeholder="请输入邮箱"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setEmailVerified(false)
+                }}
+                required
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSendCode}
+                disabled={isSendingCode || countdown > 0}
+                className="shrink-0"
+              >
+                {isSendingCode ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : countdown > 0 ? (
+                  `${countdown}s`
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-1" />
+                    发送
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
+          
+          {/* 验证码 */}
           <div className="space-y-2">
-            <Label htmlFor="password">密码</Label>
+            <Label htmlFor="verificationCode">
+              验证码 <span className="text-red-500">*</span>
+            </Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  id="verificationCode"
+                  type="text"
+                  placeholder="请输入邮箱验证码"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  required
+                  maxLength={6}
+                  className="pl-10"
+                />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              </div>
+              {emailVerified && (
+                <div className="flex items-center text-green-600 text-sm">
+                  <span>已验证</span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* 密码 */}
+          <div className="space-y-2">
+            <Label htmlFor="password">
+              密码 <span className="text-red-500">*</span>
+            </Label>
             <div className="relative">
               <Input
                 id="password"
@@ -152,8 +295,12 @@ function RegisterForm() {
               </button>
             </div>
           </div>
+          
+          {/* 确认密码 */}
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">确认密码</Label>
+            <Label htmlFor="confirmPassword">
+              确认密码 <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="confirmPassword"
               type="password"

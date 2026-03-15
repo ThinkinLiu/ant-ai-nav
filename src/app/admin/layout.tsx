@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, Users, FileCheck, BarChart3, ArrowLeft, MessageCircle, UserCheck, Settings, Trophy, Database, Newspaper, Award, Calendar } from 'lucide-react'
+import { LayoutDashboard, Users, FileCheck, BarChart3, ArrowLeft, MessageCircle, UserCheck, Settings, Trophy, Database, Newspaper, Award, Calendar, Mail } from 'lucide-react'
 
 const navItems = [
   { href: '/admin', label: '数据概览', icon: BarChart3 },
@@ -19,6 +19,7 @@ const navItems = [
   { href: '/admin/traffic-sources', label: '排行榜配置', icon: Trophy },
   { href: '/admin/generate-tools', label: '批量导入', icon: Database },
   { href: '/admin/seo', label: 'SEO设置', icon: Settings },
+  { href: '/admin/smtp', label: '邮件服务', icon: Mail },
 ]
 
 export default function AdminLayout({
