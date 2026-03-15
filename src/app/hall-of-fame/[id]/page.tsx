@@ -1,15 +1,21 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getSupabaseClient } from '@/storage/database/supabase-client'
+import { getSupabaseClient, tryGetSupabaseClient } from '@/storage/database/supabase-client'
 import { PersonDetail } from './PersonDetail'
 
 interface Props {
   params: Promise<{ id: string }>
 }
 
-// 生成静态参数
+// 生成静态参数 - 在构建时如果环境变量不存在则返回空数组
 export async function generateStaticParams() {
-  const supabase = getSupabaseClient()
+  const supabase = tryGetSupabaseClient()
+  if (!supabase) {
+    // 构建时环境变量不存在，返回空数组
+    // 这样页面会在运行时动态生成
+    return []
+  }
+  
   const { data: people } = await supabase
     .from('ai_hall_of_fame')
     .select('id')

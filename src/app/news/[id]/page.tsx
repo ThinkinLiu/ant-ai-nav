@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getSupabaseClient } from '@/storage/database/supabase-client'
+import { getSupabaseClient, tryGetSupabaseClient } from '@/storage/database/supabase-client'
 import { categoryConfig } from '../config'
 import { NewsDetail } from './NewsDetail'
 
@@ -8,9 +8,13 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
-// 生成静态参数
+// 生成静态参数 - 在构建时如果环境变量不存在则返回空数组
 export async function generateStaticParams() {
-  const supabase = getSupabaseClient()
+  const supabase = tryGetSupabaseClient()
+  if (!supabase) {
+    return []
+  }
+  
   const { data: news } = await supabase
     .from('ai_news')
     .select('id')
