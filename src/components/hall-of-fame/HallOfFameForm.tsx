@@ -17,7 +17,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { X, Plus, Loader2 } from 'lucide-react'
+import { X, Plus, Loader2, Sparkles } from 'lucide-react'
 import { categoryConfig } from '@/app/hall-of-fame/config'
 
 export interface HallOfFameFormData {
@@ -67,6 +67,7 @@ const avatarColors: Record<string, string> = {
 export default function HallOfFameForm({ mode, initialData, id }: HallOfFameFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [generating, setGenerating] = useState(false)
   const [newTag, setNewTag] = useState('')
   const [newAchievement, setNewAchievement] = useState('')
 
@@ -99,6 +100,57 @@ export default function HallOfFameForm({ mode, initialData, id }: HallOfFameForm
     const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${color}&color=fff&size=256&bold=true`
     setFormData(prev => ({ ...prev, photo: avatarUrl }))
     toast.success('头像已生成')
+  }
+
+  // 一键自动生成所有内容
+  const handleAutoGenerate = async () => {
+    if (!formData.name.trim()) {
+      toast.warning('请先输入人物姓名')
+      return
+    }
+
+    setGenerating(true)
+    toast.info('正在搜索并生成信息，请稍候...')
+
+    try {
+      const response = await fetch('/api/admin/hall-of-fame/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          category: formData.category || undefined,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success && result.data) {
+        const data = result.data
+        setFormData(prev => ({
+          ...prev,
+          nameEn: data.nameEn || prev.nameEn,
+          photo: data.photo || prev.photo,
+          title: data.title || prev.title,
+          summary: data.summary || prev.summary,
+          bio: data.bio || prev.bio,
+          achievements: data.achievements?.length > 0 ? data.achievements : prev.achievements,
+          organization: data.organization || prev.organization,
+          organizationUrl: data.organizationUrl || prev.organizationUrl,
+          country: data.country || prev.country,
+          category: data.category || prev.category,
+          tags: data.tags?.length > 0 ? data.tags : prev.tags,
+          birthYear: data.birthYear || prev.birthYear,
+        }))
+        toast.success('信息已自动生成，请检查并确认')
+      } else {
+        toast.error(result.error || '生成失败，请手动填写')
+      }
+    } catch (error) {
+      console.error('自动生成失败:', error)
+      toast.error('生成失败，请稍后重试')
+    } finally {
+      setGenerating(false)
+    }
   }
 
   // 添加标签
@@ -192,6 +244,41 @@ export default function HallOfFameForm({ mode, initialData, id }: HallOfFameForm
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* 自动生成提示 */}
+      <Card className="border-purple-200 bg-purple-50/50">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Sparkles className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="font-medium text-purple-900">智能生成</p>
+                <p className="text-sm text-purple-700">输入人物姓名后，点击按钮自动搜索并生成详细信息</p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              onClick={handleAutoGenerate}
+              disabled={generating || !formData.name.trim()}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  生成中...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  一键生成
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* 基础信息 */}
       <Card>
         <CardHeader>
