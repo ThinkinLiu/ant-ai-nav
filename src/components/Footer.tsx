@@ -1,6 +1,24 @@
 import Link from 'next/link'
+import { getSupabaseClient } from '@/storage/database/supabase-client'
 
-export function Footer() {
+async function getFriendLinks() {
+  try {
+    const client = getSupabaseClient()
+    const { data } = await client
+      .from('friend_links')
+      .select('id, name, url')
+      .eq('status', 'approved')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true })
+    return data || []
+  } catch {
+    return []
+  }
+}
+
+export async function Footer() {
+  const friendLinks = await getFriendLinks()
+
   return (
     <footer className="border-t bg-muted/30">
       <div className="container mx-auto px-4 py-8">
@@ -49,30 +67,24 @@ export function Footer() {
         <div className="mt-8 pt-6 border-t">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <span className="font-medium text-foreground">友情链接：</span>
-            <a 
-              href="https://ai.itlao5.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
+            {friendLinks.map((link) => (
+              <a
+                key={link.id}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors"
+              >
+                {link.name}
+              </a>
+            ))}
+            <Link 
+              href="/link-submit"
+              className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
             >
-              AI导航5
-            </a>
-            <a 
-              href="https://itlao5.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
-            >
-              IT老五博客
-            </a>
-            <a 
-              href="https://github.com/ThinkinLiu/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:text-primary transition-colors"
-            >
-              Github
-            </a>
+              <span className="text-xs">+</span>
+              申请收录
+            </Link>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
             关注微信公众号「IT老五」获取更多AI工具资讯和教程

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, Users, FileCheck, BarChart3, ArrowLeft, MessageCircle, UserCheck, Settings, Trophy, Database, Newspaper, Award, Calendar, Mail } from 'lucide-react'
+import { LayoutDashboard, Users, FileCheck, BarChart3, ArrowLeft, MessageCircle, UserCheck, Settings, Trophy, Database, Newspaper, Award, Calendar, Mail, Link2 } from 'lucide-react'
 
 const navItems = [
   { href: '/admin', label: '数据概览', icon: BarChart3 },
@@ -13,6 +13,7 @@ const navItems = [
   { href: '/admin/news', label: 'AI资讯', icon: Newspaper },
   { href: '/admin/hall-of-fame', label: '名人堂管理', icon: Award },
   { href: '/admin/timeline', label: '大事纪管理', icon: Calendar },
+  { href: '/admin/friend-links', label: '友情链接', icon: Link2 },
   { href: '/admin/applications', label: '发布者审核', icon: UserCheck },
   { href: '/admin/users', label: '用户管理', icon: Users },
   { href: '/admin/comments', label: '评论管理', icon: MessageCircle },
