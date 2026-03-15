@@ -7,6 +7,9 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
+// 强制动态渲染，避免构建时访问数据库
+export const dynamic = 'force-dynamic'
+
 // 生成静态参数 - 在构建时如果环境变量不存在则返回空数组
 export async function generateStaticParams() {
   const supabase = tryGetSupabaseClient()

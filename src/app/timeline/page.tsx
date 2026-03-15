@@ -3,6 +3,9 @@ import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { TimelineList } from './TimelineList'
 import { categoryConfig } from './config'
 
+// 强制动态渲染，避免构建时访问数据库
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'AI大事纪 - 蚂蚁AI导航',
   description: '探索人工智能发展历程中的重要里程碑事件，从图灵测试到ChatGPT，见证AI的演进与突破。',

@@ -3,6 +3,9 @@ import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { NewsList } from './NewsList'
 import { categoryConfig, getCategoryConfig } from './config'
 
+// 强制动态渲染，避免构建时访问数据库
+export const dynamic = 'force-dynamic'
+
 // 格式化时间，精确到分钟
 function formatDateTime(dateStr: string): string {
   return new Date(dateStr).toLocaleString('zh-CN', {

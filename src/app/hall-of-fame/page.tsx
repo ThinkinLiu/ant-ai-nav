@@ -4,6 +4,9 @@ import { HallOfFameList } from './HallOfFameList'
 import { categoryConfig, categoryOrder } from './config'
 import { FeaturedAvatar } from './components/Avatar'
 
+// 强制动态渲染，避免构建时访问数据库
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'AI名人堂 - 蚂蚁AI导航',
   description: '致敬为人工智能发展做出杰出贡献的先驱者、研究者、企业家和工程师。探索AI领域最具影响力的人物故事。',

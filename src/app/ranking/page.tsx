@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { RankingList } from './RankingList'
 
+// 强制动态渲染，避免构建时访问数据库
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'AI工具排行榜 - 蚂蚁AI导航',
   description: '查看最热门的AI工具排行榜，了解各类AI工具的流量和受欢迎程度。每日更新。',
