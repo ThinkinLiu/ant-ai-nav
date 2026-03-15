@@ -7,11 +7,11 @@ function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
-// 创建邮件传输器
-async function createTransporter() {
+// 获取SMTP配置
+async function getSMTPConfig() {
   const client = getSupabaseClient()
   
-  const { data: settings } = await client
+  const { data: settings, error } = await client
     .from('smtp_settings')
     .select('*')
     .eq('is_active', true)
@@ -19,20 +19,20 @@ async function createTransporter() {
     .limit(1)
     .single()
 
-  if (!settings || !settings.host || !settings.user_name || !settings.password) {
-    throw new Error('SMTP配置不完整')
+  if (error || !settings) {
+    return null
+  }
+
+  if (!settings.host || !settings.user_name || !settings.password || !settings.from_email) {
+    return null
   }
 
   return {
-    transporter: nodemailer.createTransport({
-      host: settings.host,
-      port: settings.port,
-      secure: settings.secure,
-      auth: {
-        user: settings.user_name,
-        pass: settings.password,
-      },
-    }),
+    host: settings.host,
+    port: settings.port || 587,
+    secure: settings.secure ?? true,
+    user: settings.user_name,
+    pass: settings.password,
     fromEmail: settings.from_email,
     fromName: settings.from_name || '蚂蚁AI导航',
   }
@@ -60,24 +60,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 检查发送频率限制（60秒内只能发送一次）
     const client = getSupabaseClient()
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString()
-    
-    const { data: recentCodes } = await client
-      .from('email_verification_codes')
-      .select('created_at')
-      .eq('email', email)
-      .eq('type', type)
-      .gte('created_at', oneMinuteAgo)
-      .limit(1)
-
-    if (recentCodes && recentCodes.length > 0) {
-      return NextResponse.json(
-        { success: false, error: '验证码发送过于频繁，请60秒后再试' },
-        { status: 429 }
-      )
-    }
 
     // 检查邮箱是否已注册（注册时）
     if (type === 'register') {
@@ -95,44 +78,53 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 先检查SMTP配置是否完整
+    const smtpConfig = await getSMTPConfig()
+    if (!smtpConfig) {
+      console.error('SMTP配置不完整')
+      return NextResponse.json(
+        { success: false, error: '邮件服务未配置，请联系管理员在后台设置SMTP服务' },
+        { status: 500 }
+      )
+    }
+
+    // 检查发送频率限制（60秒内只能发送一次）
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString()
+    
+    const { data: recentCodes } = await client
+      .from('email_verification_codes')
+      .select('created_at')
+      .eq('email', email)
+      .eq('type', type)
+      .gte('created_at', oneMinuteAgo)
+      .limit(1)
+
+    if (recentCodes && recentCodes.length > 0) {
+      return NextResponse.json(
+        { success: false, error: '验证码发送过于频繁，请60秒后再试' },
+        { status: 429 }
+      )
+    }
+
     // 生成验证码
     const code = generateCode()
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10分钟后过期
 
-    // 保存验证码到数据库
-    const { error: insertError } = await client
-      .from('email_verification_codes')
-      .insert({
-        email,
-        code,
-        type,
-        expires_at: expiresAt.toISOString(),
-      })
-
-    if (insertError) {
-      console.error('保存验证码失败:', insertError)
-      return NextResponse.json(
-        { success: false, error: '验证码保存失败，请稍后重试' },
-        { status: 500 }
-      )
-    }
-
-    // 获取SMTP配置并发送邮件
-    let transporterInfo
-    try {
-      transporterInfo = await createTransporter()
-    } catch (error) {
-      console.error('SMTP配置错误:', error)
-      return NextResponse.json(
-        { success: false, error: '邮件服务配置不完整，请联系管理员' },
-        { status: 500 }
-      )
-    }
+    // 创建邮件传输器
+    const transporter = nodemailer.createTransport({
+      host: smtpConfig.host,
+      port: smtpConfig.port,
+      secure: smtpConfig.secure,
+      auth: {
+        user: smtpConfig.user,
+        pass: smtpConfig.pass,
+      },
+    })
 
     // 发送邮件
     try {
-      await transporterInfo.transporter.sendMail({
-        from: `"${transporterInfo.fromName}" <${transporterInfo.fromEmail}>`,
+      await transporter.sendMail({
+        from: `"${smtpConfig.fromName}" <${smtpConfig.fromEmail}>`,
         to: email,
         subject: type === 'register' ? '【蚂蚁AI导航】注册验证码' : '【蚂蚁AI导航】邮箱验证码',
         html: `
@@ -156,22 +148,47 @@ export async function POST(request: NextRequest) {
           </div>
         `,
       })
-    } catch (error) {
-      console.error('发送邮件失败:', error)
+    } catch (emailError: any) {
+      console.error('发送邮件失败:', emailError)
+      // 邮件发送失败，返回具体错误
+      let errorMessage = '邮件发送失败，请稍后重试'
+      if (emailError.code === 'ECONNECTION') {
+        errorMessage = '无法连接邮件服务器，请检查SMTP配置'
+      } else if (emailError.code === 'EAUTH') {
+        errorMessage = '邮箱认证失败，请检查邮箱账号和授权码'
+      } else if (emailError.code === 'EENVELOPE') {
+        errorMessage = '收件人地址无效'
+      }
       return NextResponse.json(
-        { success: false, error: '邮件发送失败，请检查邮箱地址是否正确' },
+        { success: false, error: errorMessage },
         { status: 500 }
       )
+    }
+
+    // 邮件发送成功后，保存验证码到数据库
+    const { error: insertError } = await client
+      .from('email_verification_codes')
+      .insert({
+        email,
+        code,
+        type,
+        expires_at: expiresAt.toISOString(),
+      })
+
+    if (insertError) {
+      console.error('保存验证码失败:', insertError)
+      // 验证码保存失败，但邮件已发送，仍然返回成功
+      // 因为验证码有效期内的旧验证码可能仍然有效
     }
 
     return NextResponse.json({
       success: true,
       message: '验证码已发送，请查收邮件',
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('发送验证码错误:', error)
     return NextResponse.json(
-      { success: false, error: '服务器错误' },
+      { success: false, error: error.message || '服务器错误，请稍后重试' },
       { status: 500 }
     )
   }
@@ -226,7 +243,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('验证验证码错误:', error)
     return NextResponse.json(
-      { success: false, error: '服务器错误' },
+      { success: false, error: '验证失败，请稍后重试' },
       { status: 500 }
     )
   }

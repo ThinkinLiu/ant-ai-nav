@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { AnalyticsScript } from '@/components/AnalyticsScript'
+import { Toaster } from '@/components/ui/sonner'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -110,6 +111,7 @@ export default function RootLayout({
           </main>
           <Footer />
         </AuthProvider>
+        <Toaster />
       </body>
     </html>
   )
