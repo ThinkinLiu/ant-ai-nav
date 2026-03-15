@@ -1,9 +1,46 @@
 #!/bin/bash
-set -Eeuo pipefail
+# 准备脚本 - 在构建前运行
 
-COZE_WORKSPACE_PATH="${COZE_WORKSPACE_PATH:-$(pwd)}"
+set -e
 
-cd "${COZE_WORKSPACE_PATH}"
+echo "🔍 检查环境配置..."
 
-echo "Installing dependencies..."
-pnpm install --prefer-frozen-lockfile --prefer-offline --loglevel debug --reporter=append-only
+# 检查是否存在 .env.local 文件
+if [ ! -f .env.local ]; then
+  echo "⚠️  未找到 .env.local 文件"
+  
+  # 检查是否在 Coze 环境
+  if [ -n "$COZE_WORKSPACE_PATH" ] || [ -n "$COZE_INTEGRATION_BASE_URL" ]; then
+    echo "📦 检测到 Coze 环境"
+    
+    # 检查 Coze 环境变量
+    if [ -z "$COZE_SUPABASE_URL" ] && [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+      echo "❌ 错误: 缺少 Supabase URL 配置"
+      echo "请在 Coze 平台设置环境变量:"
+      echo "  - COZE_SUPABASE_URL 或 NEXT_PUBLIC_SUPABASE_URL"
+      echo "  - COZE_SUPABASE_ANON_KEY 或 NEXT_PUBLIC_SUPABASE_ANON_KEY"
+      exit 1
+    fi
+    
+    echo "✅ Coze 环境变量检查通过"
+  else
+    echo "📦 检测到独立服务器环境"
+    
+    # 如果 .env.example 存在，创建 .env.local
+    if [ -f .env.example ]; then
+      echo "📝 从 .env.example 创建 .env.local"
+      cp .env.example .env.local
+      echo "⚠️  请编辑 .env.local 文件并填写实际的配置值"
+    fi
+  fi
+else
+  echo "✅ 找到 .env.local 文件"
+fi
+
+# 运行环境变量检查脚本
+echo ""
+echo "🔍 运行环境变量验证..."
+pnpm tsx scripts/check-env.ts
+
+echo ""
+echo "✅ 环境准备完成！"

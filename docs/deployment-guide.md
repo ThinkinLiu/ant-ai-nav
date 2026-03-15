@@ -1,182 +1,458 @@
-# 部署配置指南
+# 部署指南
 
-## 🚀 环境变量配置
+本文档详细介绍如何在 **Coze 环境** 和 **独立服务器环境** 部署蚂蚁AI导航项目。
 
-部署时需要配置以下必需的环境变量：
+## 📋 目录
 
-### 必需环境变量
+- [环境要求](#环境要求)
+- [快速开始](#快速开始)
+- [Coze 环境部署](#coze-环境部署)
+- [独立服务器部署](#独立服务器部署)
+- [环境变量配置](#环境变量配置)
+- [常见问题](#常见问题)
+
+---
+
+## 环境要求
+
+### 必需环境
+- **Node.js**: 18.x 或更高版本
+- **pnpm**: 8.x 或更高版本
+- **Git**: 用于克隆代码库
+
+### 必需账号
+- **Supabase 账号**: 用于数据库服务
+  - 注册地址: https://supabase.com
+  - 免费额度: 500MB 数据库，1GB 文件存储
+
+### 可选服务
+- **Coze 平台账号**: 用于 AI 生成功能
+  - 注册地址: https://www.coze.cn
+- **S3 兼容存储**: 用于文件上传功能
+  - 推荐服务: Cloudflare R2, AWS S3, 阿里云 OSS
+
+---
+
+## 快速开始
+
+### 1. 克隆项目
 
 ```bash
-# Supabase 数据库配置
-NEXT_PUBLIC_SUPABASE_URL=https://br-giddy-crow-97a8b86c.supabase2.aidap-global.cn-beijing.volces.com
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjMzNTM3MTM5NDMsInJvbGUiOiJhbm9uIn0.n0YDj3Gjz3xKmcrcc8j_IxnO2VgSkkI4_6tU5q52sO0
-
-# Coze API 配置（AI 功能）
-COZE_WORKLOAD_IDENTITY_API_KEY=UFpMZ3VGRGdYYnU3M2RWR3pQajNzdE9yek1iaTJFaXM6cHBiVVhFVTZNaG43N2RacnVpS3FROVl6YzZ0ZEZmdWxTWEV0dUd2bG94ekRobGtyaDJZTG9OODNCRkd0Y1J4dQ==
-COZE_WORKLOAD_IDENTITY_CLIENT_ID=PZLguFDgXbu73dVGzPj3stOrzMbi2Eis
-COZE_WORKLOAD_IDENTITY_CLIENT_SECRET=ppbUXEU6Mhn77dZruiKqQ9Yzc6tdFfulSXEtuGvloxzDhlkrh2YLoN83BFGtcRxu
-COZE_INTEGRATION_BASE_URL=https://integration.coze.cn
-COZE_INTEGRATION_MODEL_BASE_URL=https://integration.coze.cn/api/v3
-COZE_WORKLOAD_IDENTITY_TOKEN_ENDPOINT=https://api.coze.cn/.well-known/token
-COZE_WORKLOAD_ACCESS_TOKEN_ENDPOINT=https://api.coze.cn/.well-known/token
+git clone <your-repo-url>
+cd ant-ai-navigation
 ```
 
-## 📦 各平台部署配置
+### 2. 安装依赖
 
-### 1. Vercel 部署
-
-**方法一：通过 Vercel Dashboard**
-1. 进入项目设置 → Environment Variables
-2. 添加上述所有环境变量
-3. 选择环境：Production, Preview, Development
-4. 重新部署项目
-
-**方法二：通过 Vercel CLI**
 ```bash
-# 安装 Vercel CLI
-npm i -g vercel
-
-# 登录
-vercel login
-
-# 添加环境变量
-vercel env add NEXT_PUBLIC_SUPABASE_URL
-# 粘贴值：https://br-giddy-crow-97a8b86c.supabase2.aidap-global.cn-beijing.volces.com
-
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
-# 粘贴值：eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
-# 重复以上步骤添加其他环境变量
-
-# 部署
-vercel --prod
+pnpm install
 ```
 
-### 2. Docker 部署
+### 3. 配置环境变量
 
-**创建 .env 文件**
+根据你的部署环境，选择对应的配置模板：
+
+#### Coze 环境
 ```bash
-# 在项目根目录创建 .env 文件
-cp .env.example .env
-
-# 编辑 .env 文件，填入实际值
-vim .env
+# 参考 .env.example.coze 配置 Coze 平台环境变量
+cat .env.example.coze
 ```
 
-**docker-compose.yml 已配置**
+#### 独立服务器
+```bash
+# 复制模板并编辑
+cp .env.example.standalone .env.local
+# 编辑 .env.local 填写实际配置
+```
+
+### 4. 检查环境配置
+
+```bash
+# 运行环境检查脚本
+pnpm tsx scripts/check-env.ts
+
+# 显示详细配置
+pnpm tsx scripts/check-env.ts --config
+
+# JSON 格式输出（适合 CI/CD）
+pnpm tsx scripts/check-env.ts --json
+```
+
+### 5. 启动开发服务器
+
+```bash
+pnpm dev
+```
+
+访问 http://localhost:5000 查看效果。
+
+---
+
+## Coze 环境部署
+
+### 第一步：准备 Supabase 数据库
+
+1. 登录 [Supabase 控制台](https://supabase.com/dashboard)
+2. 创建新项目或使用现有项目
+3. 获取项目配置信息：
+   - **Project URL**: Settings → API → Project URL
+   - **Anon Key**: Settings → API → Project API keys → anon public
+
+### 第二步：配置 Coze 环境变量
+
+在 Coze 平台设置以下环境变量：
+
+#### 必需变量
+
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `COZE_SUPABASE_URL` | Supabase 项目 URL | `https://xxx.supabase.co` |
+| `COZE_SUPABASE_ANON_KEY` | Supabase 匿名密钥 | `eyJhbGc...` |
+
+#### 可选变量（AI 功能）
+
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `COZE_WORKLOAD_IDENTITY_API_KEY` | Coze API 密钥 | 从 Coze 平台获取 |
+| `COZE_WORKLOAD_IDENTITY_CLIENT_ID` | Coze 客户端 ID | 从 Coze 平台获取 |
+| `COZE_WORKLOAD_IDENTITY_CLIENT_SECRET` | Coze 客户端密钥 | 从 Coze 平台获取 |
+
+### 第三步：部署到 Coze
+
+1. 在 Coze 平台创建新的应用
+2. 连接你的代码仓库
+3. 配置构建命令（已内置）：
+   ```bash
+   bash ./scripts/build.sh
+   ```
+4. 配置启动命令（已内置）：
+   ```bash
+   bash ./scripts/start.sh
+   ```
+5. 部署应用
+
+### 第四步：验证部署
+
+部署完成后，访问应用 URL，检查：
+- ✅ 页面正常加载
+- ✅ 数据库连接正常
+- ✅ AI 功能可用（如已配置）
+
+---
+
+## 独立服务器部署
+
+### 方案一：使用 Docker（推荐）
+
+#### 1. 构建镜像
+
+```bash
+# 构建生产镜像
+docker build -t ant-ai-navigation:latest .
+```
+
+#### 2. 运行容器
+
+```bash
+docker run -d \
+  --name ant-ai-nav \
+  -p 3000:3000 \
+  -e NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co \
+  -e NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc... \
+  -e COZE_WORKLOAD_IDENTITY_API_KEY=your-key \
+  ant-ai-navigation:latest
+```
+
+#### 3. 使用 Docker Compose（推荐）
+
+创建 `docker-compose.yml`:
+
 ```yaml
-# 项目已包含 docker-compose.yml
-# 直接运行即可
+version: '3.8'
+
+services:
+  web:
+    image: ant-ai-navigation:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
+      - COZE_WORKLOAD_IDENTITY_API_KEY=your-key
+      - NODE_ENV=production
+    restart: unless-stopped
+```
+
+运行：
+```bash
 docker-compose up -d
 ```
 
-### 3. Railway 部署
+### 方案二：使用 PM2
+
+#### 1. 安装 PM2
+
+```bash
+npm install -g pm2
+```
+
+#### 2. 构建项目
+
+```bash
+# 配置环境变量
+cp .env.example.standalone .env.local
+# 编辑 .env.local
+
+# 安装依赖
+pnpm install --frozen-lockfile
+
+# 构建
+pnpm run build
+```
+
+#### 3. 启动服务
+
+```bash
+pm2 start pnpm --name "ant-ai-nav" -- start
+```
+
+#### 4. 设置开机自启
+
+```bash
+pm2 startup
+pm2 save
+```
+
+### 方案三：使用 Vercel / Netlify
+
+#### Vercel 部署
 
 1. 连接 GitHub 仓库
-2. 在项目设置中添加环境变量：
-   - 点击 Variables 标签
-   - 点击 "Add Variable"
-   - 输入变量名和值
-3. Railway 会自动部署
+2. 自动检测 Next.js 框架
+3. 配置环境变量：
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. 部署
 
-### 4. 传统服务器部署
+#### Netlify 部署
 
-**方式一：创建 .env.local 文件**
+1. 连接 GitHub 仓库
+2. 构建命令: `pnpm run build`
+3. 发布目录: `.next`
+4. 配置环境变量
+5. 部署
+
+---
+
+## 环境变量配置
+
+### 环境变量命名支持
+
+项目支持多种环境变量命名方式，优先级从高到低：
+
+#### Supabase URL
+
+1. `NEXT_PUBLIC_SUPABASE_URL` （标准 Next.js 命名）
+2. `COZE_SUPABASE_URL` （Coze 环境命名）
+3. `SUPABASE_URL` （通用命名）
+
+#### Supabase Anon Key
+
+1. `NEXT_PUBLIC_SUPABASE_ANON_KEY` （标准命名）
+2. `COZE_SUPABASE_ANON_KEY` （Coze 环境命名）
+3. `SUPABASE_ANON_KEY` （通用命名）
+4. `SUPABASE_SERVICE_ROLE_KEY` （服务端命名）
+
+### 环境检测
+
+项目会自动检测运行环境：
+
+- **Coze 环境**: 检测到 `COZE_WORKSPACE_PATH` 或 `COZE_INTEGRATION_BASE_URL`
+- **独立服务器**: 生产环境且非 Coze 环境
+- **开发环境**: 本地开发（`NODE_ENV=development`）
+
+### 配置验证
+
+#### 命令行验证
+
 ```bash
-# 在项目根目录创建 .env.local
-vim .env.local
+# 检查环境配置
+pnpm tsx scripts/check-env.ts
 
-# 粘贴所有环境变量
+# 显示详细配置（隐藏敏感信息）
+pnpm tsx scripts/check-env.ts --config
 
-# 构建并启动
-pnpm install
-pnpm build
-pnpm start
+# JSON 格式输出（适合 CI/CD）
+pnpm tsx scripts/check-env.ts --json
+
+# 显示帮助信息
+pnpm tsx scripts/check-env.ts --help
 ```
 
-**方式二：系统环境变量**
-```bash
-# 在 ~/.bashrc 或 ~/.zshrc 中添加
-export NEXT_PUBLIC_SUPABASE_URL="https://br-giddy-crow-97a8b86c.supabase2.aidap-global.cn-beijing.volces.com"
-export NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+#### 代码中验证
 
-# 使配置生效
-source ~/.bashrc  # 或 source ~/.zshrc
+```typescript
+import { validateEnv, detectEnvironment } from '@/lib/env-config';
 
-# 启动应用
-pnpm start
-```
-
-**方式三：使用 PM2**
-```bash
-# 创建 ecosystem.config.js
-module.exports = {
-  apps: [{
-    name: 'ant-ai-nav',
-    script: 'pnpm',
-    args: 'start',
-    env: {
-      NEXT_PUBLIC_SUPABASE_URL: 'https://br-giddy-crow-97a8b86c.supabase2.aidap-global.cn-beijing.volces.com',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      // 其他环境变量...
-    }
-  }]
+// 验证环境变量
+const result = validateEnv();
+if (!result.isValid) {
+  console.error('缺少环境变量:', result.missing);
 }
 
-# 启动
-pm2 start ecosystem.config.js
+// 检测当前环境
+const env = detectEnvironment();
+console.log('当前环境:', env); // 'coze' | 'standalone' | 'development'
 ```
 
-## ✅ 验证配置
+---
 
-部署完成后，访问以下接口验证配置是否成功：
+## 常见问题
 
+### Q1: 部署时提示"缺少数据库配置"
+
+**原因**: 环境变量未正确设置
+
+**解决方案**:
+
+1. 检查环境变量是否设置：
+   ```bash
+   pnpm tsx scripts/check-env.ts
+   ```
+
+2. **Coze 环境**: 在 Coze 平台设置环境变量
+   - `COZE_SUPABASE_URL`
+   - `COZE_SUPABASE_ANON_KEY`
+
+3. **独立服务器**: 创建 `.env.local` 文件
+   ```bash
+   cp .env.example.standalone .env.local
+   # 编辑 .env.local 填写实际配置
+   ```
+
+### Q2: Coze 环境和独立服务器的区别
+
+| 特性 | Coze 环境 | 独立服务器 |
+|------|----------|----------|
+| 环境变量命名 | `COZE_*` 或 `NEXT_PUBLIC_*` | `NEXT_PUBLIC_*` |
+| 配置方式 | Coze 平台设置 | `.env.local` 文件 |
+| 构建脚本 | 自动处理 | 需手动配置 |
+| 热更新 | 支持 | 需配置 PM2 等 |
+| 日志查看 | Coze 控制台 | 服务器日志文件 |
+
+### Q3: 如何切换环境？
+
+项目会自动检测环境，无需手动切换。只需确保：
+- **Coze 环境**: 设置 `COZE_*` 环境变量
+- **独立服务器**: 创建 `.env.local` 文件
+
+### Q4: AI 功能不可用
+
+**可能原因**:
+1. 未配置 Coze API 密钥
+2. API 密钥无效或过期
+
+**解决方案**:
+1. 检查环境变量：
+   ```bash
+   pnpm tsx scripts/check-env.ts --config
+   ```
+2. 确保配置了 `COZE_WORKLOAD_IDENTITY_API_KEY`
+3. 验证 API 密钥是否有效
+
+### Q5: 文件上传功能不可用
+
+**可能原因**: 未配置 S3 存储服务
+
+**解决方案**:
+配置以下环境变量：
 ```bash
-# 检查首页是否正常加载
-curl https://your-domain.com/
-
-# 检查 API 是否正常
-curl https://your-domain.com/api/categories
+S3_ACCESS_KEY_ID=your-access-key
+S3_SECRET_ACCESS_KEY=your-secret-key
+S3_BUCKET_NAME=your-bucket-name
+S3_REGION=auto
+S3_ENDPOINT=https://your-s3-endpoint.com
 ```
 
-## 🔒 安全注意事项
+### Q6: 如何更新部署？
 
-1. **不要提交 .env.local 到 Git**
-   - 该文件已在 .gitignore 中
-   - 只提交 .env.example 模板
+#### Coze 环境
+1. 推送代码到仓库
+2. Coze 平台自动构建和部署（如已开启自动部署）
+3. 或手动触发重新部署
 
-2. **生产环境密钥安全**
-   - 定期更换 API 密钥
-   - 使用不同的 Supabase 项目（开发/生产分离）
-   - 限制密钥的访问权限
+#### 独立服务器
+```bash
+# 拉取最新代码
+git pull
 
-3. **Supabase 安全规则**
-   - 配置 Row Level Security (RLS)
-   - 设置适当的表访问权限
-   - 定期检查访问日志
+# 重新构建
+pnpm run build
 
-## 🐛 常见问题
+# 重启服务
+pm2 restart ant-ai-nav
+```
 
-### Q: 部署后提示 "Supabase is not configured"
-**A:** 检查环境变量是否正确设置：
-- 变量名拼写是否正确（注意 `NEXT_PUBLIC_` 前缀）
-- 变量值是否完整（没有多余的空格或换行）
-- 是否在正确的环境设置了变量（Production/Preview/Development）
+### Q7: 如何查看日志？
 
-### Q: 本地正常，部署后数据库连接失败
-**A:** 可能原因：
-- 部署平台的环境变量未设置
-- Supabase 防火墙限制（添加服务器 IP 到白名单）
-- 网络问题（检查 Supabase 服务状态）
+#### Coze 环境
+在 Coze 控制台查看应用日志
 
-### Q: 如何查看当前的环境变量？
-**A:** 
-- Vercel: Dashboard → Settings → Environment Variables
-- Docker: `docker exec <container> printenv`
-- PM2: `pm2 show <app-name>`
+#### 独立服务器
+```bash
+# PM2 日志
+pm2 logs ant-ai-nav
 
-## 📞 获取帮助
+# Docker 日志
+docker logs ant-ai-nav
 
-- Supabase 文档: https://supabase.com/docs
-- Next.js 环境变量: https://nextjs.org/docs/basic-features/environment-variables
-- 项目 Issues: [GitHub Issues]
+# 应用日志文件
+tail -f /app/work/logs/bypass/app.log
+```
+
+---
+
+## 技术支持
+
+- **文档**: [README.md](../README.md)
+- **问题反馈**: [GitHub Issues](your-repo-url/issues)
+- **Coze 文档**: https://www.coze.cn/docs
+- **Supabase 文档**: https://supabase.com/docs
+
+---
+
+## 附录
+
+### 环境变量完整列表
+
+| 变量名 | 必需 | 说明 | 默认值 |
+|--------|------|------|--------|
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase 项目 URL | - |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase 匿名密钥 | - |
+| `COZE_SUPABASE_URL` | ⭕ | Coze 环境的 Supabase URL | - |
+| `COZE_SUPABASE_ANON_KEY` | ⭕ | Coze 环境的 Supabase 密钥 | - |
+| `COZE_WORKLOAD_IDENTITY_API_KEY` | ⭕ | Coze API 密钥 | - |
+| `COZE_WORKLOAD_IDENTITY_CLIENT_ID` | ⭕ | Coze 客户端 ID | - |
+| `COZE_WORKLOAD_IDENTITY_CLIENT_SECRET` | ⭕ | Coze 客户端密钥 | - |
+| `S3_ACCESS_KEY_ID` | ⭕ | S3 访问密钥 ID | - |
+| `S3_SECRET_ACCESS_KEY` | ⭕ | S3 访问密钥 | - |
+| `S3_BUCKET_NAME` | ⭕ | S3 存储桶名称 | - |
+| `S3_REGION` | ⭕ | S3 区域 | `auto` |
+| `S3_ENDPOINT` | ⭕ | S3 端点 URL | - |
+| `NODE_ENV` | ⭕ | 运行环境 | `development` |
+
+### 部署检查清单
+
+部署前请确认：
+
+- [ ] 已配置 Supabase 数据库
+- [ ] 已设置必需的环境变量
+- [ ] 已运行环境检查脚本
+- [ ] 已测试本地开发环境
+- [ ] 已准备生产环境配置
+- [ ] 已配置域名和 HTTPS（如需要）
+- [ ] 已设置监控和日志（如需要）
+
+---
+
+**最后更新**: 2025-01-17

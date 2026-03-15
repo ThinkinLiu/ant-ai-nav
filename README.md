@@ -199,15 +199,53 @@ pnpm dev
 
 ## ⚙️ 环境变量配置
 
-| 变量名 | 必需 | 说明 |
-|--------|------|------|
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase 项目 URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase 匿名密钥 |
-| `S3_ACCESS_KEY_ID` | ❌ | S3 访问密钥 ID (文件上传) |
-| `S3_SECRET_ACCESS_KEY` | ❌ | S3 访问密钥 (文件上传) |
-| `S3_BUCKET_NAME` | ❌ | S3 存储桶名称 |
-| `S3_REGION` | ❌ | S3 区域 |
-| `S3_ENDPOINT` | ❌ | S3 端点 URL |
+项目支持两种部署环境：**Coze 环境** 和 **独立服务器环境**。
+
+### 必需环境变量
+
+| 变量名 | Coze 环境 | 独立服务器 | 说明 |
+|--------|----------|-----------|------|
+| Supabase URL | `COZE_SUPABASE_URL` 或 `NEXT_PUBLIC_SUPABASE_URL` | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 项目 URL |
+| Supabase Key | `COZE_SUPABASE_ANON_KEY` 或 `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 匿名密钥 |
+
+### 可选环境变量
+
+| 变量名 | 说明 |
+|--------|------|
+| `COZE_WORKLOAD_IDENTITY_API_KEY` | Coze API 密钥（AI 功能） |
+| `S3_ACCESS_KEY_ID` | S3 访问密钥 ID（文件上传） |
+| `S3_SECRET_ACCESS_KEY` | S3 访问密钥（文件上传） |
+| `S3_BUCKET_NAME` | S3 存储桶名称 |
+| `S3_REGION` | S3 区域 |
+| `S3_ENDPOINT` | S3 端点 URL |
+
+### 环境变量命名优先级
+
+项目支持多种环境变量命名方式，按以下优先级读取：
+
+**Supabase URL:**
+1. `NEXT_PUBLIC_SUPABASE_URL` ⭐ 推荐
+2. `COZE_SUPABASE_URL` ⭐ Coze 环境
+3. `SUPABASE_URL`
+
+**Supabase Anon Key:**
+1. `NEXT_PUBLIC_SUPABASE_ANON_KEY` ⭐ 推荐
+2. `COZE_SUPABASE_ANON_KEY` ⭐ Coze 环境
+3. `SUPABASE_ANON_KEY`
+4. `SUPABASE_SERVICE_ROLE_KEY`
+
+### 检查环境配置
+
+```bash
+# 验证环境变量配置
+pnpm tsx scripts/check-env.ts
+
+# 显示详细配置信息
+pnpm tsx scripts/check-env.ts --config
+
+# JSON 格式输出（适合 CI/CD）
+pnpm tsx scripts/check-env.ts --json
+```
 
 ---
 
@@ -244,27 +282,83 @@ pnpm dev
 
 ## 🚢 部署指南
 
-### Vercel 部署
+### 选择部署环境
+
+本项目支持两种部署方式：
+
+- **Coze 环境** - 适合快速部署，无需管理服务器
+- **独立服务器** - 适合自托管，完全控制环境
+
+详细部署指南：
+- 📘 [完整部署指南](./docs/deployment-guide.md)
+- 📗 [Coze 环境部署](./docs/coze-deployment.md)
+
+### Coze 环境部署
+
+#### 1. 配置环境变量
+
+在 Coze 平台设置以下环境变量：
+
+```bash
+# 必需配置
+COZE_SUPABASE_URL=https://your-project.supabase.co
+COZE_SUPABASE_ANON_KEY=your-anon-key
+
+# 或使用标准命名
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# AI 功能（可选）
+COZE_WORKLOAD_IDENTITY_API_KEY=your-coze-api-key
+```
+
+#### 2. 部署应用
+
+1. 在 Coze 平台创建应用
+2. 连接 Git 仓库
+3. 点击部署
+
+### 独立服务器部署
+
+#### Vercel 部署
 
 1. Fork 本仓库
 2. 在 Vercel 导入项目
 3. 配置环境变量
 4. 部署完成
 
-### Docker 部署
+#### Docker 部署
 
 ```bash
 # 构建镜像
 docker build -t ant-ai-nav .
 
 # 运行容器
-docker run -p 3000:3000 --env-file .env.local ant-ai-nav
+docker run -p 3000:3000 \
+  -e NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co \
+  -e NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key \
+  ant-ai-nav
 ```
 
-### Docker Compose 部署
+#### Docker Compose 部署
 
 ```bash
+# 配置环境变量
+cp .env.example.standalone .env.local
+
+# 启动服务
 docker-compose up -d
+```
+
+#### PM2 部署
+
+```bash
+# 构建项目
+pnpm install
+pnpm run build
+
+# 启动服务
+pm2 start pnpm --name "ant-ai-nav" -- start
 ```
 
 ---
