@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 
 // 英文错误信息翻译为中文
 const translateError = (error: string): string => {
@@ -74,9 +75,13 @@ function LoginForm() {
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1 text-center">
         <div className="flex justify-center mb-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600">
-            <span className="text-2xl font-bold text-white">蚂</span>
-          </div>
+          <Image
+            src="/logo.png"
+            alt="蚂蚁AI导航"
+            width={48}
+            height={48}
+            className="h-12 w-12 rounded-xl"
+          />
         </div>
         <CardTitle className="text-2xl font-bold">欢迎回来</CardTitle>
         <CardDescription>
@@ -144,9 +149,13 @@ function LoginFormFallback() {
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1 text-center">
         <div className="flex justify-center mb-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600">
-            <span className="text-2xl font-bold text-white">蚂</span>
-          </div>
+          <Image
+            src="/logo.png"
+            alt="蚂蚁AI导航"
+            width={48}
+            height={48}
+            className="h-12 w-12 rounded-xl"
+          />
         </div>
         <CardTitle className="text-2xl font-bold">欢迎回来</CardTitle>
         <CardDescription>
