@@ -34,8 +34,6 @@
 - **12_seo_settings.sql** - SEO设置数据（1条记录）
 - **13_site_settings.sql** - 网站功能设置数据（1条记录）
 - **14_traffic_data_sources.sql** - 流量数据源配置（4条记录）
-- **15_friend_links.sql** - 友情链接数据（3条记录）
-- **16_smtp_settings.sql** - SMTP邮件设置（1条记录）
 
 ## 🚀 使用方法
 
@@ -74,8 +72,6 @@ psql -U username -d database_name -f 11_ranking_update_log.sql
 psql -U username -d database_name -f 12_seo_settings.sql
 psql -U username -d database_name -f 13_site_settings.sql
 psql -U username -d database_name -f 14_traffic_data_sources.sql
-psql -U username -d database_name -f 15_friend_links.sql
-psql -U username -d database_name -f 16_smtp_settings.sql
 ```
 
 ### 一键初始化
@@ -99,16 +95,13 @@ Get-Content database\*.sql | psql -U username -d database_name
 | tool_tags | 5 | 工具标签关联 |
 | ai_hall_of_fame | 124 | AI名人堂人物 |
 | ai_timeline | 109 | AI大事纪事件 |
-| ai_news | 133 | AI资讯 |
 | comments | 51 | 用户评论 |
 | publisher_applications | 1 | 发布者申请 |
 | ai_tool_rankings | 160 | 工具排行榜 |
 | ranking_update_log | 2 | 排行榜更新日志 |
 | seo_settings | 1 | SEO设置 |
 | site_settings | 1 | 网站设置 |
-| smtp_settings | 1 | SMTP设置 |
 | traffic_data_sources | 4 | 流量数据源 |
-| friend_links | 3 | 友情链接 |
 
 ## 📋 表结构概览
 
@@ -118,29 +111,18 @@ Get-Content database\*.sql | psql -U username -d database_name
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | id | SERIAL | 主键 |
-| name | VARCHAR(100) | 工具名称 |
-| slug | VARCHAR(100) | URL别名 |
+| name | VARCHAR(200) | 工具名称 |
+| slug | VARCHAR(200) | URL别名 |
 | description | TEXT | 简短描述 |
 | long_description | TEXT | 详细描述 |
-| website_url | TEXT | 官网地址 |
+| website | VARCHAR(500) | 官网地址 |
 | category_id | INTEGER | 分类ID |
-| pricing_type | VARCHAR(50) | 定价类型 |
+| publisher_id | VARCHAR(36) | 发布者ID |
+| status | VARCHAR(20) | 状态（pending/approved/rejected）|
 | is_featured | BOOLEAN | 是否推荐 |
 | is_pinned | BOOLEAN | 是否置顶 |
-| status | VARCHAR(20) | 状态 |
-
-#### ai_news - AI资讯表
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | SERIAL | 主键 |
-| title | VARCHAR(200) | 标题 |
-| slug | VARCHAR(200) | URL别名 |
-| summary | TEXT | 摘要 |
-| content | TEXT | 正文 |
-| category | VARCHAR(50) | 分类 |
-| tags | JSONB | 标签 |
-| status | VARCHAR(20) | 状态 |
-| author_id | VARCHAR(36) | 作者ID |
+| is_free | BOOLEAN | 是否免费 |
+| pricing_info | TEXT | 价格信息 |
 
 #### ai_hall_of_fame - AI名人堂表
 | 字段 | 类型 | 说明 |
@@ -166,7 +148,28 @@ Get-Content database\*.sql | psql -U username -d database_name
 | title | VARCHAR(200) | 事件标题 |
 | description | TEXT | 事件描述 |
 | category | VARCHAR(50) | 分类 |
-| importance | VARCHAR(20) | 重要性 |
+| importance | VARCHAR(20) | 重要性（landmark/important/normal）|
+
+### 用户交互表
+
+#### users - 用户表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | VARCHAR(36) | 主键（UUID）|
+| email | VARCHAR(255) | 邮箱 |
+| name | VARCHAR(128) | 用户名 |
+| role | VARCHAR(20) | 角色（admin/publisher/user）|
+| is_active | BOOLEAN | 是否激活 |
+
+#### comments - 评论表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | SERIAL | 主键 |
+| tool_id | INTEGER | 工具ID |
+| user_id | VARCHAR(36) | 用户ID |
+| content | TEXT | 评论内容 |
+| rating | INTEGER | 评分（1-5）|
+| is_hidden | BOOLEAN | 是否隐藏 |
 
 ### 系统设置表
 
@@ -174,47 +177,92 @@ Get-Content database\*.sql | psql -U username -d database_name
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | id | SERIAL | 主键 |
-| site_name | VARCHAR(100) | 网站名称 |
-| site_description | TEXT | 网站描述 |
-| contact_email | VARCHAR(100) | 联系邮箱 |
-
-#### smtp_settings - SMTP设置
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | SERIAL | 主键 |
-| host | VARCHAR(100) | SMTP服务器 |
-| port | INTEGER | 端口 |
-| username | VARCHAR(100) | 用户名 |
-| password | VARCHAR(100) | 密码（加密） |
+| ranking_enabled | BOOLEAN | 是否启用排行榜 |
+| comments_enabled | BOOLEAN | 是否启用评论 |
+| favorites_enabled | BOOLEAN | 是否启用收藏 |
 
 #### seo_settings - SEO设置
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | id | SERIAL | 主键 |
-| meta_title | VARCHAR(200) | 标题 |
-| meta_description | TEXT | 描述 |
-| meta_keywords | TEXT | 关键词 |
+| site_name | VARCHAR(100) | 网站名称 |
+| site_description | TEXT | 网站描述 |
+| site_keywords | TEXT | 关键词 |
+| google_analytics_id | VARCHAR(50) | Google分析ID |
+| baidu_analytics_id | VARCHAR(50) | 百度分析ID |
 
 ## ⚠️ 注意事项
 
 1. **执行顺序**：必须先执行 `00_schema.sql` 创建表结构，然后按顺序导入数据
-2. **外键约束**：数据导入顺序考虑了外键约束关系，请勿随意调整顺序
-3. **时间戳**：所有 `created_at` 和 `updated_at` 字段使用时区时间戳
-4. **唯一约束**：`slug` 字段有唯一约束，导入前请确保无重复
-5. **数据更新**：如需更新数据，建议使用管理后台的数据迁移功能
+2. **数据依赖**：某些表有外键约束，需要先导入被引用的表数据
+3. **序列重置**：每个数据文件末尾包含序列重置语句，确保后续插入正常
+4. **时区设置**：所有时间戳使用 TIMESTAMP WITH TIME ZONE 类型
+5. **UUID生成**：用户ID等使用UUID，需要 uuid-ossp 扩展
 
-## 🔄 数据迁移
+## 🔄 数据更新
 
-推荐使用管理后台的数据迁移功能：
+### 更新排行榜数据
+排行榜数据需要定期更新，更新流程：
+1. 从流量数据源获取最新数据
+2. 计算排名变化
+3. 插入新的排行榜记录
+4. 记录更新日志
 
-1. 访问 `/admin/data-migration`
-2. 选择导出模式
-3. 下载JSON备份文件
-4. 在目标环境导入
+### 添加新工具
+新工具提交流程：
+1. 用户提交工具申请
+2. 管理员审核
+3. 审核通过后创建工具记录
+4. 关联标签和分类
 
-详见 [内容管理文档](../docs/CONTENT_MANAGEMENT.md#五数据迁移管理)
+## 📝 维护说明
 
-## 📝 版本历史
+- **备份策略**：定期备份数据库，建议每天一次全量备份
+- **数据清理**：定期清理过期的会话数据、日志数据
+- **性能优化**：定期执行 VACUUM 和 ANALYZE 命令
+- **索引维护**：监控索引使用情况，必要时添加或删除索引
 
-- **v2.0** (2026-03-15) - 新增数据迁移功能，更新表结构
-- **v1.0** (2025-01-21) - 初始版本，包含完整数据库结构和数据
+## 🔧 常用SQL查询
+
+### 查询工具总数
+```sql
+SELECT COUNT(*) FROM ai_tools WHERE status = 'approved';
+```
+
+### 查询分类统计
+```sql
+SELECT c.name, COUNT(t.id) as tool_count
+FROM categories c
+LEFT JOIN ai_tools t ON c.id = t.category_id
+WHERE t.status = 'approved'
+GROUP BY c.id, c.name
+ORDER BY tool_count DESC;
+```
+
+### 查询最新工具
+```sql
+SELECT name, description, created_at
+FROM ai_tools
+WHERE status = 'approved'
+ORDER BY created_at DESC
+LIMIT 10;
+```
+
+### 查询热门工具
+```sql
+SELECT name, view_count, favorite_count
+FROM ai_tools
+WHERE status = 'approved'
+ORDER BY view_count DESC
+LIMIT 10;
+```
+
+## 📞 技术支持
+
+如有问题，请联系：
+- Email: admin@antai.com
+- GitHub: [项目地址]
+
+---
+
+**最后更新时间**: 2025-01-15
