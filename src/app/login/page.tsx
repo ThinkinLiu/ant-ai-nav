@@ -10,6 +10,36 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/AuthContext'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 
+// 英文错误信息翻译为中文
+const translateError = (error: string): string => {
+  const errorMap: Record<string, string> = {
+    'Invalid login credentials': '邮箱或密码错误',
+    'Email not confirmed': '邮箱未验证，请先查收验证邮件',
+    'Too many requests': '登录尝试过于频繁，请稍后再试',
+    'User not found': '用户不存在',
+    'Invalid email': '邮箱格式不正确',
+    'Invalid password': '密码格式不正确',
+    'Email and password are required': '请输入邮箱和密码',
+    'Failed to fetch': '网络连接失败，请检查网络',
+    'Network request failed': '网络请求失败，请稍后重试',
+  }
+  
+  // 精确匹配
+  if (errorMap[error]) {
+    return errorMap[error]
+  }
+  
+  // 模糊匹配
+  for (const [key, value] of Object.entries(errorMap)) {
+    if (error.toLowerCase().includes(key.toLowerCase())) {
+      return value
+    }
+  }
+  
+  // 默认返回原始错误或通用提示
+  return error || '登录失败，请稍后重试'
+}
+
 function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -31,7 +61,7 @@ function LoginForm() {
       if (result.success) {
         router.push(redirect)
       } else {
-        setError(result.error || '登录失败')
+        setError(translateError(result.error || ''))
       }
     } catch {
       setError('登录失败，请稍后重试')
@@ -92,7 +122,7 @@ function LoginForm() {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4">
+        <CardFooter className="flex flex-col gap-4 pt-6">
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             登录
