@@ -23,7 +23,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, Edit, Trash2 } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Plus, Search, Edit, Trash2, Sparkles, Loader2, Calendar, AlertCircle } from 'lucide-react'
 import { useConfirm } from '@/hooks/use-confirm'
 
 const categoryConfig = {
@@ -40,6 +48,21 @@ const importanceConfig = {
   normal: { label: '普通事件', color: 'bg-gray-500' },
 }
 
+interface TimelineEvent {
+  year: number
+  month: number
+  day: number
+  title: string
+  titleEn: string
+  description: string
+  category: string
+  importance: string
+  icon: string
+  image: string
+  relatedUrl: string
+  tags: string[]
+}
+
 export default function TimelineManagementPage() {
   const router = useRouter()
   const { confirm, ConfirmDialog } = useConfirm()
@@ -53,9 +76,24 @@ export default function TimelineManagementPage() {
     search: '',
   })
 
+  // 自动生成相关状态
+  const [autoGenerateOpen, setAutoGenerateOpen] = useState(false)
+  const [endDate, setEndDate] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [searchResults, setSearchResults] = useState<TimelineEvent[]>([])
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
+  const [importing, setImporting] = useState(false)
+  const [dateRange, setDateRange] = useState<{ start: string; end: string; startFormatted: string; endFormatted: string } | null>(null)
+
   useEffect(() => {
     fetchEvents()
   }, [page, filters])
+
+  // 设置默认截止日期为今天
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0]
+    setEndDate(today)
+  }, [])
 
   const fetchEvents = async () => {
     setLoading(true)
@@ -111,6 +149,105 @@ export default function TimelineManagementPage() {
     }
   }
 
+  // 自动生成AI大事件
+  const handleAutoGenerate = async () => {
+    if (!endDate) {
+      toast.error('请输入截止日期')
+      return
+    }
+
+    setGenerating(true)
+    setSelectedItems(new Set())
+    setSearchResults([])
+
+    try {
+      const response = await fetch('/api/admin/timeline/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endDate }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setDateRange(result.dateRange)
+        setSearchResults(result.data)
+        if (result.data.length === 0) {
+          toast.info(result.message || '未找到新的AI大事件')
+        } else {
+          toast.success(result.message)
+        }
+      } else {
+        toast.error(result.error || '生成失败')
+      }
+    } catch (error) {
+      console.error('生成失败:', error)
+      toast.error('生成失败，请稍后重试')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  // 切换选中状态
+  const toggleSelect = (index: number) => {
+    const newSelected = new Set(selectedItems)
+    if (newSelected.has(index)) {
+      newSelected.delete(index)
+    } else {
+      newSelected.add(index)
+    }
+    setSelectedItems(newSelected)
+  }
+
+  // 全选/取消全选
+  const toggleSelectAll = () => {
+    if (selectedItems.size === searchResults.length) {
+      setSelectedItems(new Set())
+    } else {
+      setSelectedItems(new Set(searchResults.map((_, i) => i)))
+    }
+  }
+
+  // 导入选中的事件
+  const handleImport = async () => {
+    if (selectedItems.size === 0) {
+      toast.error('请选择要导入的事件')
+      return
+    }
+
+    setImporting(true)
+
+    try {
+      const itemsToImport = Array.from(selectedItems).map((index) => searchResults[index])
+
+      const response = await fetch('/api/admin/timeline/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: itemsToImport }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success(`成功导入 ${result.data.importedCount} 条事件`)
+        if (result.data.errors && result.data.errors.length > 0) {
+          toast.warning(`部分导入存在问题:\n${result.data.errors.slice(0, 3).join('\n')}`)
+        }
+        setAutoGenerateOpen(false)
+        setSearchResults([])
+        setSelectedItems(new Set())
+        fetchEvents()
+      } else {
+        toast.error(result.error || '导入失败')
+      }
+    } catch (error) {
+      console.error('导入失败:', error)
+      toast.error('导入失败，请稍后重试')
+    } finally {
+      setImporting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {ConfirmDialog}
@@ -118,12 +255,22 @@ export default function TimelineManagementPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>AI大事纪管理</CardTitle>
-            <Button asChild>
-              <Link href="/admin/timeline/new">
-                <Plus className="mr-2 h-4 w-4" />
-                新增事件
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600"
+                onClick={() => setAutoGenerateOpen(true)}
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                自动生成
+              </Button>
+              <Button asChild>
+                <Link href="/admin/timeline/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  新增事件
+                </Link>
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -277,6 +424,159 @@ export default function TimelineManagementPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* 自动生成对话框 */}
+      <Dialog open={autoGenerateOpen} onOpenChange={setAutoGenerateOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-500" />
+              自动生成AI大事纪
+            </DialogTitle>
+            <DialogDescription>
+              输入截止日期，系统将自动搜索已有数据截止日期到本次截止日期之间的AI大事件
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* 日期输入区域 */}
+          <div className="flex gap-3 py-4 border-b items-center">
+            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">截止日期：</span>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <Button onClick={handleAutoGenerate} disabled={generating}>
+              {generating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="mr-2 h-4 w-4" />
+              )}
+              搜索
+            </Button>
+          </div>
+
+          {/* 提示信息 */}
+          <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">筛选标准</p>
+              <ul className="mt-1 text-xs space-y-1 text-amber-700">
+                <li>• 事件必须真实发生，有可靠公开报道</li>
+                <li>• 对AI行业产生重大影响或推动作用</li>
+                <li>• 时间准确，日期在指定范围内</li>
+                <li>• 仅保留里程碑或重要事件</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* 搜索结果 */}
+          <div className="flex-1 overflow-auto">
+            {searchResults.length > 0 ? (
+              <div className="space-y-3">
+                {/* 时间范围和全选操作栏 */}
+                <div className="flex items-center justify-between py-2 px-1 bg-muted/50 rounded">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={selectedItems.size === searchResults.length}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      已选择 {selectedItems.size} / {searchResults.length} 条
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {dateRange && (
+                      <span className="text-xs text-muted-foreground">
+                        搜索范围：{dateRange.startFormatted} ~ {dateRange.endFormatted}
+                      </span>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={handleImport}
+                      disabled={selectedItems.size === 0 || importing}
+                    >
+                      {importing ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-2 h-4 w-4" />
+                      )}
+                      导入选中
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 结果列表 */}
+                {searchResults.map((event, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedItems.has(index) ? 'bg-purple-50 border-purple-300' : 'hover:bg-muted/50'
+                    }`}
+                    onClick={() => toggleSelect(index)}
+                  >
+                    <div className="flex gap-3">
+                      <Checkbox
+                        checked={selectedItems.has(index)}
+                        onCheckedChange={() => toggleSelect(index)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{event.icon}</span>
+                          <span className="font-medium text-sm">{event.year}-{String(event.month).padStart(2, '0')}-{String(event.day).padStart(2, '0')}</span>
+                          <h4 className="font-medium text-sm line-clamp-1">{event.title}</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {event.description}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2 text-xs">
+                          <Badge variant="outline" className="text-xs">
+                            {categoryConfig[event.category as keyof typeof categoryConfig]?.icon}{' '}
+                            {categoryConfig[event.category as keyof typeof categoryConfig]?.label}
+                          </Badge>
+                          <Badge className={importanceConfig[event.importance as keyof typeof importanceConfig]?.color}>
+                            {importanceConfig[event.importance as keyof typeof importanceConfig]?.label}
+                          </Badge>
+                          {event.tags && event.tags.length > 0 && (
+                            <div className="flex gap-1">
+                              {event.tags.slice(0, 3).map((tag, i) => (
+                                <span key={i} className="bg-muted px-1.5 py-0.5 rounded text-xs">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : generating ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <p className="mt-3 text-sm text-muted-foreground">正在搜索并生成AI大事件...</p>
+                <p className="mt-1 text-xs text-muted-foreground/70">这可能需要几秒钟，请耐心等待</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Calendar className="h-12 w-12 text-muted-foreground/50" />
+                <p className="mt-3 text-sm text-muted-foreground">
+                  输入截止日期后点击搜索按钮
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground/70">
+                  系统将自动搜索从已有数据最新日期到截止日期之间的AI大事件
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
