@@ -19,6 +19,38 @@ fi
 echo ""
 
 # ============================================
+# 加载环境变量文件（按优先级）
+# ============================================
+
+# 1. 首先尝试加载 .env.local（开发环境）
+if [ -f .env.local ]; then
+  echo "📄 加载 .env.local 文件..."
+  set -a
+  source .env.local 2>/dev/null || true
+  set +a
+  echo "✅ .env.local 已加载"
+  echo ""
+fi
+
+# 2. 加载 .env.build 作为后备（构建时使用）
+if [ -f .env.build ]; then
+  echo "📄 加载 .env.build 文件..."
+  set -a
+  source .env.build 2>/dev/null || true
+  set +a
+  echo "✅ .env.build 已加载"
+  echo ""
+fi
+
+# 3. 输出当前环境变量状态（调试用）
+echo "📋 环境变量状态:"
+echo "  - NEXT_PUBLIC_SUPABASE_URL: $([ -n "$NEXT_PUBLIC_SUPABASE_URL" ] && echo "已设置" || echo "未设置")"
+echo "  - COZE_SUPABASE_URL: $([ -n "$COZE_SUPABASE_URL" ] && echo "已设置" || echo "未设置")"
+echo "  - NEXT_PUBLIC_SUPABASE_ANON_KEY: $([ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && echo "已设置" || echo "未设置")"
+echo "  - COZE_SUPABASE_ANON_KEY: $([ -n "$COZE_SUPABASE_ANON_KEY" ] && echo "已设置" || echo "未设置")"
+echo ""
+
+# ============================================
 # 关键步骤：环境变量映射和导出
 # 必须在构建前完成，因为 NEXT_PUBLIC_* 变量在构建时内联
 # ============================================
