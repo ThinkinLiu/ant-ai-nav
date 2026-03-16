@@ -27,21 +27,28 @@ import { formatRelativeTime } from '@/lib/utils'
 import { 
   Check, X, Eye, ExternalLink, Search, EyeOff, ChevronLeft, 
   ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw, ArrowUpDown,
-  Pin, PinOff
+  Pin, PinOff, Edit, Loader2
 } from 'lucide-react'
 
 interface Tool {
   id: number
   name: string
+  slug: string
   description: string
+  long_description: string | null
   website: string
+  logo: string | null
   status: string
   view_count: number
   created_at: string
   reject_reason: string | null
   is_pinned: boolean
+  is_featured: boolean
+  is_free: boolean
+  pricing_info: string | null
   publisher: { id: string; name: string; email: string } | null
   category: { id: number; name: string } | null
+  tags: { id: number; name: string }[]
   favorite_count: number
   comment_count: number
 }
@@ -130,6 +137,26 @@ function AdminToolsContent() {
   const [reviewDialog, setReviewDialog] = useState<{ open: boolean; tool: Tool | null }>({
     open: false,
     tool: null,
+  })
+
+  // 编辑弹窗状态
+  const [editDialog, setEditDialog] = useState<{ open: boolean; tool: Tool | null }>({
+    open: false,
+    tool: null,
+  })
+  const [editLoading, setEditLoading] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    long_description: '',
+    website: '',
+    logo: '',
+    categoryId: '',
+    is_free: true,
+    is_featured: false,
+    is_pinned: false,
+    pricing_info: '',
+    tags: '',
   })
 
   const fetchTools = useCallback(async () => {
@@ -308,6 +335,61 @@ function AdminToolsContent() {
     }
   }
 
+  // 打开编辑弹窗
+  const handleOpenEdit = (tool: Tool) => {
+    setEditForm({
+      name: tool.name || '',
+      description: tool.description || '',
+      long_description: tool.long_description || '',
+      website: tool.website || '',
+      logo: tool.logo || '',
+      categoryId: tool.category?.id?.toString() || '',
+      is_free: tool.is_free ?? true,
+      is_featured: tool.is_featured ?? false,
+      is_pinned: tool.is_pinned ?? false,
+      pricing_info: tool.pricing_info || '',
+      tags: tool.tags?.map(t => t.name).join(', ') || '',
+    })
+    setEditDialog({ open: true, tool })
+  }
+
+  // 提交编辑
+  const handleEditSubmit = async () => {
+    if (!editDialog.tool) return
+    setEditLoading(true)
+    try {
+      const response = await fetch(`/api/tools/${editDialog.tool.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editForm.name,
+          description: editForm.description,
+          long_description: editForm.long_description || null,
+          website: editForm.website,
+          logo: editForm.logo || null,
+          categoryId: editForm.categoryId ? parseInt(editForm.categoryId) : null,
+          is_free: editForm.is_free,
+          is_featured: editForm.is_featured,
+          isPinned: editForm.is_pinned,
+          pricing_info: editForm.pricing_info || null,
+          tags: editForm.tags.split(',').map(t => t.trim()).filter(Boolean),
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        setEditDialog({ open: false, tool: null })
+        fetchTools()
+      }
+    } catch (error) {
+      console.error('编辑失败:', error)
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
@@ -483,6 +565,14 @@ function AdminToolsContent() {
                           <Eye className="h-4 w-4" />
                         </a>
                       </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        title="编辑"
+                        onClick={() => handleOpenEdit(tool)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
                       
                       {tool.status === 'pending' && (
                         <>
@@ -649,6 +739,142 @@ function AdminToolsContent() {
               onClick={() => handleReReview(reviewDialog.tool!, 'approved')}
             >
               通过
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 编辑弹窗 */}
+      <Dialog open={editDialog.open} onOpenChange={(open) => setEditDialog({ open, tool: null })}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>编辑工具</DialogTitle>
+            <DialogDescription>
+              编辑工具信息，修改后点击保存。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">工具名称 *</label>
+                <Input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  placeholder="请输入工具名称"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">官网地址 *</label>
+                <Input
+                  value={editForm.website}
+                  onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                  placeholder="https://example.com"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">简介 *</label>
+              <Textarea
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                placeholder="请输入工具简介"
+                rows={2}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">详细介绍</label>
+              <Textarea
+                value={editForm.long_description}
+                onChange={(e) => setEditForm({ ...editForm, long_description: e.target.value })}
+                placeholder="请输入详细介绍（可选）"
+                rows={4}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">分类</label>
+                <Select 
+                  value={editForm.categoryId} 
+                  onValueChange={(value) => setEditForm({ ...editForm, categoryId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择分类" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Logo URL</label>
+                <Input
+                  value={editForm.logo}
+                  onChange={(e) => setEditForm({ ...editForm, logo: e.target.value })}
+                  placeholder="https://icons.duckduckgo.com/ip3/domain.com.ico"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">标签</label>
+              <Input
+                value={editForm.tags}
+                onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
+                placeholder="多个标签用逗号分隔，如：AI写作, 文案, GPT"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">价格信息</label>
+              <Input
+                value={editForm.pricing_info}
+                onChange={(e) => setEditForm({ ...editForm, pricing_info: e.target.value })}
+                placeholder="如：免费 / ¥99/月 / 按量计费"
+              />
+            </div>
+            
+            <div className="flex flex-wrap gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editForm.is_free}
+                  onChange={(e) => setEditForm({ ...editForm, is_free: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">免费工具</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editForm.is_featured}
+                  onChange={(e) => setEditForm({ ...editForm, is_featured: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">精选推荐</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editForm.is_pinned}
+                  onChange={(e) => setEditForm({ ...editForm, is_pinned: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">置顶显示</span>
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialog({ open: false, tool: null })}>
+              取消
+            </Button>
+            <Button onClick={handleEditSubmit} disabled={editLoading}>
+              {editLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              保存
             </Button>
           </DialogFooter>
         </DialogContent>
