@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Sparkles, Wand2 } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface Category {
   id: number
@@ -23,6 +24,8 @@ export default function NewToolPage() {
   const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -35,6 +38,9 @@ export default function NewToolPage() {
     tags: '',
   })
   const [error, setError] = useState('')
+
+  // 判断是否为管理员
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     fetchCategories()
@@ -49,6 +55,56 @@ export default function NewToolPage() {
       }
     } catch (error) {
       console.error('获取分类失败:', error)
+    }
+  }
+
+  // AI 自动生成工具信息
+  const handleGenerateInfo = async () => {
+    setGenerateError('')
+    
+    if (!formData.name || !formData.website) {
+      setGenerateError('请先填写工具名称和官网地址')
+      return
+    }
+
+    setGenerating(true)
+    try {
+      const response = await fetch('/api/admin/generate-tool-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          website: formData.website,
+        }),
+      })
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        const result = data.data
+        // 自动填充表单
+        setFormData(prev => ({
+          ...prev,
+          name: result.name || prev.name,
+          description: result.description || prev.description,
+          longDescription: result.long_description || prev.longDescription,
+          tags: result.tags?.join(', ') || prev.tags,
+          isFree: result.is_free ?? prev.isFree,
+          pricingInfo: result.pricing_info || prev.pricingInfo,
+          // 根据返回的分类名称匹配分类ID
+          categoryId: result.category 
+            ? categories.find(c => c.name === result.category)?.id?.toString() || prev.categoryId
+            : prev.categoryId,
+        }))
+      } else {
+        setGenerateError(data.error || '生成失败，请重试')
+      }
+    } catch (error) {
+      setGenerateError('生成失败，请稍后重试')
+    } finally {
+      setGenerating(false)
     }
   }
 
@@ -95,6 +151,71 @@ export default function NewToolPage() {
           返回
         </Link>
       </Button>
+
+      {/* 管理员专属：AI 自动生成区域 */}
+      {isAdmin && (
+        <Card className="mb-6 border-dashed border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="h-5 w-5 text-primary" />
+              AI 自动生成（管理员专属）
+            </CardTitle>
+            <CardDescription>
+              输入工具名称和链接，AI 将自动生成描述、分类、标签等信息
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="generate-name">工具名称</Label>
+                  <Input
+                    id="generate-name"
+                    placeholder="例如：ChatGPT"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="generate-website">官网地址</Label>
+                  <Input
+                    id="generate-website"
+                    type="url"
+                    placeholder="https://..."
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  />
+                </div>
+              </div>
+              
+              {generateError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{generateError}</AlertDescription>
+                </Alert>
+              )}
+              
+              <Button 
+                type="button"
+                onClick={handleGenerateInfo}
+                disabled={generating || !formData.name || !formData.website}
+                className="w-full"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    AI 正在生成...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    自动生成信息
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
