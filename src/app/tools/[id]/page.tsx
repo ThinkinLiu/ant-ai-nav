@@ -17,6 +17,7 @@ import {
   Eye, Clock, ArrowLeft, Send, ThumbsUp, Award
 } from 'lucide-react'
 import RelatedTools from '@/components/tools/RelatedTools'
+import { ToolLogoNext } from '@/components/tools/ToolLogo'
 
 interface Tool {
   id: number
@@ -237,16 +238,13 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div 
-                    className="h-16 w-16 rounded-xl flex items-center justify-center text-white font-bold text-2xl shrink-0"
-                    style={{ backgroundColor: tool.category?.color || '#6366F1' }}
-                  >
-                    {tool.logo ? (
-                      <img src={tool.logo} alt={tool.name} className="h-full w-full rounded-xl object-cover" />
-                    ) : (
-                      tool.name[0]
-                    )}
-                  </div>
+                  <ToolLogoNext 
+                    logo={tool.logo} 
+                    name={tool.name} 
+                    size={64}
+                    className="h-16 w-16 rounded-xl shrink-0"
+                    fallbackBgColor={tool.category?.color || '#6366F1'}
+                  />
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h1 className="text-2xl font-bold">{tool.name}</h1>
