@@ -17,6 +17,7 @@ import {
   ArrowUp, ArrowDown, Minus, Trophy, TrendingUp, 
   Eye, ExternalLink, ChevronLeft, ChevronRight, Loader2
 } from 'lucide-react'
+import { ToolLogoNext } from '@/components/tools/ToolLogo'
 
 interface Tool {
   id: string
@@ -266,13 +267,11 @@ export function RankingList() {
                       {/* Tool Info */}
                       <td className="py-4 px-4">
                         <Link href={`/tools/${item.tool.slug}`} className="flex items-center gap-3 hover:text-primary transition-colors">
-                          <img 
-                            src={item.tool.logo || '/placeholder-tool.png'} 
-                            alt={item.tool.name}
-                            className="w-10 h-10 rounded-lg object-cover bg-muted"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder-tool.png'
-                            }}
+                          <ToolLogoNext 
+                            logo={item.tool.logo}
+                            name={item.tool.name}
+                            size={40}
+                            className="w-10 h-10 rounded-lg shrink-0"
                           />
                           <div className="min-w-0">
                             <div className="font-medium truncate flex items-center gap-2">

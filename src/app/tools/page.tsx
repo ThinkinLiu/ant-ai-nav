@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatRelativeTime } from '@/lib/utils'
+import { ToolLogoNext } from '@/components/tools/ToolLogo'
 
 const iconMap: Record<string, any> = {
   PenTool,
@@ -313,16 +314,13 @@ function ToolsPageContent() {
                       )}
                       
                       <div className="flex items-start gap-3">
-                        <div 
-                          className="h-12 w-12 rounded-lg flex items-center justify-center text-white font-bold text-lg shrink-0"
-                          style={{ backgroundColor: tool.category?.color || '#6366F1' }}
-                        >
-                          {tool.logo ? (
-                            <img src={tool.logo} alt={tool.name} className="h-full w-full rounded-lg object-cover" />
-                          ) : (
-                            tool.name[0]
-                          )}
-                        </div>
+                        <ToolLogoNext 
+                          logo={tool.logo}
+                          name={tool.name}
+                          size={48}
+                          className="h-12 w-12 rounded-lg shrink-0"
+                          fallbackBgColor={tool.category?.color || '#6366F1'}
+                        />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold truncate group-hover:text-primary transition-colors">

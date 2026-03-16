@@ -9,6 +9,7 @@ import {
   ArrowRight, Shuffle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ToolLogoNext } from '@/components/tools/ToolLogo'
 
 interface RelatedTool {
   id: number
@@ -128,16 +129,13 @@ export default function RelatedTools({ toolId }: RelatedToolsProps) {
 
                 {/* Logo 和名称 */}
                 <div className="flex items-center gap-3 mb-2">
-                  <div 
-                    className="h-10 w-10 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0"
-                    style={{ backgroundColor: tool.category?.color || '#6366F1' }}
-                  >
-                    {tool.logo ? (
-                      <img src={tool.logo} alt={tool.name} className="h-full w-full rounded-lg object-cover" />
-                    ) : (
-                      tool.name[0]
-                    )}
-                  </div>
+                  <ToolLogoNext 
+                    logo={tool.logo}
+                    name={tool.name}
+                    size={40}
+                    className="h-10 w-10 rounded-lg shrink-0"
+                    fallbackBgColor={tool.category?.color || '#6366F1'}
+                  />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
                       {tool.name}
