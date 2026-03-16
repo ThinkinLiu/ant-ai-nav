@@ -22,28 +22,235 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, Edit, Trash2, Star } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Star, Eye } from 'lucide-react'
 import { useConfirm } from '@/hooks/use-confirm'
 
 const categoryConfig = {
-  pioneer: { label: '先驱者', icon: '🌟' },
-  research: { label: '研究者', icon: '🔬' },
-  researcher: { label: '学者', icon: '🎓' },
-  entrepreneur: { label: '企业家', icon: '💼' },
-  engineering: { label: '工程师', icon: '⚙️' },
-  engineer: { label: '开发者', icon: '💻' },
-  vision: { label: '视觉专家', icon: '👁️' },
-  nlp: { label: 'NLP专家', icon: '💬' },
-  robotics: { label: '机器人', icon: '🤖' },
-  education: { label: '教育家', icon: '📚' },
-  team: { label: '团队', icon: '👥' },
+  pioneer: { label: '先驱者', icon: '🌟', color: 'from-yellow-500/20 to-orange-500/20' },
+  research: { label: '研究者', icon: '🔬', color: 'from-blue-500/20 to-cyan-500/20' },
+  researcher: { label: '学者', icon: '🎓', color: 'from-blue-400/20 to-sky-500/20' },
+  entrepreneur: { label: '企业家', icon: '💼', color: 'from-green-500/20 to-emerald-500/20' },
+  engineering: { label: '工程师', icon: '⚙️', color: 'from-purple-500/20 to-pink-500/20' },
+  engineer: { label: '开发者', icon: '💻', color: 'from-purple-400/20 to-fuchsia-500/20' },
+  vision: { label: '视觉专家', icon: '👁️', color: 'from-rose-500/20 to-red-500/20' },
+  nlp: { label: 'NLP专家', icon: '💬', color: 'from-teal-500/20 to-cyan-500/20' },
+  robotics: { label: '机器人', icon: '🤖', color: 'from-amber-500/20 to-yellow-500/20' },
+  education: { label: '教育家', icon: '📚', color: 'from-lime-500/20 to-green-500/20' },
+  team: { label: '团队', icon: '👥', color: 'from-indigo-500/20 to-violet-500/20' },
+}
+
+interface Person {
+  id: number
+  name: string
+  name_en: string | null
+  photo: string | null
+  title: string | null
+  summary: string
+  bio: string | null
+  achievements: string[] | null
+  organization: string | null
+  organization_url: string | null
+  country: string | null
+  category: string | null
+  tags: string[] | null
+  is_featured: boolean
+  view_count: number
+  birth_year: number | null
+}
+
+// 预览弹窗组件
+function PreviewDialog({ 
+  person, 
+  open, 
+  onOpenChange 
+}: { 
+  person: Person | null
+  open: boolean
+  onOpenChange: (open: boolean) => void 
+}) {
+  if (!person) return null
+
+  const categoryInfo = person.category ? categoryConfig[person.category as keyof typeof categoryConfig] : null
+
+  // 获取名字首字母
+  const getInitials = (name: string) => {
+    const parts = name.split(/[\s-]+/)
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase()
+    }
+    return name.slice(0, 2).toUpperCase()
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Eye className="h-5 w-5" />
+            预览 - {person.name}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* 头部信息 */}
+          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-xl">
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* 头像 */}
+              <div className="w-32 h-32 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center flex-shrink-0">
+                {person.photo ? (
+                  <img
+                    src={person.photo}
+                    alt={person.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-4xl font-bold text-primary">
+                    {getInitials(person.name_en || person.name)}
+                  </span>
+                )}
+              </div>
+
+              {/* 基本信息 */}
+              <div className="flex-1">
+                <div className="flex items-start gap-3 flex-wrap">
+                  <div>
+                    <h2 className="text-2xl font-bold">{person.name}</h2>
+                    {person.name_en && (
+                      <p className="text-lg text-muted-foreground mt-1">{person.name_en}</p>
+                    )}
+                  </div>
+                  {categoryInfo && (
+                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium flex items-center gap-1.5">
+                      <span>{categoryInfo.icon}</span>
+                      <span>{categoryInfo.label}</span>
+                    </span>
+                  )}
+                  {person.is_featured && (
+                    <span className="px-3 py-1 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded-full text-sm font-medium">
+                      ⭐ 精选
+                    </span>
+                  )}
+                </div>
+
+                {person.title && (
+                  <p className="text-lg text-primary/80 font-medium mt-3">
+                    {person.title}
+                  </p>
+                )}
+
+                <p className="text-muted-foreground mt-3 leading-relaxed">
+                  {person.summary}
+                </p>
+
+                {/* 元信息 */}
+                <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
+                  {person.country && (
+                    <div className="flex items-center gap-1.5">
+                      <span>🌍</span>
+                      <span>{person.country}</span>
+                    </div>
+                  )}
+                  {person.birth_year && (
+                    <div className="flex items-center gap-1.5">
+                      <span>📅</span>
+                      <span>{person.birth_year}年出生</span>
+                    </div>
+                  )}
+                  {person.organization && (
+                    <div className="flex items-center gap-1.5">
+                      <span>🏢</span>
+                      <span>{person.organization}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <span>👁️</span>
+                    <span>{person.view_count || 0} 次浏览</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 人物传记 */}
+          {person.bio && (
+            <div className="bg-card border rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span>📖</span>
+                <span>人物传记</span>
+              </h3>
+              <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                {person.bio}
+              </div>
+            </div>
+          )}
+
+          {/* 主要成就 */}
+          {person.achievements && person.achievements.length > 0 && (
+            <div className="bg-card border rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span>🏆</span>
+                <span>主要成就</span>
+              </h3>
+              <ul className="space-y-3">
+                {person.achievements.map((achievement, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <span className="text-primary text-lg mt-0.5">✓</span>
+                    <span className="text-muted-foreground">{achievement}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* 研究领域标签 */}
+          {person.tags && person.tags.length > 0 && (
+            <div className="bg-card border rounded-xl p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span>🏷️</span>
+                <span>研究领域</span>
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {person.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-muted rounded-full text-sm text-muted-foreground"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 底部操作 */}
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              关闭
+            </Button>
+            <Button asChild>
+              <Link href={`/hall-of-fame/${person.id}`} target="_blank">
+                <Eye className="h-4 w-4 mr-2" />
+                查看完整页面
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 export default function HallOfFameManagementPage() {
   const router = useRouter()
   const { confirm, ConfirmDialog } = useConfirm()
-  const [people, setPeople] = useState<any[]>([])
+  const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -51,6 +258,8 @@ export default function HallOfFameManagementPage() {
     category: '',
     search: '',
   })
+  const [previewPerson, setPreviewPerson] = useState<Person | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   useEffect(() => {
     fetchPeople()
@@ -131,9 +340,20 @@ export default function HallOfFameManagementPage() {
     }
   }
 
+  const handlePreview = (person: Person) => {
+    setPreviewPerson(person)
+    setPreviewOpen(true)
+  }
+
   return (
     <div className="space-y-6">
       {ConfirmDialog}
+      <PreviewDialog 
+        person={previewPerson} 
+        open={previewOpen} 
+        onOpenChange={setPreviewOpen} 
+      />
+      
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -234,6 +454,14 @@ export default function HallOfFameManagementPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handlePreview(person)}
+                          title="预览"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button size="sm" variant="outline" asChild>
                           <Link href={`/admin/hall-of-fame/${person.id}/edit`}>
                             <Edit className="h-4 w-4" />
