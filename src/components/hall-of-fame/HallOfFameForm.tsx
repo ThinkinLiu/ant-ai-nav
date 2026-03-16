@@ -17,8 +17,9 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { X, Plus, Loader2, Sparkles } from 'lucide-react'
+import { X, Plus, Loader2, Sparkles, Link2, Upload } from 'lucide-react'
 import { categoryConfig } from '@/app/hall-of-fame/config'
+import ImageUploader from '@/components/ui/image-uploader'
 
 export interface HallOfFameFormData {
   name: string
@@ -341,28 +342,46 @@ export default function HallOfFameForm({ mode, initialData, id }: HallOfFameForm
           </div>
 
           <div>
-            <Label htmlFor="photo">头像URL</Label>
-            <div className="flex gap-2">
-              <Input
-                id="photo"
+            <Label>头像</Label>
+            <div className="flex items-start gap-6">
+              {/* 图片上传区域 */}
+              <ImageUploader
                 value={formData.photo}
-                onChange={e => setFormData(prev => ({ ...prev, photo: e.target.value }))}
-                placeholder="留空将使用默认头像"
-                className="flex-1"
+                onChange={url => setFormData(prev => ({ ...prev, photo: url }))}
+                folder="hall-of-fame"
+                aspectRatio="circle"
+                maxSize={2}
               />
-              <Button type="button" variant="outline" onClick={generateAvatar}>
-                自动生成
-              </Button>
-            </div>
-            {formData.photo && (
-              <div className="mt-2">
-                <img
-                  src={formData.photo}
-                  alt="预览"
-                  className="w-20 h-20 rounded-full object-cover"
-                />
+              
+              {/* 右侧操作区 */}
+              <div className="flex-1 space-y-3">
+                {/* 手动输入 URL */}
+                <div>
+                  <Label htmlFor="photo" className="text-sm text-muted-foreground mb-1.5 block">
+                    或输入图片链接
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="photo"
+                      value={formData.photo}
+                      onChange={e => setFormData(prev => ({ ...prev, photo: e.target.value }))}
+                      placeholder="输入图片 URL"
+                      className="flex-1"
+                    />
+                    <Button type="button" variant="outline" onClick={generateAvatar} title="自动生成头像">
+                      <Sparkles className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* 提示信息 */}
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>• 点击左侧圆形区域上传图片</p>
+                  <p>• 支持 JPG、PNG 格式，最大 2MB</p>
+                  <p>• 或输入图片链接，点击 ✨ 自动生成默认头像</p>
+                </div>
               </div>
-            )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
