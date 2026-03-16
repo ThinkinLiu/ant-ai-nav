@@ -13,7 +13,10 @@ interface ToolLogoProps {
 
 /**
  * 工具Logo组件 - 自动处理图标加载失败的情况
- * 优先尝试原始URL，失败后尝试备用图标服务，最后显示首字母
+ * 降级策略：
+ * 1. IconHorse服务（主要）- 国内访问稳定
+ * 2. Splitbee Favicon服务（备用）- 辅助
+ * 3. 工具名称首字母（兜底）
  */
 export function ToolLogo({ 
   logo, 
@@ -25,8 +28,8 @@ export function ToolLogo({
   const [imgError, setImgError] = useState(false)
   const [triedFallback, setTriedFallback] = useState(false)
 
-  // 生成备用图标URL
-  const fallbackLogo = useMemo(() => {
+  // 生成主图标URL（使用IconHorse服务，国内访问稳定）
+  const primaryLogo = useMemo(() => {
     if (!logo) return null
     
     // 从原始logo URL中提取域名
@@ -35,8 +38,25 @@ export function ToolLogo({
       const match = logo.match(/icons\.duckduckgo\.com\/ip3\/([^/]+)/)
       if (match) {
         const domain = match[1].replace(/\.ico$/, '')
-        // 使用Google Favicon服务作为备用
-        return `https://www.google.com/s2/favicons?domain=${domain}&sz=${Math.max(size, 64)}`
+        // 使用IconHorse服务（国内可访问）
+        return `https://icon.horse/icon/${domain}?size=${Math.max(size, 64)}`
+      }
+    } catch {
+      // ignore
+    }
+    return null
+  }, [logo, size])
+
+  // 生成备用图标URL（使用Splitbee服务）
+  const fallbackLogo = useMemo(() => {
+    if (!logo) return null
+    
+    try {
+      const match = logo.match(/icons\.duckduckgo\.com\/ip3\/([^/]+)/)
+      if (match) {
+        const domain = match[1].replace(/\.ico$/, '')
+        // 使用Splitbee Favicon服务作为备用
+        return `https://favicon.splitbee.io/?url=${domain}&size=${Math.max(size, 64)}`
       }
     } catch {
       // ignore
@@ -73,7 +93,7 @@ export function ToolLogo({
     )
   }
 
-  // 尝试备用图标
+  // 尝试备用图标（Splitbee）
   if (imgError && fallbackLogo && !triedFallback) {
     return (
       <img 
@@ -85,10 +105,10 @@ export function ToolLogo({
     )
   }
 
-  // 使用原始logo
+  // 使用主图标服务（IconHorse）
   return (
     <img 
-      src={logo}
+      src={primaryLogo || logo}
       alt={name}
       className={className}
       onError={() => setImgError(true)}
@@ -109,7 +129,23 @@ export function ToolLogoNext({
   const [imgError, setImgError] = useState(false)
   const [triedFallback, setTriedFallback] = useState(false)
 
-  // 生成备用图标URL
+  // 生成主图标URL（使用IconHorse服务，国内访问稳定）
+  const primaryLogo = useMemo(() => {
+    if (!logo) return null
+    
+    try {
+      const match = logo.match(/icons\.duckduckgo\.com\/ip3\/([^/]+)/)
+      if (match) {
+        const domain = match[1].replace(/\.ico$/, '')
+        return `https://icon.horse/icon/${domain}?size=${Math.max(size, 64)}`
+      }
+    } catch {
+      // ignore
+    }
+    return null
+  }, [logo, size])
+
+  // 生成备用图标URL（使用Splitbee服务）
   const fallbackLogo = useMemo(() => {
     if (!logo) return null
     
@@ -117,7 +153,7 @@ export function ToolLogoNext({
       const match = logo.match(/icons\.duckduckgo\.com\/ip3\/([^/]+)/)
       if (match) {
         const domain = match[1].replace(/\.ico$/, '')
-        return `https://www.google.com/s2/favicons?domain=${domain}&sz=${Math.max(size, 64)}`
+        return `https://favicon.splitbee.io/?url=${domain}&size=${Math.max(size, 64)}`
       }
     } catch {
       // ignore
@@ -153,7 +189,7 @@ export function ToolLogoNext({
     )
   }
 
-  // 尝试备用图标
+  // 尝试备用图标（Splitbee）
   if (imgError && fallbackLogo && !triedFallback) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -168,11 +204,11 @@ export function ToolLogoNext({
     )
   }
 
-  // 使用原始logo - 外部URL使用普通img标签
+  // 使用主图标服务（IconHorse）- 外部URL使用普通img标签
   // eslint-disable-next-line @next/next/no-img-element
   return (
     <img 
-      src={logo}
+      src={primaryLogo || logo}
       alt={name}
       className={className}
       width={size}
