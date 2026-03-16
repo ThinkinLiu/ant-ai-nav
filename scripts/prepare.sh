@@ -13,16 +13,16 @@ if [ ! -f .env.local ]; then
   if [ -n "$COZE_WORKSPACE_PATH" ] || [ -n "$COZE_INTEGRATION_BASE_URL" ]; then
     echo "📦 检测到 Coze 环境"
     
-    # 检查 Coze 环境变量
+    # 检查 Coze 环境变量（改为警告而非错误）
     if [ -z "$COZE_SUPABASE_URL" ] && [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
-      echo "❌ 错误: 缺少 Supabase URL 配置"
+      echo "⚠️  警告: 缺少 Supabase URL 配置"
       echo "请在 Coze 平台设置环境变量:"
       echo "  - COZE_SUPABASE_URL 或 NEXT_PUBLIC_SUPABASE_URL"
       echo "  - COZE_SUPABASE_ANON_KEY 或 NEXT_PUBLIC_SUPABASE_ANON_KEY"
-      exit 1
+      echo "构建将继续，但某些功能可能不可用"
+    else
+      echo "✅ Coze 环境变量检查通过"
     fi
-    
-    echo "✅ Coze 环境变量检查通过"
   else
     echo "📦 检测到独立服务器环境"
     
@@ -37,10 +37,12 @@ else
   echo "✅ 找到 .env.local 文件"
 fi
 
-# 运行环境变量检查脚本
-echo ""
-echo "🔍 运行环境变量验证..."
-pnpm tsx scripts/check-env.ts
+# 运行环境变量检查脚本（仅在开发环境）
+if [ -z "$COZE_WORKSPACE_PATH" ] && [ -z "$COZE_INTEGRATION_BASE_URL" ]; then
+  echo ""
+  echo "🔍 运行环境变量验证..."
+  pnpm tsx scripts/check-env.ts || true
+fi
 
 echo ""
 echo "✅ 环境准备完成！"

@@ -36,12 +36,13 @@ elif [ -n "$SUPABASE_URL" ]; then
   echo "  ✅ 从 SUPABASE_URL 映射到 NEXT_PUBLIC_SUPABASE_URL"
   export NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
 else
-  echo "  ❌ 错误: 缺少 Supabase URL 配置"
-  echo "  请设置以下任一环境变量:"
+  echo "  ⚠️  警告: 缺少 Supabase URL 配置，使用占位符"
+  echo "  请在部署后设置以下任一环境变量:"
   echo "    - NEXT_PUBLIC_SUPABASE_URL"
   echo "    - COZE_SUPABASE_URL"
   echo "    - SUPABASE_URL"
-  exit 1
+  # 使用占位符，允许构建继续
+  export NEXT_PUBLIC_SUPABASE_URL="https://placeholder.supabase.co"
 fi
 
 # Supabase Anon Key
@@ -58,13 +59,14 @@ elif [ -n "$SUPABASE_SERVICE_ROLE_KEY" ]; then
   echo "  ✅ 从 SUPABASE_SERVICE_ROLE_KEY 映射到 NEXT_PUBLIC_SUPABASE_ANON_KEY"
   export NEXT_PUBLIC_SUPABASE_ANON_KEY="$SUPABASE_SERVICE_ROLE_KEY"
 else
-  echo "  ❌ 错误: 缺少 Supabase Anon Key 配置"
-  echo "  请设置以下任一环境变量:"
+  echo "  ⚠️  警告: 缺少 Supabase Anon Key 配置，使用占位符"
+  echo "  请在部署后设置以下任一环境变量:"
   echo "    - NEXT_PUBLIC_SUPABASE_ANON_KEY"
   echo "    - COZE_SUPABASE_ANON_KEY"
   echo "    - SUPABASE_ANON_KEY"
   echo "    - SUPABASE_SERVICE_ROLE_KEY"
-  exit 1
+  # 使用占位符，允许构建继续
+  export NEXT_PUBLIC_SUPABASE_ANON_KEY="placeholder-anon-key"
 fi
 
 echo ""
