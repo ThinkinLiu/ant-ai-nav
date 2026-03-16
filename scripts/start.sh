@@ -11,9 +11,9 @@ if [ "$SKIP_DB_SYNC" != "true" ]; then
   echo ""
   echo "🔍 检查数据库状态..."
   
-  # 尝试运行数据库同步检查
-  if [ -f "scripts/sync-database.ts" ]; then
-    pnpm tsx scripts/sync-database.ts || echo "⚠️  数据库同步检查失败，请手动检查"
+  # 运行数据库同步检查脚本
+  if [ -f "scripts/auto-sync-database.ts" ]; then
+    pnpm tsx scripts/auto-sync-database.ts 2>&1 | head -50
   fi
   
   echo ""
