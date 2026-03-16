@@ -27,7 +27,7 @@ import { formatRelativeTime } from '@/lib/utils'
 import { 
   Check, X, Eye, ExternalLink, Search, EyeOff, ChevronLeft, 
   ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw, ArrowUpDown,
-  Pin, PinOff, Edit, Loader2
+  Pin, PinOff, Edit, Loader2, Sparkles
 } from 'lucide-react'
 
 interface Tool {
@@ -145,6 +145,7 @@ function AdminToolsContent() {
     tool: null,
   })
   const [editLoading, setEditLoading] = useState(false)
+  const [generateLoading, setGenerateLoading] = useState(false)
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
@@ -351,6 +352,59 @@ function AdminToolsContent() {
       tags: tool.tags?.map(t => t.name).join(', ') || '',
     })
     setEditDialog({ open: true, tool })
+  }
+
+  // 自动生成工具信息
+  const handleGenerateInfo = async () => {
+    if (!editForm.name || !editForm.website) {
+      return
+    }
+
+    setGenerateLoading(true)
+    try {
+      const response = await fetch('/api/admin/generate-tool-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editForm.name,
+          website: editForm.website,
+        }),
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        const result = data.data
+        // 找到分类ID
+        const categoryMap: Record<string, string> = {
+          'AI写作': '1',
+          'AI绘画': '2',
+          'AI对话': '3',
+          'AI编程': '4',
+          'AI音频': '5',
+          'AI视频': '6',
+          'AI办公': '7',
+          'AI学习': '8',
+        }
+        
+        setEditForm(prev => ({
+          ...prev,
+          name: result.name || prev.name,
+          description: result.description || prev.description,
+          long_description: result.long_description || prev.long_description,
+          categoryId: categoryMap[result.category] || prev.categoryId,
+          tags: result.tags?.join(', ') || prev.tags,
+          is_free: result.is_free ?? prev.is_free,
+          pricing_info: result.pricing_info || prev.pricing_info,
+        }))
+      }
+    } catch (error) {
+      console.error('自动生成失败:', error)
+    } finally {
+      setGenerateLoading(false)
+    }
   }
 
   // 提交编辑
@@ -753,6 +807,35 @@ function AdminToolsContent() {
               编辑工具信息，修改后点击保存。
             </DialogDescription>
           </DialogHeader>
+          
+          {/* 自动生成区域 */}
+          <div className="bg-muted/50 rounded-lg p-4 mb-2">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 text-sm text-muted-foreground">
+                输入工具名称和链接后，点击"自动生成"可自动填充其他信息
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateInfo}
+                disabled={generateLoading || !editForm.name || !editForm.website}
+                className="shrink-0"
+              >
+                {generateLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    生成中...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    自动生成
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+          
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
