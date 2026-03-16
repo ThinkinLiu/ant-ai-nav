@@ -270,6 +270,7 @@ export function RankingList() {
                           <ToolLogoNext 
                             logo={item.tool.logo}
                             name={item.tool.name}
+                            website={item.tool.website}
                             size={40}
                             className="w-10 h-10 rounded-lg shrink-0"
                           />

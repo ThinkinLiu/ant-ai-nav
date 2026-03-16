@@ -17,6 +17,7 @@ interface RelatedTool {
   slug: string
   description: string
   logo: string | null
+  website: string
   is_featured: boolean
   is_pinned: boolean
   is_free: boolean
@@ -132,6 +133,7 @@ export default function RelatedTools({ toolId }: RelatedToolsProps) {
                   <ToolLogoNext 
                     logo={tool.logo}
                     name={tool.name}
+                    website={tool.website}
                     size={40}
                     className="h-10 w-10 rounded-lg shrink-0"
                     fallbackBgColor={tool.category?.color || '#6366F1'}

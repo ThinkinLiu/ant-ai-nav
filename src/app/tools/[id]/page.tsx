@@ -241,6 +241,7 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                   <ToolLogoNext 
                     logo={tool.logo} 
                     name={tool.name} 
+                    website={tool.website}
                     size={64}
                     className="h-16 w-16 rounded-xl shrink-0"
                     fallbackBgColor={tool.category?.color || '#6366F1'}

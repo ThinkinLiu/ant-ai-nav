@@ -317,6 +317,7 @@ function ToolsPageContent() {
                         <ToolLogoNext 
                           logo={tool.logo}
                           name={tool.name}
+                          website={tool.website}
                           size={48}
                           className="h-12 w-12 rounded-lg shrink-0"
                           fallbackBgColor={tool.category?.color || '#6366F1'}

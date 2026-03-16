@@ -1,26 +1,64 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Image from 'next/image'
 
 interface ToolLogoProps {
   logo: string | null
   name: string
+  website?: string | null
   className?: string
   size?: number
   fallbackBgColor?: string
 }
 
 /**
+ * 从 URL 中提取域名
+ * 支持多种格式：
+ * - https://icons.duckduckgo.com/ip3/domain.com.ico
+ * - https://www.example.com/path
+ * - example.com
+ */
+function extractDomain(url: string | null | undefined): string | null {
+  if (!url) return null
+  
+  try {
+    // 1. 尝试匹配 DuckDuckGo 图标格式
+    const duckDuckGoMatch = url.match(/icons\.duckduckgo\.com\/ip3\/([^/]+)/)
+    if (duckDuckGoMatch) {
+      return duckDuckGoMatch[1].replace(/\.ico$/, '')
+    }
+    
+    // 2. 尝试解析完整 URL
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      const urlObj = new URL(url)
+      // 移除 www. 前缀
+      return urlObj.hostname.replace(/^www\./, '')
+    }
+    
+    // 3. 如果已经是域名格式（没有协议）
+    const domainMatch = url.match(/^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}/)
+    if (domainMatch) {
+      return url.replace(/^www\./, '')
+    }
+    
+    return null
+  } catch {
+    return null
+  }
+}
+
+/**
  * 工具Logo组件 - 自动处理图标加载失败的情况
  * 降级策略：
- * 1. IconHorse服务（主要）- 国内访问稳定
- * 2. Splitbee Favicon服务（备用）- 辅助
- * 3. 工具名称首字母（兜底）
+ * 1. 从 logo 字段提取域名，使用 IconHorse 服务（主要）- 国内访问稳定
+ * 2. 如果 logo 为空，从 website 字段提取域名，使用 IconHorse 服务
+ * 3. Splitbee Favicon 服务（备用）- 辅助
+ * 4. 工具名称首字母（兜底）
  */
 export function ToolLogo({ 
   logo, 
-  name, 
+  name,
+  website,
   className = '', 
   size = 48,
   fallbackBgColor 
@@ -28,41 +66,27 @@ export function ToolLogo({
   const [imgError, setImgError] = useState(false)
   const [triedFallback, setTriedFallback] = useState(false)
 
+  // 提取域名（优先从 logo，其次从 website）
+  const domain = useMemo(() => {
+    // 优先从 logo 字段提取
+    const logoDomain = extractDomain(logo)
+    if (logoDomain) return logoDomain
+    
+    // 如果 logo 为空或无法提取，尝试从 website 提取
+    return extractDomain(website)
+  }, [logo, website])
+
   // 生成主图标URL（使用IconHorse服务，国内访问稳定）
   const primaryLogo = useMemo(() => {
-    if (!logo) return null
-    
-    // 从原始logo URL中提取域名
-    try {
-      // DuckDuckGo格式: https://icons.duckduckgo.com/ip3/domain.com.ico
-      const match = logo.match(/icons\.duckduckgo\.com\/ip3\/([^/]+)/)
-      if (match) {
-        const domain = match[1].replace(/\.ico$/, '')
-        // 使用IconHorse服务（国内可访问）
-        return `https://icon.horse/icon/${domain}?size=${Math.max(size, 64)}`
-      }
-    } catch {
-      // ignore
-    }
-    return null
-  }, [logo, size])
+    if (!domain) return null
+    return `https://icon.horse/icon/${domain}?size=${Math.max(size, 64)}`
+  }, [domain, size])
 
   // 生成备用图标URL（使用Splitbee服务）
   const fallbackLogo = useMemo(() => {
-    if (!logo) return null
-    
-    try {
-      const match = logo.match(/icons\.duckduckgo\.com\/ip3\/([^/]+)/)
-      if (match) {
-        const domain = match[1].replace(/\.ico$/, '')
-        // 使用Splitbee Favicon服务作为备用
-        return `https://favicon.splitbee.io/?url=${domain}&size=${Math.max(size, 64)}`
-      }
-    } catch {
-      // ignore
-    }
-    return null
-  }, [logo, size])
+    if (!domain) return null
+    return `https://favicon.splitbee.io/?url=${domain}&size=${Math.max(size, 64)}`
+  }, [domain, size])
 
   // 生成基于名称的背景色
   const bgColor = useMemo(() => {
@@ -81,8 +105,8 @@ export function ToolLogo({
     return colors[Math.abs(hash) % colors.length]
   }, [name, fallbackBgColor])
 
-  // 没有logo或所有尝试都失败
-  if (!logo || (imgError && triedFallback)) {
+  // 没有域名或所有尝试都失败
+  if (!domain || (imgError && triedFallback)) {
     return (
       <div 
         className={`flex items-center justify-center text-white font-bold ${className}`}
@@ -108,7 +132,7 @@ export function ToolLogo({
   // 使用主图标服务（IconHorse）
   return (
     <img 
-      src={primaryLogo || logo}
+      src={primaryLogo || ''}
       alt={name}
       className={className}
       onError={() => setImgError(true)}
@@ -121,7 +145,8 @@ export function ToolLogo({
  */
 export function ToolLogoNext({ 
   logo, 
-  name, 
+  name,
+  website,
   className = '', 
   size = 48,
   fallbackBgColor 
@@ -129,37 +154,27 @@ export function ToolLogoNext({
   const [imgError, setImgError] = useState(false)
   const [triedFallback, setTriedFallback] = useState(false)
 
+  // 提取域名（优先从 logo，其次从 website）
+  const domain = useMemo(() => {
+    // 优先从 logo 字段提取
+    const logoDomain = extractDomain(logo)
+    if (logoDomain) return logoDomain
+    
+    // 如果 logo 为空或无法提取，尝试从 website 提取
+    return extractDomain(website)
+  }, [logo, website])
+
   // 生成主图标URL（使用IconHorse服务，国内访问稳定）
   const primaryLogo = useMemo(() => {
-    if (!logo) return null
-    
-    try {
-      const match = logo.match(/icons\.duckduckgo\.com\/ip3\/([^/]+)/)
-      if (match) {
-        const domain = match[1].replace(/\.ico$/, '')
-        return `https://icon.horse/icon/${domain}?size=${Math.max(size, 64)}`
-      }
-    } catch {
-      // ignore
-    }
-    return null
-  }, [logo, size])
+    if (!domain) return null
+    return `https://icon.horse/icon/${domain}?size=${Math.max(size, 64)}`
+  }, [domain, size])
 
   // 生成备用图标URL（使用Splitbee服务）
   const fallbackLogo = useMemo(() => {
-    if (!logo) return null
-    
-    try {
-      const match = logo.match(/icons\.duckduckgo\.com\/ip3\/([^/]+)/)
-      if (match) {
-        const domain = match[1].replace(/\.ico$/, '')
-        return `https://favicon.splitbee.io/?url=${domain}&size=${Math.max(size, 64)}`
-      }
-    } catch {
-      // ignore
-    }
-    return null
-  }, [logo, size])
+    if (!domain) return null
+    return `https://favicon.splitbee.io/?url=${domain}&size=${Math.max(size, 64)}`
+  }, [domain, size])
 
   // 生成基于名称的背景色
   const bgColor = useMemo(() => {
@@ -177,8 +192,8 @@ export function ToolLogoNext({
     return colors[Math.abs(hash) % colors.length]
   }, [name, fallbackBgColor])
 
-  // 没有logo或所有尝试都失败
-  if (!logo || (imgError && triedFallback)) {
+  // 没有域名或所有尝试都失败
+  if (!domain || (imgError && triedFallback)) {
     return (
       <div 
         className={`flex items-center justify-center text-white font-bold ${className}`}
@@ -204,11 +219,11 @@ export function ToolLogoNext({
     )
   }
 
-  // 使用主图标服务（IconHorse）- 外部URL使用普通img标签
-  // eslint-disable-next-line @next/next/no-img-element
+  // 使用主图标服务（IconHorse）
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img 
-      src={primaryLogo || logo}
+      src={primaryLogo || ''}
       alt={name}
       className={className}
       width={size}
@@ -217,5 +232,3 @@ export function ToolLogoNext({
     />
   )
 }
-
-export default ToolLogo

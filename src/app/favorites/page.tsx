@@ -233,6 +233,7 @@ export default function FavoritesPage() {
                             <ToolLogoNext 
                               logo={tool.logo} 
                               name={tool.name} 
+                              website={tool.website}
                               className="h-full w-full rounded-lg"
                               size={40}
                               fallbackBgColor={tool.category?.color || '#EC4899'}

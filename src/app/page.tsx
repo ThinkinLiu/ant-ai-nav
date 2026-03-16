@@ -251,6 +251,7 @@ function HomePageContent() {
                         <ToolLogoNext 
                           logo={tool.logo} 
                           name={tool.name} 
+                          website={tool.website}
                           className="h-full w-full rounded-lg"
                           size={48}
                           fallbackBgColor={tool.category?.color || '#EF4444'}
@@ -297,6 +298,7 @@ function HomePageContent() {
                         <ToolLogoNext 
                           logo={tool.logo} 
                           name={tool.name} 
+                          website={tool.website}
                           className="h-full w-full rounded-lg"
                           size={48}
                           fallbackBgColor={tool.category?.color || '#3B82F6'}
@@ -448,6 +450,7 @@ function HomePageContent() {
                           <ToolLogoNext 
                             logo={tool.logo} 
                             name={tool.name} 
+                            website={tool.website}
                             className="h-full w-full rounded-lg"
                             size={48}
                             fallbackBgColor={tool.category?.color || '#6366F1'}
