@@ -62,11 +62,33 @@ const articleContent = `# 蚂蚁AI导航：发现全球最优秀的AI工具，�
 
 #### 4. 工具详情页
 
-每个工具都有专属详情页，包含工具介绍、官网链接、用户评分、评论互动、一键收藏功能。
+每个工具都有专属详情页，包含：
+- 📋 工具介绍与长描述
+- 🔗 官网直达链接
+- ⭐ 用户评分与评价
+- 💬 评论互动区
+- ❤️ 一键收藏功能
+- 🔗 相关工具推荐
 
 ![工具详情页](/assets/details.png)
 
-#### 5. 个人中心
+#### 5. AI工具排行榜
+
+实时追踪全球热门AI工具流量数据：
+- 📈 每日更新排行数据
+- 🌍 多数据源整合
+- 📊 月度流量统计
+- 🏆 Top榜单展示
+
+#### 6. 内容频道
+
+**AI资讯** - 行业最新动态、技术突破报道、产品发布资讯
+
+**AI名人堂** - AI领域杰出人物，先驱者、研究者、企业家、工程师
+
+**AI大事纪** - AI发展里程碑事件，时间轴展示
+
+#### 7. 个人中心
 
 注册用户可享受个性化服务：我的收藏、个人资料、发布者申请。
 
@@ -76,7 +98,18 @@ const articleContent = `# 蚂蚁AI导航：发现全球最优秀的AI工具，�
 
 ### 📝 发布者端：分享与成长
 
-成为发布者，你可以：发布工具、管理工具、编辑更新。
+#### 成为发布者
+
+申请流程：
+1. 用户提交申请（填写理由、联系方式）
+2. 管理员审核
+3. 审核通过后获得发布者权限
+
+#### 发布者功能
+
+- **发布工具**：提交优质AI工具，支持图标上传
+- **发布资讯**：分享AI行业动态
+- **管理内容**：查看发布内容的数据统计
 
 ![发布者中心](/assets/publish.png)
 
@@ -88,26 +121,95 @@ const articleContent = `# 蚂蚁AI导航：发现全球最优秀的AI工具，�
 
 ### 👑 管理端：高效运营
 
-管理员拥有完整的后台管理能力：数据概览、工具审核、用户管理、评论管理。
+管理员拥有完整的后台管理能力：
+
+#### 核心管理
+- 数据概览
+- 工具审核
+- 用户管理
+- 评论管理
+- 发布者申请审核
+
+#### 内容管理
+- AI资讯管理（支持AI自动发布）
+- 名人堂管理（支持AI自动生成）
+- 大事纪管理（支持AI自动生成）
+- 友情链接管理
+- 批量工具生成
+
+#### 系统管理
+- 数据迁移（多模式导出/导入）
+- SEO设置
+- SMTP邮件服务
+- 流量来源管理
 
 ![管理后台](/assets/manage.png)
 
 ---
 
-## 技术架构
+## 🤖 AI智能能力
 
-- **Next.js 16 (App Router)** - 服务端渲染
-- **React 19** - 并发渲染
-- **TypeScript 5** - 全栈类型安全
-- **Tailwind CSS 4** - 原子化CSS
-- **shadcn/ui** - 精美组件库
-- **Supabase (PostgreSQL)** - 数据库 + 认证
+平台深度集成AI能力，实现智能化运营：
+
+| 功能 | 说明 |
+|------|------|
+| 自动发布AI资讯 | 输入日期，自动搜索生成资讯 |
+| 自动生成名人堂 | 输入姓名，自动生成人物信息 |
+| 自动生成大事纪 | 自动搜索生成历史事件 |
+| AI生成工具信息 | 输入工具名称和官网，自动生成描述、分类、标签 |
+| 图标智能显示 | 根据logo字段类型自动选择最佳显示方式 |
+
+---
+
+## 技术架构：现代、高效、可扩展
+
+### 前端技术
+
+| 技术 | 说明 |
+|------|------|
+| Next.js 16 (App Router) | 服务端渲染，首屏加载速度提升40% |
+| React 19 | 并发渲染，流畅用户体验 |
+| TypeScript 5 | 全栈类型安全 |
+| Tailwind CSS 4 | 原子化CSS |
+| shadcn/ui | 精美组件库 |
+
+### 后端技术
+
+| 技术 | 说明 |
+|------|------|
+| Next.js API Routes | Serverless Functions |
+| Supabase (PostgreSQL) | 数据库 + 认证 + 行级安全策略 |
+| Coze SDK | Web Search + LLM (AI智能功能) |
+| S3 对象存储 | 图片/文件上传 |
+
+### 安全特性
+
+- 会话超时：30分钟无操作自动登出
+- 行级安全策略：数据库层面权限控制
+- JWT Token 认证
 
 ---
 
 ## 数据规模
 
-平台已收录 **1700+ 真实AI工具**，覆盖国内外混合、分类均衡、持续更新。
+| 数据类型 | 数量 |
+|----------|------|
+| AI工具 | 2,000+ |
+| AI资讯 | 200+ |
+| AI名人堂人物 | 150+ |
+| AI大事纪事件 | 150+ |
+| 工具分类 | 8 |
+| 友情链接 | 5 |
+
+平台收录**真实AI工具**，覆盖国内外混合、分类均衡、持续更新。
+
+---
+
+## 结语：让AI工具触手可及
+
+蚂蚁AI导航不仅是一个工具导航网站，更是AI时代的效率加速器。无论你是开发者、内容创作者、设计师还是职场人士，都能在这里找到最适合的AI工具。
+
+**立即访问，开启你的AI效率之旅！**
 
 ---
 
@@ -256,7 +358,15 @@ export default function ArticlePage() {
             </div>
 
             <h4 className="text-lg font-medium mt-6 mb-2">4. 工具详情页</h4>
-            <p className="text-muted-foreground">每个工具都有专属详情页，包含工具介绍、官网链接、用户评分、评论互动、一键收藏功能。</p>
+            <p className="text-muted-foreground mb-2">每个工具都有专属详情页，包含：</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-1">
+              <li>📋 工具介绍与长描述</li>
+              <li>🔗 官网直达链接</li>
+              <li>⭐ 用户评分与评价</li>
+              <li>💬 评论互动区</li>
+              <li>❤️ 一键收藏功能</li>
+              <li>🔗 相关工具推荐</li>
+            </ul>
 
             {/* 详情页截图 */}
             <div className="my-8 rounded-lg overflow-hidden border">
@@ -269,7 +379,21 @@ export default function ArticlePage() {
               />
             </div>
 
-            <h4 className="text-lg font-medium mt-6 mb-2">5. 个人中心</h4>
+            <h4 className="text-lg font-medium mt-6 mb-2">5. AI工具排行榜</h4>
+            <p className="text-muted-foreground mb-2">实时追踪全球热门AI工具流量数据：</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-1">
+              <li>📈 每日更新排行数据</li>
+              <li>🌍 多数据源整合</li>
+              <li>📊 月度流量统计</li>
+              <li>🏆 Top榜单展示</li>
+            </ul>
+
+            <h4 className="text-lg font-medium mt-6 mb-2">6. 内容频道</h4>
+            <p className="text-muted-foreground mb-2"><strong>AI资讯</strong> - 行业最新动态、技术突破报道、产品发布资讯</p>
+            <p className="text-muted-foreground mb-2"><strong>AI名人堂</strong> - AI领域杰出人物，先驱者、研究者、企业家、工程师</p>
+            <p className="text-muted-foreground"><strong>AI大事纪</strong> - AI发展里程碑事件，时间轴展示</p>
+
+            <h4 className="text-lg font-medium mt-6 mb-2">7. 个人中心</h4>
             <p className="text-muted-foreground">注册用户可享受个性化服务：我的收藏、个人资料、发布者申请。</p>
 
             {/* 个人中心截图 */}
@@ -284,7 +408,21 @@ export default function ArticlePage() {
             </div>
 
             <h3 className="text-xl font-semibold mt-8 mb-3">📝 发布者端：分享与成长</h3>
-            <p className="text-muted-foreground">成为发布者，你可以：发布工具、管理工具、编辑更新。数据面板清晰展示发布统计。</p>
+            
+            <h4 className="text-lg font-medium mt-4 mb-2">成为发布者</h4>
+            <p className="text-muted-foreground mb-2">申请流程：</p>
+            <ol className="list-decimal list-inside text-muted-foreground space-y-1">
+              <li>用户提交申请（填写理由、联系方式）</li>
+              <li>管理员审核</li>
+              <li>审核通过后获得发布者权限</li>
+            </ol>
+
+            <h4 className="text-lg font-medium mt-4 mb-2">发布者功能</h4>
+            <ul className="list-disc list-inside text-muted-foreground space-y-1">
+              <li><strong>发布工具</strong>：提交优质AI工具，支持图标上传</li>
+              <li><strong>发布资讯</strong>：分享AI行业动态</li>
+              <li><strong>管理内容</strong>：查看发布内容的数据统计</li>
+            </ul>
 
             {/* 发布者中心截图 */}
             <div className="my-8 rounded-lg overflow-hidden border">
@@ -309,7 +447,11 @@ export default function ArticlePage() {
             </div>
 
             <h3 className="text-xl font-semibold mt-8 mb-3">👑 管理端：高效运营</h3>
-            <p className="text-muted-foreground">管理员拥有完整的后台管理能力：数据概览、工具审核、用户管理、评论管理。</p>
+            <p className="text-muted-foreground mb-2">管理员拥有完整的后台管理能力：</p>
+
+            <p className="text-muted-foreground mt-4"><strong>核心管理</strong>：数据概览、工具审核、用户管理、评论管理、发布者申请审核</p>
+            <p className="text-muted-foreground mt-2"><strong>内容管理</strong>：AI资讯管理、名人堂管理、大事纪管理、友情链接管理、批量工具生成</p>
+            <p className="text-muted-foreground mt-2"><strong>系统管理</strong>：数据迁移、SEO设置、SMTP邮件服务、流量来源管理</p>
 
             {/* 管理后台截图 */}
             <div className="my-8 rounded-lg overflow-hidden border">
@@ -324,30 +466,97 @@ export default function ArticlePage() {
 
             <hr className="my-8" />
 
+            <h2 className="text-2xl font-bold mt-8 mb-4">🤖 AI智能能力</h2>
+            <p className="text-muted-foreground mb-4">平台深度集成AI能力，实现智能化运营：</p>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-border rounded-lg overflow-hidden">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="border border-border p-3 text-left">功能</th>
+                    <th className="border border-border p-3 text-left">说明</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className="border border-border p-3">自动发布AI资讯</td><td className="border border-border p-3">输入日期，自动搜索生成资讯</td></tr>
+                  <tr><td className="border border-border p-3">自动生成名人堂</td><td className="border border-border p-3">输入姓名，自动生成人物信息</td></tr>
+                  <tr><td className="border border-border p-3">自动生成大事纪</td><td className="border border-border p-3">自动搜索生成历史事件</td></tr>
+                  <tr><td className="border border-border p-3">AI生成工具信息</td><td className="border border-border p-3">输入工具名称和官网，自动生成描述、分类、标签</td></tr>
+                  <tr><td className="border border-border p-3">图标智能显示</td><td className="border border-border p-3">根据logo字段类型自动选择最佳显示方式</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <hr className="my-8" />
+
             <h2 className="text-2xl font-bold mt-8 mb-4">技术架构：现代、高效、可扩展</h2>
 
             <h3 className="text-xl font-semibold mt-6 mb-3">前端技术</h3>
-            <ul className="list-disc list-inside text-muted-foreground space-y-1">
-              <li><strong>Next.js 16 (App Router)</strong> - 服务端渲染，首屏加载速度提升40%</li>
-              <li><strong>React 19</strong> - 并发渲染，流畅用户体验</li>
-              <li><strong>TypeScript 5</strong> - 全栈类型安全</li>
-              <li><strong>Tailwind CSS 4</strong> - 原子化CSS</li>
-              <li><strong>shadcn/ui</strong> - 精美组件库</li>
-            </ul>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-border rounded-lg overflow-hidden">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="border border-border p-3 text-left">技术</th>
+                    <th className="border border-border p-3 text-left">说明</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className="border border-border p-3">Next.js 16 (App Router)</td><td className="border border-border p-3">服务端渲染，首屏加载速度提升40%</td></tr>
+                  <tr><td className="border border-border p-3">React 19</td><td className="border border-border p-3">并发渲染，流畅用户体验</td></tr>
+                  <tr><td className="border border-border p-3">TypeScript 5</td><td className="border border-border p-3">全栈类型安全</td></tr>
+                  <tr><td className="border border-border p-3">Tailwind CSS 4</td><td className="border border-border p-3">原子化CSS</td></tr>
+                  <tr><td className="border border-border p-3">shadcn/ui</td><td className="border border-border p-3">精美组件库</td></tr>
+                </tbody>
+              </table>
+            </div>
 
             <h3 className="text-xl font-semibold mt-6 mb-3">后端技术</h3>
-            <ul className="list-disc list-inside text-muted-foreground space-y-1">
-              <li><strong>Next.js API Routes</strong> - Serverless Functions</li>
-              <li><strong>Supabase (PostgreSQL)</strong> - 数据库 + 认证 + 行级安全策略</li>
-            </ul>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-border rounded-lg overflow-hidden">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="border border-border p-3 text-left">技术</th>
+                    <th className="border border-border p-3 text-left">说明</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className="border border-border p-3">Next.js API Routes</td><td className="border border-border p-3">Serverless Functions</td></tr>
+                  <tr><td className="border border-border p-3">Supabase (PostgreSQL)</td><td className="border border-border p-3">数据库 + 认证 + 行级安全策略</td></tr>
+                  <tr><td className="border border-border p-3">Coze SDK</td><td className="border border-border p-3">Web Search + LLM (AI智能功能)</td></tr>
+                  <tr><td className="border border-border p-3">S3 对象存储</td><td className="border border-border p-3">图片/文件上传</td></tr>
+                </tbody>
+              </table>
+            </div>
 
-            <h3 className="text-xl font-semibold mt-6 mb-3">数据模型</h3>
-            <p className="text-muted-foreground">核心数据表：users、categories、ai_tools、comments、favorites、tags</p>
+            <h3 className="text-xl font-semibold mt-6 mb-3">安全特性</h3>
+            <ul className="list-disc list-inside text-muted-foreground space-y-1">
+              <li>会话超时：30分钟无操作自动登出</li>
+              <li>行级安全策略：数据库层面权限控制</li>
+              <li>JWT Token 认证</li>
+            </ul>
 
             <hr className="my-8" />
 
             <h2 className="text-2xl font-bold mt-8 mb-4">数据规模</h2>
-            <p className="text-muted-foreground">平台已收录 <strong>1700+ 真实AI工具</strong>，覆盖国内外混合、分类均衡、持续更新。</p>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-border rounded-lg overflow-hidden">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="border border-border p-3 text-left">数据类型</th>
+                    <th className="border border-border p-3 text-left">数量</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td className="border border-border p-3">AI工具</td><td className="border border-border p-3 font-semibold">2,000+</td></tr>
+                  <tr><td className="border border-border p-3">AI资讯</td><td className="border border-border p-3 font-semibold">200+</td></tr>
+                  <tr><td className="border border-border p-3">AI名人堂人物</td><td className="border border-border p-3 font-semibold">150+</td></tr>
+                  <tr><td className="border border-border p-3">AI大事纪事件</td><td className="border border-border p-3 font-semibold">150+</td></tr>
+                  <tr><td className="border border-border p-3">工具分类</td><td className="border border-border p-3 font-semibold">8</td></tr>
+                  <tr><td className="border border-border p-3">友情链接</td><td className="border border-border p-3 font-semibold">5</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-muted-foreground mt-4">平台收录<strong>真实AI工具</strong>，覆盖国内外混合、分类均衡、持续更新。</p>
 
             <hr className="my-8" />
 
@@ -356,30 +565,6 @@ export default function ArticlePage() {
               蚂蚁AI导航不仅是一个工具导航网站，更是AI时代的效率加速器。无论你是开发者、内容创作者、设计师还是职场人士，都能在这里找到最适合的AI工具。
             </p>
             <p className="font-semibold mt-4"><strong>立即访问，开启你的AI效率之旅！</strong></p>
-
-            <hr className="my-8" />
-
-            <h2 className="text-2xl font-bold mt-8 mb-4">技术栈清单</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-border rounded-lg overflow-hidden">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="border border-border p-3 text-left">类别</th>
-                    <th className="border border-border p-3 text-left">技术</th>
-                    <th className="border border-border p-3 text-left">版本</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td className="border border-border p-3">框架</td><td className="border border-border p-3">Next.js</td><td className="border border-border p-3">16.x</td></tr>
-                  <tr><td className="border border-border p-3">前端</td><td className="border border-border p-3">React</td><td className="border border-border p-3">19.x</td></tr>
-                  <tr><td className="border border-border p-3">语言</td><td className="border border-border p-3">TypeScript</td><td className="border border-border p-3">5.x</td></tr>
-                  <tr><td className="border border-border p-3">样式</td><td className="border border-border p-3">Tailwind CSS</td><td className="border border-border p-3">4.x</td></tr>
-                  <tr><td className="border border-border p-3">组件</td><td className="border border-border p-3">shadcn/ui</td><td className="border border-border p-3">latest</td></tr>
-                  <tr><td className="border border-border p-3">数据库</td><td className="border border-border p-3">Supabase</td><td className="border border-border p-3">-</td></tr>
-                  <tr><td className="border border-border p-3">图标</td><td className="border border-border p-3">Lucide Icons</td><td className="border border-border p-3">latest</td></tr>
-                </tbody>
-              </table>
-            </div>
 
             <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-8">
               <strong>蚂蚁AI导航</strong> - 发现最好的AI工具，释放无限创造力
