@@ -36,7 +36,7 @@ export async function GET(
     // 获取同分类的其他工具
     const { data: relatedTools, error } = await supabase
       .from('ai_tools')
-      .select('id, name, slug, description, logo, is_featured, is_pinned, is_free, view_count, category_id')
+      .select('id, name, slug, description, logo, website, is_featured, is_pinned, is_free, view_count, category_id')
       .eq('category_id', currentTool.category_id)
       .neq('id', toolId)
       .eq('status', 'approved')
@@ -56,7 +56,7 @@ export async function GET(
       // 如果同分类没有其他工具，则获取其他热门工具
       const { data: hotTools, error: hotError } = await supabase
         .from('ai_tools')
-        .select('id, name, slug, description, logo, is_featured, is_pinned, is_free, view_count, category_id')
+        .select('id, name, slug, description, logo, website, is_featured, is_pinned, is_free, view_count, category_id')
         .neq('id', toolId)
         .eq('status', 'approved')
         .order('view_count', { ascending: false })
