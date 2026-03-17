@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -51,6 +51,14 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/'
+  const isExpired = searchParams.get('expired') === 'true'
+
+  // 显示会话过期提示
+  useEffect(() => {
+    if (isExpired) {
+      setError('登录已过期，请重新登录')
+    }
+  }, [isExpired])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
