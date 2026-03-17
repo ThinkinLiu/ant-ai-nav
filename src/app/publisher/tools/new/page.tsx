@@ -320,18 +320,18 @@ export default function NewToolPage() {
               />
             </div>
 
-            {!formData.isFree && (
-              <div className="space-y-2">
-                <Label htmlFor="pricingInfo">定价信息</Label>
-                <Textarea
-                  id="pricingInfo"
-                  placeholder="描述定价方案，如：免费版、专业版$20/月"
-                  rows={2}
-                  value={formData.pricingInfo}
-                  onChange={(e) => setFormData({ ...formData, pricingInfo: e.target.value })}
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="pricingInfo">定价信息</Label>
+              <Textarea
+                id="pricingInfo"
+                placeholder={formData.isFree 
+                  ? "描述免费情况，如：完全免费、部分功能免费等" 
+                  : "描述定价方案，如：免费版、专业版$20/月"}
+                rows={2}
+                value={formData.pricingInfo}
+                onChange={(e) => setFormData({ ...formData, pricingInfo: e.target.value })}
+              />
+            </div>
 
             <div className="flex gap-4">
               <Button type="submit" disabled={loading}>
