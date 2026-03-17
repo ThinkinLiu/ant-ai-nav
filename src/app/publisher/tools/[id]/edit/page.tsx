@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Loader2, AlertCircle, Upload, Link2 } from 'lucide-react'
 import ImageUploader from '@/components/ui/image-uploader'
+import { ToolLogo } from '@/components/tools/ToolLogo'
 
 interface Category {
   id: number
@@ -291,36 +292,25 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
             </div>
 
             {/* Logo 上传/URL 输入 */}
+            {/* Logo 上传/URL 输入 */}
             <div className="space-y-3">
               <Label>工具图标</Label>
               
               {/* 图标预览 */}
               <div className="flex items-center gap-4 mb-4">
-                <div 
-                  className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden border-2"
-                  style={{ 
-                    backgroundColor: formData.logo ? 'transparent' : (selectedCategory?.color || '#6366F1')
-                  }}
-                >
-                  {formData.logo ? (
-                    <img 
-                      src={formData.logo} 
-                      alt={formData.name || '图标预览'} 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement
-                        target.style.display = 'none'
-                      }}
-                    />
-                  ) : (
-                    <span className="text-white text-2xl font-bold">
-                      {formData.name?.[0]?.toUpperCase() || '?'}
-                    </span>
-                  )}
+                <div className="w-16 h-16 rounded-xl overflow-hidden border-2 bg-muted">
+                  <ToolLogo
+                    logo={formData.logo || null}
+                    name={formData.name || '工具'}
+                    website={formData.website}
+                    className="w-full h-full object-cover"
+                    size={64}
+                    fallbackBgColor={selectedCategory?.color}
+                  />
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  <p>图标预览</p>
-                  <p className="text-xs">建议尺寸：256x256px</p>
+                  <p>图标预览（与首页显示一致）</p>
+                  <p className="text-xs">为空时自动使用网站图标服务生成</p>
                 </div>
               </div>
 
