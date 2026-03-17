@@ -11,12 +11,15 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { ArrowLeft, Loader2, Sparkles, Wand2 } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ArrowLeft, Loader2, Sparkles, Wand2, Upload, Link2, Image as ImageIcon } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import ImageUploader from '@/components/ui/image-uploader'
 
 interface Category {
   id: number
   name: string
+  color?: string
 }
 
 export default function NewToolPage() {
@@ -26,6 +29,7 @@ export default function NewToolPage() {
   const [loading, setLoading] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState('')
+  const [logoInputMode, setLogoInputMode] = useState<string>('upload')
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -142,6 +146,9 @@ export default function NewToolPage() {
       setLoading(false)
     }
   }
+
+  // 获取当前分类的颜色
+  const selectedCategory = categories.find(c => c.id.toString() === formData.categoryId)
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -290,15 +297,77 @@ export default function NewToolPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="logo">Logo URL</Label>
-              <Input
-                id="logo"
-                type="url"
-                placeholder="https://...logo.png"
-                value={formData.logo}
-                onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-              />
+            {/* Logo 上传/URL 输入 */}
+            <div className="space-y-3">
+              <Label>工具图标</Label>
+              
+              {/* 图标预览 */}
+              <div className="flex items-center gap-4 mb-4">
+                <div 
+                  className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden border-2"
+                  style={{ 
+                    backgroundColor: formData.logo ? 'transparent' : (selectedCategory?.color || '#6366F1')
+                  }}
+                >
+                  {formData.logo ? (
+                    <img 
+                      src={formData.logo} 
+                      alt={formData.name || '图标预览'} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.style.display = 'none'
+                      }}
+                    />
+                  ) : (
+                    <span className="text-white text-2xl font-bold">
+                      {formData.name?.[0]?.toUpperCase() || '?'}
+                    </span>
+                  )}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <p>图标预览</p>
+                  <p className="text-xs">建议尺寸：256x256px</p>
+                </div>
+              </div>
+
+              {/* 输入方式切换 */}
+              <Tabs value={logoInputMode} onValueChange={setLogoInputMode}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload" className="flex items-center gap-2">
+                    <Upload className="h-4 w-4" />
+                    上传图片
+                  </TabsTrigger>
+                  <TabsTrigger value="url" className="flex items-center gap-2">
+                    <Link2 className="h-4 w-4" />
+                    输入 URL
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="upload" className="mt-4">
+                  <ImageUploader
+                    value={formData.logo}
+                    onChange={(url) => setFormData({ ...formData, logo: url })}
+                    folder="logos"
+                    aspectRatio="square"
+                    maxSize={2}
+                    placeholder="点击上传图标"
+                  />
+                </TabsContent>
+                
+                <TabsContent value="url" className="mt-4">
+                  <Input
+                    id="logo"
+                    type="url"
+                    placeholder="https://example.com/logo.png"
+                    value={formData.logo}
+                    onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    输入图标的完整 URL 地址
+                  </p>
+                </TabsContent>
+              </Tabs>
             </div>
 
             <div className="space-y-2">
