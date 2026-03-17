@@ -101,7 +101,7 @@ export default function RootLayout({
 
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body className="antialiased min-h-screen flex flex-col">
+      <body className="antialiased min-h-screen flex flex-col" suppressHydrationWarning>
         {isDev && <Inspector />}
         <AnalyticsScript />
         <AuthProvider>
