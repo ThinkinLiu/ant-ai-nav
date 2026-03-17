@@ -37,6 +37,25 @@ else
   echo "✅ 找到 .env.local 文件"
 fi
 
+# ============================================
+# 关键步骤：安装依赖
+# 确保在开发环境启动前依赖已安装
+# ============================================
+
+echo ""
+echo "📦 安装依赖..."
+
+# 检查 pnpm-lock.yaml 是否存在
+if [ -f "pnpm-lock.yaml" ]; then
+  echo "  使用 pnpm-lock.yaml 安装依赖..."
+  pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+else
+  echo "  安装依赖..."
+  pnpm install
+fi
+
+echo "✅ 依赖安装完成"
+
 # 运行环境变量检查脚本（仅在开发环境）
 if [ -z "$COZE_WORKSPACE_PATH" ] && [ -z "$COZE_INTEGRATION_BASE_URL" ]; then
   echo ""

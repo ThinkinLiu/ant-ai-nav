@@ -6,6 +6,18 @@ PORT=${PORT:-3000}
 
 echo "🚀 Starting production server on port $PORT..."
 
+# 检查 node_modules 是否存在
+if [ ! -d "node_modules" ]; then
+    echo "📦 node_modules not found, installing dependencies..."
+    pnpm install
+fi
+
+# 检查 .next 目录是否存在（构建产物）
+if [ ! -d ".next" ]; then
+    echo "⚠️  Build output not found, running build..."
+    pnpm run build
+fi
+
 # 检查是否需要同步数据库
 if [ "$SKIP_DB_SYNC" != "true" ]; then
   echo ""
@@ -20,4 +32,4 @@ if [ "$SKIP_DB_SYNC" != "true" ]; then
 fi
 
 # 启动服务
-pnpm start
+exec pnpm start
