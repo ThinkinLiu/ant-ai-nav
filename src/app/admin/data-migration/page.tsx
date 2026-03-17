@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { 
   Download, Upload, Database, AlertTriangle, CheckCircle, Loader2,
-  ChevronDown, ChevronUp, FileJson
+  ChevronDown, ChevronUp, FileJson, FileCode, FileSpreadsheet
 } from 'lucide-react'
 
 // 表定义类型
@@ -35,6 +35,10 @@ export default function DataMigrationPage() {
   const [importProgress, setImportProgress] = useState<string>('')
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // 导出表结构相关状态
+  const [exportingSchema, setExportingSchema] = useState(false)
+  const [schemaFormat, setSchemaFormat] = useState<'json' | 'sql'>('sql')
 
   // 导出相关状态
   const [tables, setTables] = useState<TableDefinition[]>([])
@@ -248,6 +252,59 @@ export default function DataMigrationPage() {
       .reduce((sum, t) => sum + t.count, 0)
   }
 
+  // 导出表结构
+  const handleExportSchema = async () => {
+    setExportingSchema(true)
+    try {
+      const action = schemaFormat === 'sql' ? 'schema-sql' : 'schema'
+      const tablesParam = selectedTables.size > 0 ? `&tables=${Array.from(selectedTables).join(',')}` : ''
+      
+      const response = await fetch(`/api/admin/data/export?action=${action}${tablesParam}`, {
+        headers: {
+          'Authorization': `Bearer ${user?.id}`,
+        },
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || '导出失败')
+      }
+
+      if (schemaFormat === 'json') {
+        // JSON 格式
+        const data = await response.json()
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        const dateStr = new Date().toISOString().split('T')[0]
+        a.download = `ai-nav-schema-${dateStr}.json`
+        a.click()
+        window.URL.revokeObjectURL(url)
+      } else {
+        // SQL 格式
+        const disposition = response.headers.get('Content-Disposition')
+        const filenameMatch = disposition?.match(/filename="?(.+)"?/i)
+        const filename = filenameMatch ? decodeURIComponent(filenameMatch[1]) : `schema-${Date.now()}.sql`
+
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.click()
+        window.URL.revokeObjectURL(url)
+      }
+
+      toast.success('表结构导出成功')
+    } catch (error: any) {
+      console.error('导出表结构失败:', error)
+      toast.error('导出失败：' + error.message)
+    } finally {
+      setExportingSchema(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -397,6 +454,82 @@ export default function DataMigrationPage() {
             </Button>
             <span className="text-sm text-muted-foreground">
               文件将自动下载到本地
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 导出表结构 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileCode className="h-5 w-5 text-orange-600" />
+            导出表结构
+          </CardTitle>
+          <CardDescription>
+            导出数据库表结构定义，用于数据库初始化和文档
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* 格式选择 */}
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium">导出格式：</span>
+            <div className="flex gap-2">
+              <Button
+                variant={schemaFormat === 'sql' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSchemaFormat('sql')}
+              >
+                <FileCode className="mr-1 h-4 w-4" />
+                SQL 脚本
+              </Button>
+              <Button
+                variant={schemaFormat === 'json' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSchemaFormat('json')}
+              >
+                <FileSpreadsheet className="mr-1 h-4 w-4" />
+                JSON 格式
+              </Button>
+            </div>
+          </div>
+
+          {/* 说明 */}
+          <div className="flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg text-orange-700 text-sm">
+            <Database className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div>
+              <strong>说明：</strong>
+              {schemaFormat === 'sql' 
+                ? 'SQL 脚本可直接在 PostgreSQL 数据库中执行，用于创建完整的表结构、索引和触发器。'
+                : 'JSON 格式包含详细的字段定义、类型、约束等信息，适合用于文档或程序处理。'}
+            </div>
+          </div>
+
+          {/* 当前选择的表 */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>将导出：</span>
+            <Badge variant="secondary">
+              {selectedTables.size > 0 ? `${selectedTables.size} 个选中表` : '全部表'}
+            </Badge>
+          </div>
+
+          {/* 导出按钮 */}
+          <div className="flex items-center gap-4">
+            <Button onClick={handleExportSchema} disabled={exportingSchema}>
+              {exportingSchema ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  导出中...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  导出表结构
+                </>
+              )}
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {schemaFormat === 'sql' ? '.sql 文件' : '.json 文件'}
             </span>
           </div>
         </CardContent>
