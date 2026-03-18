@@ -25,8 +25,14 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { formatRelativeTime } from '@/lib/utils'
-import { Edit, Trash2, Eye, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, MessageCircle, Heart, X, Filter, Check, XCircle, Clock } from 'lucide-react'
+import { Edit, Trash2, Eye, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, MessageCircle, Heart, X, Filter, Check, XCircle, Clock, Search } from 'lucide-react'
 import { useConfirm } from '@/hooks/use-confirm'
+
+interface Category {
+  id: number
+  name: string
+  slug: string
+}
 
 interface Tool {
   id: number
@@ -39,7 +45,7 @@ interface Tool {
   created_at: string
   is_featured: boolean
   reject_reason: string | null
-  category: { name: string } | null
+  category: { id: number; name: string } | null
 }
 
 interface Stats {
@@ -54,6 +60,7 @@ const PAGE_SIZE_OPTIONS = [5, 10, 20, 50]
 type SortField = 'created_at' | 'view_count' | 'favorite_count' | 'comment_count'
 type SortOrder = 'asc' | 'desc'
 type StatusFilter = '' | 'pending' | 'approved' | 'rejected'
+type CategoryFilter = '' | number
 
 const SORT_OPTIONS: { value: SortField; label: string }[] = [
   { value: 'created_at', label: '发布时间' },
@@ -76,6 +83,9 @@ export default function PublisherDashboard() {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, approved: 0, rejected: 0 })
   
+  // 分类列表
+  const [categories, setCategories] = useState<Category[]>([])
+  
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -88,6 +98,13 @@ export default function PublisherDashboard() {
 
   // 状态筛选
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('')
+  
+  // 分类筛选
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('')
+  
+  // 搜索关键词
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchInput, setSearchInput] = useState('') // 输入框的值，用于防抖
 
   // 审批对话框状态
   const [approveDialogOpen, setApproveDialogOpen] = useState(false)
@@ -97,6 +114,19 @@ export default function PublisherDashboard() {
   const [submitting, setSubmitting] = useState(false)
 
   const isAdmin = user?.role === 'admin'
+
+  // 获取分类列表
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories')
+      const data = await response.json()
+      if (data.success) {
+        setCategories(data.data || [])
+      }
+    } catch (error) {
+      console.error('获取分类列表失败:', error)
+    }
+  }
 
   // 获取统计数据
   const fetchStats = async () => {
@@ -114,7 +144,7 @@ export default function PublisherDashboard() {
     }
   }
 
-  // 获取工具列表（带分页、排序和状态筛选）
+  // 获取工具列表（带分页、排序、状态筛选、搜索和分类过滤）
   const fetchMyTools = async () => {
     if (!user?.id) return
     setLoading(true)
@@ -130,6 +160,16 @@ export default function PublisherDashboard() {
       // 如果有状态筛选，添加到参数中
       if (statusFilter) {
         params.append('status', statusFilter)
+      }
+      
+      // 如果有分类筛选，添加到参数中
+      if (categoryFilter) {
+        params.append('categoryId', categoryFilter.toString())
+      }
+      
+      // 如果有搜索关键词，添加到参数中
+      if (searchQuery) {
+        params.append('search', searchQuery)
       }
 
       const response = await fetch(`/api/tools?${params.toString()}`, {
@@ -152,6 +192,7 @@ export default function PublisherDashboard() {
   useEffect(() => {
     if (user && token) {
       fetchStats()
+      fetchCategories()
     }
   }, [user, token])
 
@@ -160,7 +201,7 @@ export default function PublisherDashboard() {
     if (user && token) {
       fetchMyTools()
     }
-  }, [user, token, currentPage, pageSize, sortField, sortOrder, statusFilter])
+  }, [user, token, currentPage, pageSize, sortField, sortOrder, statusFilter, categoryFilter, searchQuery])
 
   // 每页记录数变化时，重置到第一页
   const handlePageSizeChange = (value: string) => {
@@ -185,9 +226,24 @@ export default function PublisherDashboard() {
     setCurrentPage(1)
   }
 
+  // 分类筛选
+  const handleCategoryFilter = (categoryId: string) => {
+    setCategoryFilter(categoryId ? parseInt(categoryId) : '')
+    setCurrentPage(1)
+  }
+
+  // 搜索处理
+  const handleSearch = () => {
+    setSearchQuery(searchInput)
+    setCurrentPage(1)
+  }
+
   // 清除筛选
   const clearFilter = () => {
     setStatusFilter('')
+    setCategoryFilter('')
+    setSearchQuery('')
+    setSearchInput('')
     setCurrentPage(1)
   }
 
@@ -345,10 +401,12 @@ export default function PublisherDashboard() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             我的工具
-            {statusFilter && (
+            {(statusFilter || categoryFilter || searchQuery) && (
               <Badge variant="secondary" className="font-normal">
                 <Filter className="h-3 w-3 mr-1" />
-                {STATUS_LABELS[statusFilter]}
+                {statusFilter && STATUS_LABELS[statusFilter]}
+                {categoryFilter && ` · ${categories.find(c => c.id === categoryFilter)?.name}`}
+                {searchQuery && ` · "${searchQuery}"`}
                 <button onClick={clearFilter} className="ml-1 hover:text-destructive">
                   <X className="h-3 w-3" />
                 </button>
@@ -365,8 +423,45 @@ export default function PublisherDashboard() {
         <CardContent>
           {tools.length > 0 ? (
             <>
-              {/* 排序控制 */}
+              {/* 搜索和筛选控制 */}
               <div className="flex flex-wrap items-center gap-4 mb-4 pb-4 border-b">
+                {/* 搜索框 */}
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="搜索工具名称..."
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      className="h-8 w-48 rounded-md border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                  </div>
+                  <Button variant="outline" size="sm" className="h-8" onClick={handleSearch}>
+                    搜索
+                  </Button>
+                </div>
+                
+                {/* 分类筛选 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">分类：</span>
+                  <Select value={categoryFilter ? categoryFilter.toString() : ''} onValueChange={handleCategoryFilter}>
+                    <SelectTrigger className="w-32 h-8">
+                      <SelectValue placeholder="全部分类" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">全部分类</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* 排序 */}
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">排序：</span>
                   <Select value={sortField} onValueChange={handleSortFieldChange}>
