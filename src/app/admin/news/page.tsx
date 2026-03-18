@@ -44,7 +44,8 @@ const statusConfig = {
   rejected: { label: '已拒绝', color: 'bg-red-500' },
 }
 
-const categoryConfig = {
+// 资讯分类配置（从API动态获取）
+const defaultCategoryConfig: Record<string, string> = {
   industry: '行业动态',
   research: '学术研究',
   product: '产品发布',
@@ -77,6 +78,7 @@ export default function NewsManagementPage() {
   const { confirm, ConfirmDialog } = useConfirm()
   const [news, setNews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [categoryConfig, setCategoryConfig] = useState<Record<string, string>>(defaultCategoryConfig)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState({
@@ -96,8 +98,26 @@ export default function NewsManagementPage() {
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
   const [importing, setImporting] = useState(false)
 
+  // 获取分类配置
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/admin/news-categories')
+      const result = await response.json()
+      if (result.success) {
+        const config: Record<string, string> = {}
+        for (const cat of result.data) {
+          config[cat.slug] = cat.name
+        }
+        setCategoryConfig(config)
+      }
+    } catch (error) {
+      console.error('获取分类配置失败:', error)
+    }
+  }
+
   useEffect(() => {
     if (user && (user.role === 'admin' || user.role === 'publisher')) {
+      fetchCategories()
       fetchNews()
     }
   }, [user, page, filters])
