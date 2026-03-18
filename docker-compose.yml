@@ -11,8 +11,6 @@
 #   日志: docker-compose logs -f
 #   重建: docker-compose up -d --build
 
-version: '3.8'
-
 services:
   # ==================== 应用服务 ====================
   app:
