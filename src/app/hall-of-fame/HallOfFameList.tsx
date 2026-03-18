@@ -100,7 +100,7 @@ export function HallOfFameList({ totalCount }: Props) {
   return (
     <div>
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+      <div className="space-y-4 mb-6">
         {/* Category Filter */}
         <div className="flex flex-wrap gap-2">
           <button
@@ -134,14 +134,14 @@ export function HallOfFameList({ totalCount }: Props) {
         </div>
 
         {/* Search and Sort */}
-        <div className="flex-1 flex gap-2 md:justify-end">
-          <form onSubmit={handleSearch} className="flex gap-2 flex-1 md:flex-initial">
+        <div className="flex justify-end gap-2">
+          <form onSubmit={handleSearch} className="flex gap-2">
             <input
               type="text"
               placeholder="搜索人物..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-4 py-2 border rounded-lg bg-background flex-1 md:w-48"
+              className="px-4 py-2 border rounded-lg bg-background w-48"
             />
             <button
               type="submit"
