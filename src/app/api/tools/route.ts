@@ -189,32 +189,68 @@ export async function GET(request: NextRequest) {
 
     // 精选推荐特殊处理：置顶在前，其余随机排序
     if (isFeatured === 'true') {
-      // 获取所有精选工具
-      let featuredQuery = client
+      // 并行查询：1) 所有精选工具用于分类统计  2) 当前筛选条件的精选工具用于展示
+      const [allFeaturedResult, categoriesResult] = await Promise.all([
+        client
+          .from('ai_tools')
+          .select('id, category_id, is_pinned')
+          .eq('is_featured', true)
+          .eq('status', 'approved'),
+        client
+          .from('categories')
+          .select('id, name, slug, description, icon, color'),
+      ])
+
+      // 计算每个分类的精选工具数量（基于所有精选工具）
+      const featuredCountByCategory = new Map<number, number>()
+      for (const tool of (allFeaturedResult.data || [])) {
+        const count = featuredCountByCategory.get(tool.category_id) || 0
+        featuredCountByCategory.set(tool.category_id, count + 1)
+      }
+
+      // 计算总精选工具数
+      const totalFeaturedCount = (allFeaturedResult.data || []).length
+
+      // 组装分类统计数据
+      const categoryMap = new Map(
+        (categoriesResult.data || []).map(c => [c.id, c])
+      )
+      const categoryStats = (categoriesResult.data || []).map(c => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        description: c.description,
+        icon: c.icon,
+        color: c.color,
+        toolCount: featuredCountByCategory.get(c.id) || 0,
+      }))
+
+      // 查询当前筛选条件的精选工具（用于展示）
+      let displayQuery = client
         .from('ai_tools')
         .select('id, name, slug, description, website, logo, is_featured, is_free, is_pinned, view_count, favorite_count, created_at, category_id, status, reject_reason')
 
       if (categoryId) {
-        featuredQuery = featuredQuery.eq('category_id', parseInt(categoryId))
+        displayQuery = displayQuery.eq('category_id', parseInt(categoryId))
       }
       if (search) {
-        featuredQuery = featuredQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+        displayQuery = displayQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
       }
       
-      featuredQuery = featuredQuery.eq('is_featured', true).eq('status', 'approved')
+      displayQuery = displayQuery.eq('is_featured', true).eq('status', 'approved')
 
-      const { data: allFeaturedTools, error: featuredError } = await featuredQuery
+      const { data: displayTools, error: displayError } = await displayQuery
 
-      if (featuredError) {
+      if (displayError) {
         return NextResponse.json(
-          { success: false, error: featuredError.message },
+          { success: false, error: displayError.message },
           { status: 400 }
         )
       }
 
       // 分离置顶和非置顶工具
-      const pinnedTools = (allFeaturedTools || []).filter(t => t.is_pinned)
-      const unpinnedTools = (allFeaturedTools || []).filter(t => !t.is_pinned)
+      const pinnedTools = (displayTools || []).filter(t => t.is_pinned)
+      const unpinnedTools = (displayTools || []).filter(t => !t.is_pinned)
 
       // Fisher-Yates 洗牌算法随机排序非置顶工具
       for (let i = unpinnedTools.length - 1; i > 0; i--) {
@@ -231,33 +267,6 @@ export async function GET(request: NextRequest) {
       const to = from + limit
       const paginatedTools = sortedTools.slice(from, to)
 
-      // 获取分类信息
-      const { data: categoriesData } = await client
-        .from('categories')
-        .select('id, name, slug, description, icon, color')
-      
-      const categoryMap = new Map(
-        (categoriesData || []).map(c => [c.id, c])
-      )
-
-      // 计算每个分类的精选工具数量
-      const featuredCountByCategory = new Map<number, number>()
-      for (const tool of (allFeaturedTools || [])) {
-        const count = featuredCountByCategory.get(tool.category_id) || 0
-        featuredCountByCategory.set(tool.category_id, count + 1)
-      }
-
-      // 组装分类统计数据
-      const categoryStats = (categoriesData || []).map(c => ({
-        id: c.id,
-        name: c.name,
-        slug: c.slug,
-        description: c.description,
-        icon: c.icon,
-        color: c.color,
-        toolCount: featuredCountByCategory.get(c.id) || 0,
-      }))
-
       // 组装工具数据
       const toolsWithCategory = paginatedTools.map(tool => ({
         ...tool,
@@ -273,7 +282,7 @@ export async function GET(request: NextRequest) {
           limit,
           totalPages: Math.ceil(total / limit),
           categories: categoryStats,
-          totalToolCount: total,
+          totalToolCount: totalFeaturedCount,
         },
       }, {
         headers: {
