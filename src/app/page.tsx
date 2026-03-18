@@ -590,13 +590,16 @@ function HomePageContent() {
                 {currentTab?.type === 'news' && tabNews.length > 0 && (
                   <Card className="overflow-hidden">
                     <CardContent className="p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                        {tabNews.map((news) => (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
+                        {tabNews.map((news, index) => (
                           <Link 
                             key={news.id} 
                             href={`/news/${news.id}`}
-                            className="flex items-start gap-3 py-2 group hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
+                            className="flex items-start gap-2 py-1 group hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
                           >
+                            <span className="text-xs text-muted-foreground w-5 shrink-0 pt-0.5">
+                              {index + 1}.
+                            </span>
                             <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors flex-1 min-w-0" style={{ minHeight: '2.5rem' }}>
                               {news.title}
                             </h3>
@@ -636,13 +639,16 @@ function HomePageContent() {
                 {currentTab?.type === 'timeline' && tabTimeline.length > 0 && (
                   <Card className="overflow-hidden">
                     <CardContent className="p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                        {tabTimeline.map((event) => (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
+                        {tabTimeline.map((event, index) => (
                           <Link 
                             key={event.id} 
                             href={`/timeline/${event.id}`}
-                            className="flex items-start gap-3 py-2 group hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
+                            className="flex items-start gap-2 py-1 group hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
                           >
+                            <span className="text-xs text-muted-foreground w-5 shrink-0 pt-0.5">
+                              {index + 1}.
+                            </span>
                             <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0 pt-0.5">
                               {event.year}{event.month ? `.${event.month}` : ''}{event.day ? `.${event.day}` : ''}
                             </span>
