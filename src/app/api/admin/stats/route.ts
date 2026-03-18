@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       
       // 资讯统计
       client.from('ai_news').select('*', { count: 'exact', head: true }),
-      client.from('ai_news').select('*', { count: 'exact', head: true }).eq('status', 'published'),
+      client.from('ai_news').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
       client.from('ai_news').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     ])
 
