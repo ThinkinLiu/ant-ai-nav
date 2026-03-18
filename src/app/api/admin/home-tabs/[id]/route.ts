@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest, { params }: Props) {
     const supabase = getSupabaseClient()
     const body = await request.json()
     
-    const { name, slug, type, source_id, icon, color, sort_order, is_default } = body
+    const { name, slug, type, source_id, icon, color, sort_order, is_default, is_visible } = body
     
     // 检查Tab是否存在
     const { data: existingTab, error: fetchError } = await supabase
@@ -70,6 +70,7 @@ export async function PUT(request: NextRequest, { params }: Props) {
       icon: icon || null,
       color: color || null,
       sort_order: sort_order ?? existingTab.sort_order,
+      is_visible: is_visible !== undefined ? is_visible : existingTab.is_visible,
     }
     
     // 非系统Tab可以修改slug和type

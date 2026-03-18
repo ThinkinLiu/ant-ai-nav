@@ -23,7 +23,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { 
   Plus, Edit, Trash2, GripVertical, Save, LayoutGrid,
-  Flame, Globe, Home, Star
+  Flame, Globe, Home, Star, Eye, EyeOff
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -38,6 +38,7 @@ interface Tab {
   sort_order: number
   is_default: boolean
   is_system: boolean
+  is_visible: boolean
   created_at: string
 }
 
@@ -94,6 +95,7 @@ export default function HomeTabsAdminPage() {
     color: '#6366F1',
     sort_order: 0,
     is_default: false,
+    is_visible: true,
   })
 
   useEffect(() => {
@@ -153,6 +155,7 @@ export default function HomeTabsAdminPage() {
       color: tab.color || '#6366F1',
       sort_order: tab.sort_order,
       is_default: tab.is_default,
+      is_visible: tab.is_visible,
     })
     setEditDialogOpen(true)
   }
@@ -168,6 +171,7 @@ export default function HomeTabsAdminPage() {
       color: '#6366F1',
       sort_order: tabs.length,
       is_default: false,
+      is_visible: true,
     })
     setAddDialogOpen(true)
   }
@@ -249,6 +253,33 @@ export default function HomeTabsAdminPage() {
     }
   }
 
+  const toggleVisibility = async (tab: Tab) => {
+    try {
+      const response = await fetch(`/api/admin/home-tabs/${tab.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...tab,
+          is_visible: !tab.is_visible,
+        }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        toast.success(tab.is_visible ? '已隐藏' : '已显示')
+        fetchTabs()
+      } else {
+        toast.error(data.error || '操作失败')
+      }
+    } catch (error) {
+      console.error('切换显示状态失败:', error)
+      toast.error('操作失败')
+    }
+  }
+
   const getTypeLabel = (type: string) => {
     return TAB_TYPES.find(t => t.value === type)?.label || type
   }
@@ -298,7 +329,7 @@ export default function HomeTabsAdminPage() {
             {tabs.map((tab, index) => (
               <div
                 key={tab.id}
-                className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50"
+                className={`flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 ${!tab.is_visible ? 'opacity-60' : ''}`}
               >
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <GripVertical className="h-4 w-4" />
@@ -313,6 +344,9 @@ export default function HomeTabsAdminPage() {
                     )}
                     {tab.is_system && (
                       <Badge variant="secondary">系统</Badge>
+                    )}
+                    {!tab.is_visible && (
+                      <Badge variant="outline" className="text-muted-foreground">已隐藏</Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
@@ -329,6 +363,18 @@ export default function HomeTabsAdminPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleVisibility(tab)}
+                    title={tab.is_visible ? '点击隐藏' : '点击显示'}
+                  >
+                    {tab.is_visible ? (
+                      <Eye className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -484,6 +530,17 @@ export default function HomeTabsAdminPage() {
               />
               <Label htmlFor="is_default">设为默认Tab</Label>
             </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_visible"
+                checked={formData.is_visible}
+                onChange={(e) => setFormData({ ...formData, is_visible: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="is_visible">在首页显示</Label>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
@@ -630,6 +687,17 @@ export default function HomeTabsAdminPage() {
                 className="rounded border-gray-300"
               />
               <Label htmlFor="is_default_new">设为默认Tab</Label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_visible_new"
+                checked={formData.is_visible}
+                onChange={(e) => setFormData({ ...formData, is_visible: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="is_visible_new">在首页显示</Label>
             </div>
           </div>
           <DialogFooter>

@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseClient()
     const body = await request.json()
     
-    const { name, slug, type, source_id, icon, color, sort_order, is_default } = body
+    const { name, slug, type, source_id, icon, color, sort_order, is_default, is_visible } = body
     
     // 验证必填字段
     if (!name || !slug || !type) {
@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
         color: color || null,
         sort_order: sort_order || 0,
         is_default: is_default || false,
+        is_visible: is_visible !== undefined ? is_visible : true,
         is_system: false,
       })
       .select()

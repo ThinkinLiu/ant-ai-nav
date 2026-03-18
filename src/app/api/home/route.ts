@@ -77,10 +77,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 3. 获取Tab配置
+    // 3. 获取Tab配置（只获取显示的Tab）
     const { data: tabs, error: tabsError } = await client
       .from('home_tabs')
       .select('*')
+      .eq('is_visible', true)
       .order('sort_order', { ascending: true })
 
     if (tabsError) {
