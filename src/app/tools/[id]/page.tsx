@@ -307,9 +307,11 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                 {tool.tags && tool.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-4">
                     {tool.tags.map((tag) => (
-                      <Badge key={tag.id} variant="secondary">
-                        {tag.name}
-                      </Badge>
+                      <Link key={tag.id} href={`/tags/${encodeURIComponent(tag.name)}`}>
+                        <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80 transition-colors">
+                          {tag.name}
+                        </Badge>
+                      </Link>
                     ))}
                   </div>
                 )}

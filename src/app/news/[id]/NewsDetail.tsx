@@ -177,12 +177,13 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {news.tags.map((tag, index) => (
-                      <span
+                      <Link
                         key={index}
-                        className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                        href={`/tags/${encodeURIComponent(tag)}`}
+                        className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm hover:bg-primary/20 transition-colors"
                       >
                         {tag}
-                      </span>
+                      </Link>
                     ))}
                   </div>
                 </div>

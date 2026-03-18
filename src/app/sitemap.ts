@@ -16,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     hallOfFameResult,
     newsResult,
     timelineResult,
+    tagsResult,
   ] = await Promise.all([
     // 获取所有已审核通过的工具
     supabase
@@ -51,6 +52,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .select('id, updated_at')
       .eq('is_visible', true)
       .order('event_date', { ascending: false }),
+    
+    // 获取所有标签
+    supabase
+      .from('tags')
+      .select('slug, updated_at')
+      .order('created_at', { ascending: false }),
   ])
   
   const tools = toolsResult.data || []
@@ -58,6 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const hallOfFame = hallOfFameResult.data || []
   const news = newsResult.data || []
   const timeline = timelineResult.data || []
+  const tags = tagsResult.data || []
   
   // 静态页面 - 核心页面（高优先级）
   const corePages: MetadataRoute.Sitemap = [
@@ -195,6 +203,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }))
   
+  // 标签详情页（动态）
+  const tagPages: MetadataRoute.Sitemap = tags.map((tag) => ({
+    url: `${baseUrl}/tags/${tag.slug}`,
+    lastModified: tag.updated_at ? new Date(tag.updated_at) : now,
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
+  }))
+  
   // 合并所有页面
   return [
     ...corePages,
@@ -205,5 +221,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...hallOfFamePages,
     ...newsPages,
     ...timelinePages,
+    ...tagPages,
   ]
 }
