@@ -137,32 +137,40 @@ function HomePageContent() {
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const { user } = useAuth()
 
-  // 初始加载：获取分类数据（始终加载）
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch(`/api/home?t=${Date.now()}`, {
-          cache: 'no-store'
-        })
-        const data = await response.json()
-        if (data.success) {
-          setCategories(data.data.categories)
-          setTotalToolCount(data.data.totalToolCount || 0)
-          setTabs(data.data.tabs || [])
-          setCurrentTab(data.data.currentTab)
-          setTabTools(data.data.tabTools || [])
-          setTabNews(data.data.tabNews || [])
-          setTabFame(data.data.tabFame || [])
-          setTabTimeline(data.data.tabTimeline || [])
-          setHotTools(data.data.hotTools)
-        }
-      } catch (error) {
-        console.error('获取分类数据失败:', error)
+  // 获取原始分类数据（所有工具统计）
+  const fetchCategoriesData = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/home?t=${Date.now()}`, {
+        cache: 'no-store'
+      })
+      const data = await response.json()
+      if (data.success) {
+        setCategories(data.data.categories)
+        setTotalToolCount(data.data.totalToolCount || 0)
+        setTabs(data.data.tabs || [])
+        setCurrentTab(data.data.currentTab)
+        setTabTools(data.data.tabTools || [])
+        setTabNews(data.data.tabNews || [])
+        setTabFame(data.data.tabFame || [])
+        setTabTimeline(data.data.tabTimeline || [])
+        setHotTools(data.data.hotTools)
       }
+    } catch (error) {
+      console.error('获取分类数据失败:', error)
     }
-    
-    fetchCategories()
   }, [])
+
+  // 初始加载：获取分类数据
+  useEffect(() => {
+    fetchCategoriesData()
+  }, [fetchCategoriesData])
+
+  // 当退出精选推荐模式时，重新获取原始分类数据
+  useEffect(() => {
+    if (isFeatured !== 'true' && !searchQuery && !categoryId && activeCategory === 'all') {
+      fetchCategoriesData()
+    }
+  }, [isFeatured, searchQuery, categoryId, activeCategory, fetchCategoriesData])
 
   // 加载工具数据
   useEffect(() => {
@@ -214,6 +222,11 @@ function HomePageContent() {
       const data = await response.json()
       if (data.success) {
         setTools(data.data.data)
+        // 精选推荐模式下更新分类统计
+        if (isFeatured === 'true' && data.data.categories) {
+          setCategories(data.data.categories)
+          setTotalToolCount(data.data.totalToolCount || data.data.total || 0)
+        }
       }
     } catch (error) {
       console.error('获取工具失败:', error)

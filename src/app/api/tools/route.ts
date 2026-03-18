@@ -240,6 +240,24 @@ export async function GET(request: NextRequest) {
         (categoriesData || []).map(c => [c.id, c])
       )
 
+      // 计算每个分类的精选工具数量
+      const featuredCountByCategory = new Map<number, number>()
+      for (const tool of (allFeaturedTools || [])) {
+        const count = featuredCountByCategory.get(tool.category_id) || 0
+        featuredCountByCategory.set(tool.category_id, count + 1)
+      }
+
+      // 组装分类统计数据
+      const categoryStats = (categoriesData || []).map(c => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        description: c.description,
+        icon: c.icon,
+        color: c.color,
+        toolCount: featuredCountByCategory.get(c.id) || 0,
+      }))
+
       // 组装工具数据
       const toolsWithCategory = paginatedTools.map(tool => ({
         ...tool,
@@ -254,6 +272,8 @@ export async function GET(request: NextRequest) {
           page,
           limit,
           totalPages: Math.ceil(total / limit),
+          categories: categoryStats,
+          totalToolCount: total,
         },
       }, {
         headers: {
