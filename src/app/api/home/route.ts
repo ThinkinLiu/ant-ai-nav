@@ -19,8 +19,15 @@ const foreignHotTools = [
   'Canva', 'Adobe Firefly', 'Luma AI', 'Sora', 'Anthropic', 'OpenAI',
 ]
 
-// 龙虾专区关键字
-const lobsterKeywords = ['龙虾', 'OpenClaw', 'Lobster']
+// 龙虾专区标签关键字
+const lobsterTagKeywords = ['龙虾', 'OpenClaw']
+
+// 随机选取数组中的n个元素
+function getRandomItems<T>(array: T[], count: number): T[] {
+  if (array.length <= count) return array
+  const shuffled = [...array].sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, count)
+}
 
 /**
  * 首页聚合API - 一次请求获取所有首页数据
@@ -140,133 +147,201 @@ export async function GET(request: NextRequest) {
       // 根据Tab类型获取数据
       switch (currentTab.type) {
         case 'hot_tools':
+          // 火爆工具：获取所有符合条件的数据，随机选取8个
           const hotResult = await client
             .from('ai_tools')
             .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
             .eq('status', 'approved')
             .order('view_count', { ascending: false })
-            .limit(16)
-          tabTools = (hotResult.data || []).map(tool => ({
+            .limit(50)
+          const hotToolsData = (hotResult.data || []).map(tool => ({
             ...tool,
             category: categoryMap.get(tool.category_id) || null,
           }))
+          tabTools = getRandomItems(hotToolsData, 8)
           break
           
         case 'domestic_tools':
+          // 国内火爆：获取所有符合条件的数据，随机选取8个
           const domesticResult = await client
             .from('ai_tools')
             .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
             .eq('status', 'approved')
             .in('name', domesticHotTools)
-            .limit(16)
-          tabTools = (domesticResult.data || []).map(tool => ({
+            .limit(50)
+          const domesticToolsData = (domesticResult.data || []).map(tool => ({
             ...tool,
             category: categoryMap.get(tool.category_id) || null,
           }))
+          tabTools = getRandomItems(domesticToolsData, 8)
           break
           
         case 'foreign_tools':
+          // 国外火爆：获取所有符合条件的数据，随机选取8个
           const foreignResult = await client
             .from('ai_tools')
             .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
             .eq('status', 'approved')
             .in('name', foreignHotTools)
-            .limit(16)
-          tabTools = (foreignResult.data || []).map(tool => ({
+            .limit(50)
+          const foreignToolsData = (foreignResult.data || []).map(tool => ({
             ...tool,
             category: categoryMap.get(tool.category_id) || null,
           }))
+          tabTools = getRandomItems(foreignToolsData, 8)
           break
           
         case 'lobster_tools':
-          // 龙虾专区：名称包含"龙虾"或"OpenClaw"的工具
-          const lobsterResult = await client
-            .from('ai_tools')
-            .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
-            .eq('status', 'approved')
-            .or(lobsterKeywords.map(k => `name.ilike.%${k}%`).join(','))
-            .limit(16)
-          tabTools = (lobsterResult.data || []).map(tool => ({
-            ...tool,
-            category: categoryMap.get(tool.category_id) || null,
-          }))
+          // 龙虾专区：优先通过标签关联查询，标签名包含"龙虾"或"OpenClaw"
+          // 1. 先查询符合条件的标签
+          const orCondition = lobsterTagKeywords.map(k => `name.ilike.%${k}%`).join(',')
+          const { data: lobsterTags } = await client
+            .from('tags')
+            .select('id')
+            .or(orCondition)
+          
+          let lobsterToolsData: any[] = []
+          
+          if (lobsterTags && lobsterTags.length > 0) {
+            // 2. 通过tool_tags查询tool_id列表
+            const tagIds = lobsterTags.map(t => t.id)
+            const { data: toolTagsData } = await client
+              .from('tool_tags')
+              .select('tool_id')
+              .in('tag_id', tagIds)
+              .limit(50)
+            
+            const toolIds = toolTagsData?.map(tt => tt.tool_id) || []
+            
+            // 3. 用tool_id列表查询工具详情
+            if (toolIds.length > 0) {
+              const { data: toolsData } = await client
+                .from('ai_tools')
+                .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
+                .eq('status', 'approved')
+                .in('id', toolIds)
+                .limit(50)
+              
+              lobsterToolsData = (toolsData || []).map(tool => ({
+                ...tool,
+                category: categoryMap.get(tool.category_id) || null,
+              }))
+            }
+          }
+          
+          // 4. 如果标签筛选结果不足，补充名称包含关键字的工具
+          if (lobsterToolsData.length < 8) {
+            const existingIds = lobsterToolsData.map(t => t.id)
+            const { data: nameResult } = await client
+              .from('ai_tools')
+              .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
+              .eq('status', 'approved')
+              .or(orCondition)
+              .limit(50)
+            
+            const nameToolsData = (nameResult || [])
+              .filter(t => !existingIds.includes(t.id))
+              .map(tool => ({
+                ...tool,
+                category: categoryMap.get(tool.category_id) || null,
+              }))
+            
+            lobsterToolsData = [...lobsterToolsData, ...nameToolsData]
+          }
+          
+          // 去重后随机选取8个
+          const uniqueLobsterTools = Array.from(
+            new Map(lobsterToolsData.map((t: any) => [t.id, t])).values()
+          )
+          tabTools = getRandomItems(uniqueLobsterTools, 8)
           break
           
         case 'category':
           if (currentTab.source_id) {
+            // 分类工具：获取所有符合条件的数据，随机选取8个
             const categoryResult = await client
               .from('ai_tools')
               .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
               .eq('status', 'approved')
               .eq('category_id', currentTab.source_id)
-              .limit(16)
-            tabTools = (categoryResult.data || []).map(tool => ({
+              .limit(50)
+            const categoryToolsData = (categoryResult.data || []).map(tool => ({
               ...tool,
               category: categoryMap.get(tool.category_id) || null,
             }))
+            tabTools = getRandomItems(categoryToolsData, 8)
           }
           break
           
         case 'tag':
           if (currentTab.source_id) {
-            const tagResult = await client
+            // 标签工具：通过tool_tags查询tool_id，再查询工具详情
+            const { data: tagToolIds } = await client
               .from('tool_tags')
-              .select(`
-                tool_id,
-                ai_tools (
-                  id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id
-                )
-              `)
+              .select('tool_id')
               .eq('tag_id', currentTab.source_id)
-              .limit(16)
-            tabTools = tagResult.data
-              ?.map((tt: any) => tt.ai_tools)
-              .filter(Boolean)
-              .filter((t: any) => t.status === 'approved')
-              .map((tool: any) => ({
+              .limit(50)
+            
+            const toolIds = tagToolIds?.map(tt => tt.tool_id) || []
+            
+            if (toolIds.length > 0) {
+              const { data: toolsData } = await client
+                .from('ai_tools')
+                .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
+                .eq('status', 'approved')
+                .in('id', toolIds)
+                .limit(50)
+              
+              const tagToolsData = (toolsData || []).map(tool => ({
                 ...tool,
                 category: categoryMap.get(tool.category_id) || null,
-              })) || []
+              }))
+              tabTools = getRandomItems(tagToolsData, 8)
+            }
           }
           break
           
         case 'news':
+          // 资讯：随机选取8条
           const newsResult = await client
             .from('ai_news')
             .select('id, title, summary, cover_image, category, published_at, view_count')
             .eq('status', 'approved')
             .order('published_at', { ascending: false })
-            .limit(16)
-          tabNews = newsResult.data || []
+            .limit(30)
+          tabNews = getRandomItems(newsResult.data || [], 8)
           break
           
         case 'fame':
+          // 名人堂：随机选取8个
           const fameResult = await client
             .from('hall_of_fame')
             .select('*')
             .eq('is_visible', true)
             .order('sort_order', { ascending: true })
-            .limit(16)
-          tabFame = fameResult.data || []
+            .limit(30)
+          tabFame = getRandomItems(fameResult.data || [], 8)
           break
           
         case 'timeline':
+          // 大事纪：随机选取8条
           const timelineResult = await client
             .from('ai_timeline')
             .select('*')
             .eq('is_visible', true)
             .order('event_date', { ascending: false })
-            .limit(16)
-          tabTimeline = timelineResult.data || []
+            .limit(30)
+          tabTimeline = getRandomItems(timelineResult.data || [], 8)
           break
           
         case 'ranking':
+          // 排行榜：获取前8个
           const rankingResult = await client
             .from('ai_tools')
             .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
             .eq('status', 'approved')
             .order('view_count', { ascending: false })
-            .limit(16)
+            .limit(8)
           tabTools = (rankingResult.data || []).map(tool => ({
             ...tool,
             category: categoryMap.get(tool.category_id) || null,
