@@ -590,21 +590,12 @@ function HomePageContent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {tabNews.map((news) => (
                       <Link key={news.id} href={`/news/${news.id}`}>
-                        <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
-                          {news.cover_image && (
-                            <div className="aspect-video overflow-hidden">
-                              <img
-                                src={news.cover_image}
-                                alt={news.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                            </div>
-                          )}
-                          <CardContent className="p-4">
-                            <h3 className="font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                        <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+                          <CardContent className="p-3">
+                            <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
                               {news.title}
                             </h3>
-                            <p className="text-xs text-muted-foreground mt-2">
+                            <p className="text-xs text-muted-foreground mt-1">
                               {formatRelativeTime(news.published_at)}
                             </p>
                           </CardContent>
