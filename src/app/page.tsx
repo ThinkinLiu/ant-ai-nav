@@ -354,13 +354,6 @@ function HomePageContent() {
     }
   }, [searchQuery, categoryId, isFeatured, activeCategory])
 
-  // 搜索/筛选时单独请求
-  useEffect(() => {
-    if (searchQuery || categoryId || isFeatured || activeCategory !== 'all') {
-      fetchFilteredTools()
-    }
-  }, [searchQuery, categoryId, isFeatured, activeCategory, categories])
-
   const fetchFilteredTools = useCallback(async () => {
     setLoading(true)
     try {
@@ -379,7 +372,7 @@ function HomePageContent() {
       const data = await response.json()
       if (data.success) {
         setTools(data.data.data)
-        // 精选推荐模式下更新分类统计
+        // 精选推荐模式下更新分类统计（仅在首次加载时）
         if (isFeatured === 'true' && data.data.categories) {
           setCategories(data.data.categories)
           setTotalToolCount(data.data.totalToolCount || data.data.total || 0)
@@ -390,7 +383,14 @@ function HomePageContent() {
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, categoryId, isFeatured, activeCategory, categories])
+  }, [searchQuery, categoryId, isFeatured, activeCategory]) // 移除 categories 依赖
+
+  // 搜索/筛选时单独请求
+  useEffect(() => {
+    if (searchQuery || categoryId || isFeatured || activeCategory !== 'all') {
+      fetchFilteredTools()
+    }
+  }, [searchQuery, categoryId, isFeatured, activeCategory, fetchFilteredTools])
 
   // 切换Tab
   const handleTabChange = async (slug: string) => {
