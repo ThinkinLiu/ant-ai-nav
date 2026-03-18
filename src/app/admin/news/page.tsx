@@ -82,8 +82,8 @@ export default function NewsManagementPage() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState({
-    status: '',
-    category: '',
+    status: 'all',
+    category: 'all',
     search: '',
   })
 
@@ -128,8 +128,8 @@ export default function NewsManagementPage() {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '20',
-        ...(filters.status && { status: filters.status }),
-        ...(filters.category && { category: filters.category }),
+        ...(filters.status && filters.status !== 'all' && { status: filters.status }),
+        ...(filters.category && filters.category !== 'all' && { category: filters.category }),
         ...(filters.search && { search: filters.search }),
         ...(user?.role === 'publisher' && { authorId: user.id }),
       })
@@ -358,7 +358,7 @@ export default function NewsManagementPage() {
             </div>
             <Select
               value={filters.status}
-              onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}
+              onValueChange={(value) => setFilters({ ...filters, status: value })}
             >
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="状态" />
@@ -374,7 +374,7 @@ export default function NewsManagementPage() {
             </Select>
             <Select
               value={filters.category}
-              onValueChange={(value) => setFilters({ ...filters, category: value === 'all' ? '' : value })}
+              onValueChange={(value) => setFilters({ ...filters, category: value })}
             >
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="分类" />
