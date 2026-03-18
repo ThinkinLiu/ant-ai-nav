@@ -193,9 +193,9 @@ export async function GET(request: NextRequest) {
           break
           
         case 'lobster_tools':
-          // 龙虾专区：优先通过标签关联查询，标签名包含"龙虾"或"OpenClaw"
-          // 1. 先查询符合条件的标签
-          const orCondition = lobsterTagKeywords.map(k => `name.ilike.%${k}%`).join(',')
+          // 龙虾专区：查询名称是"龙虾"或"OpenClaw"的标签关联的工具
+          // 1. 查询名称精确匹配的标签
+          const orCondition = lobsterTagKeywords.map(k => `name.eq.${k}`).join(',')
           const { data: lobsterTags } = await client
             .from('tags')
             .select('id')
@@ -228,26 +228,6 @@ export async function GET(request: NextRequest) {
                 category: categoryMap.get(tool.category_id) || null,
               }))
             }
-          }
-          
-          // 4. 如果标签筛选结果不足，补充名称包含关键字的工具
-          if (lobsterToolsData.length < 8) {
-            const existingIds = lobsterToolsData.map(t => t.id)
-            const { data: nameResult } = await client
-              .from('ai_tools')
-              .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
-              .eq('status', 'approved')
-              .or(orCondition)
-              .limit(50)
-            
-            const nameToolsData = (nameResult || [])
-              .filter(t => !existingIds.includes(t.id))
-              .map(tool => ({
-                ...tool,
-                category: categoryMap.get(tool.category_id) || null,
-              }))
-            
-            lobsterToolsData = [...lobsterToolsData, ...nameToolsData]
           }
           
           // 去重后随机选取8个
