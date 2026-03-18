@@ -89,12 +89,9 @@ export default function AdminLayout({
   const router = useRouter()
   const pathname = usePathname()
   
-  // 展开状态：默认展开包含当前路径的分组
+  // 展开状态：默认全部展开
   const [expandedGroups, setExpandedGroups] = useState<string[]>(() => {
-    const currentGroup = navGroups.find(g => 
-      g.items.some(item => item.href === pathname)
-    )
-    return currentGroup ? [currentGroup.title] : ['数据概览']
+    return navGroups.map(g => g.title)
   })
 
   useEffect(() => {
