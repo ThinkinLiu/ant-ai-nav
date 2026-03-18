@@ -77,7 +77,7 @@ export async function GET(
     // 批量获取分类信息
     const { data: categories } = await supabase
       .from('categories')
-      .select('id, name, color')
+      .select('id, name, slug, color')
       .in('id', categoryIds)
 
     const categoryMap = new Map((categories || []).map(c => [c.id, c]))

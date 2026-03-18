@@ -25,6 +25,7 @@ interface RelatedTool {
   category: {
     id: number
     name: string
+    slug: string
     color: string
   } | null
 }
@@ -189,7 +190,7 @@ export default function RelatedTools({ toolId }: RelatedToolsProps) {
         {/* 查看更多 */}
         <div className="mt-4 pt-4 border-t text-center">
           <Link 
-            href={`/categories/${tools[0]?.category?.id || ''}`}
+            href={`/tools?category=${tools[0]?.category?.slug || ''}`}
             className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
           >
             查看更多同类工具
