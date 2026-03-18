@@ -55,7 +55,7 @@ export default function TimelineForm({ mode, initialData, id }: TimelineFormProp
     titleEn: initialData?.titleEn || '',
     description: initialData?.description || '',
     category: initialData?.category || '',
-    importance: initialData?.importance || 'normal',
+    importance: initialData?.importance || '',
     icon: initialData?.icon || '',
     image: initialData?.image || '',
     relatedPersonId: initialData?.relatedPersonId || null,
@@ -310,6 +310,7 @@ export default function TimelineForm({ mode, initialData, id }: TimelineFormProp
                   <SelectValue placeholder="选择重要性" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">无</SelectItem>
                   {Object.entries(importanceConfig).map(([key, value]) => (
                     <SelectItem key={key} value={key}>
                       {value.label}
