@@ -314,14 +314,23 @@ export async function GET(request: NextRequest) {
           break
           
         case 'timeline':
-          // 大事纪：随机选取8条
-          const timelineResult = await client
+          // 大事纪：从里程碑事件中随机选取8个
+          const landmarkTimelineResult = await client
             .from('ai_timeline')
-            .select('*')
-            .eq('is_visible', true)
-            .order('event_date', { ascending: false })
+            .select('id, year, month, day, title')
+            .eq('importance', 'landmark')
             .limit(30)
-          tabTimeline = getRandomItems(timelineResult.data || [], 8)
+          
+          if (landmarkTimelineResult.data && landmarkTimelineResult.data.length >= 8) {
+            tabTimeline = getRandomItems(landmarkTimelineResult.data, 8)
+          } else {
+            // 里程碑不足8个，从所有大事纪中补充
+            const allTimelineResult = await client
+              .from('ai_timeline')
+              .select('id, year, month, day, title')
+              .limit(30)
+            tabTimeline = getRandomItems(allTimelineResult.data || [], 8)
+          }
           break
           
         case 'ranking':
