@@ -137,10 +137,9 @@ function HomePageContent() {
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const { user } = useAuth()
 
-  // 初始加载：一次性获取首页所有数据
+  // 初始加载：获取分类数据（始终加载）
   useEffect(() => {
-    const fetchHomeData = async () => {
-      setLoading(true)
+    const fetchCategories = async () => {
       try {
         const response = await fetch(`/api/home?t=${Date.now()}`, {
           cache: 'no-store'
@@ -156,6 +155,25 @@ function HomePageContent() {
           setTabFame(data.data.tabFame || [])
           setTabTimeline(data.data.tabTimeline || [])
           setHotTools(data.data.hotTools)
+        }
+      } catch (error) {
+        console.error('获取分类数据失败:', error)
+      }
+    }
+    
+    fetchCategories()
+  }, [])
+
+  // 加载工具数据
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      setLoading(true)
+      try {
+        const response = await fetch(`/api/home?t=${Date.now()}`, {
+          cache: 'no-store'
+        })
+        const data = await response.json()
+        if (data.success) {
           setTools(data.data.latestTools)
         }
       } catch (error) {
@@ -165,6 +183,7 @@ function HomePageContent() {
       }
     }
     
+    // 只有在没有筛选条件时才加载首页默认数据
     if (!searchQuery && !categoryId && !isFeatured && activeCategory === 'all') {
       fetchHomeData()
     }
