@@ -587,22 +587,26 @@ function HomePageContent() {
 
                 {/* 资讯类型Tab */}
                 {currentTab?.type === 'news' && tabNews.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {tabNews.map((news) => (
-                      <Link key={news.id} href={`/news/${news.id}`}>
-                        <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
-                          <CardContent className="p-3">
-                            <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
+                  <Card className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                        {tabNews.map((news) => (
+                          <Link 
+                            key={news.id} 
+                            href={`/news/${news.id}`}
+                            className="flex items-start gap-3 py-2 group hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
+                          >
+                            <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors flex-1 min-w-0" style={{ minHeight: '2.5rem' }}>
                               {news.title}
                             </h3>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0 pt-0.5">
                               {formatRelativeTime(news.published_at)}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
 
                 {/* 名人堂类型Tab */}
