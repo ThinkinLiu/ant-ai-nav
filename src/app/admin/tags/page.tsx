@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,8 +15,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { useAuth } from '@/contexts/AuthContext'
+import { formatRelativeTime } from '@/lib/utils'
+import { ToolLogo } from '@/components/tools/ToolLogo'
 import { 
-  Plus, Edit, Trash2, Save, Tag, Search, X
+  Plus, Edit, Trash2, Save, Tag, Search, X, ExternalLink, Eye, Heart, Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -27,6 +30,20 @@ interface Tag {
   toolCount?: number
 }
 
+interface TagTool {
+  id: number
+  name: string
+  slug: string
+  description: string
+  website: string
+  logo: string | null
+  status: string
+  view_count: number
+  favorite_count: number
+  created_at: string
+  category: { id: number; name: string; color: string } | null
+}
+
 export default function TagsAdminPage() {
   const { token } = useAuth()
   const [tags, setTags] = useState<Tag[]>([])
@@ -35,7 +52,10 @@ export default function TagsAdminPage() {
   const [saving, setSaving] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [toolsDialogOpen, setToolsDialogOpen] = useState(false)
   const [currentTag, setCurrentTag] = useState<Tag | null>(null)
+  const [tagTools, setTagTools] = useState<TagTool[]>([])
+  const [toolsLoading, setToolsLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   
   // 表单数据
@@ -181,6 +201,78 @@ export default function TagsAdminPage() {
     }
   }
 
+  // 查看关联工具
+  const handleViewTools = async (tag: Tag) => {
+    setCurrentTag(tag)
+    setToolsDialogOpen(true)
+    setToolsLoading(true)
+    setTagTools([])
+    
+    try {
+      const response = await fetch(`/api/admin/tags/${tag.id}/tools`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await response.json()
+      if (data.success) {
+        setTagTools(data.data)
+      } else {
+        toast.error(data.error || '获取工具列表失败')
+      }
+    } catch (error) {
+      console.error('获取关联工具失败:', error)
+      toast.error('获取关联工具失败')
+    } finally {
+      setToolsLoading(false)
+    }
+  }
+
+  // 移除工具与标签的关联
+  const handleRemoveTool = async (toolId: number) => {
+    if (!currentTag) return
+    
+    if (!confirm('确定要移除该工具与此标签的关联吗？')) {
+      return
+    }
+    
+    try {
+      // 获取工具当前的所有标签
+      const response = await fetch(`/api/tools/${toolId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        // 过滤掉当前标签
+        const newTags = (data.data.tags || [])
+          .filter((t: any) => t.id !== currentTag.id)
+          .map((t: any) => t.name)
+        
+        // 更新工具的标签
+        const updateResponse = await fetch(`/api/tools/${toolId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ tags: newTags }),
+        })
+        
+        const updateData = await updateResponse.json()
+        if (updateData.success) {
+          toast.success('已移除关联')
+          // 刷新列表
+          setTagTools(prev => prev.filter(t => t.id !== toolId))
+          fetchTags()
+        } else {
+          toast.error(updateData.error || '移除失败')
+        }
+      }
+    } catch (error) {
+      console.error('移除关联失败:', error)
+      toast.error('移除关联失败')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -250,7 +342,12 @@ export default function TagsAdminPage() {
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                    <span>关联工具: {tag.toolCount || 0} 个</span>
+                    <button
+                      className="hover:text-primary cursor-pointer underline underline-offset-2"
+                      onClick={() => handleViewTools(tag)}
+                    >
+                      关联工具: {tag.toolCount || 0} 个
+                    </button>
                     <span>•</span>
                     <span>ID: {tag.id}</span>
                   </div>
@@ -361,6 +458,104 @@ export default function TagsAdminPage() {
               创建
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 关联工具对话框 */}
+      <Dialog open={toolsDialogOpen} onOpenChange={setToolsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Tag className="h-5 w-5" />
+              标签「{currentTag?.name}」关联的工具
+              <Badge variant="secondary">{tagTools.length} 个</Badge>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto py-4">
+            {toolsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : tagTools.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                暂无关联的工具
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {tagTools.map((tool) => (
+                  <div
+                    key={tool.id}
+                    className="flex items-center gap-4 p-3 border rounded-lg hover:bg-muted/50"
+                  >
+                    <ToolLogo
+                      logo={tool.logo}
+                      name={tool.name}
+                      website={tool.website}
+                      size={40}
+                      className="h-10 w-10 rounded-lg shrink-0"
+                      fallbackBgColor={tool.category?.color || '#6366F1'}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{tool.name}</span>
+                        <Badge 
+                          variant={tool.status === 'approved' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {tool.status === 'approved' ? '已通过' : tool.status === 'pending' ? '待审核' : '已拒绝'}
+                        </Badge>
+                        {tool.category && (
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs"
+                            style={{ borderColor: tool.category.color, color: tool.category.color }}
+                          >
+                            {tool.category.name}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
+                        {tool.description}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Eye className="h-3 w-3" />
+                          {tool.view_count}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Heart className="h-3 w-3" />
+                          {tool.favorite_count}
+                        </span>
+                        <span>{formatRelativeTime(tool.created_at)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        title="查看详情"
+                      >
+                        <Link href={`/tools/${tool.slug}`} target="_blank">
+                          <ExternalLink className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => handleRemoveTool(tool.id)}
+                        title="移除关联"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
