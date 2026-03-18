@@ -119,21 +119,30 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 获取标签
+    // 获取标签 - 使用直接查询方式
     let toolTagsMap: Record<number, { id: number; name: string }[]> = {}
     if (toolIds.length > 0) {
       const { data: toolTags } = await client
         .from('tool_tags')
-        .select('tool_id, tag_id, tags(id, name)')
+        .select('tool_id, tag_id')
         .in('tool_id', toolIds)
       
-      if (toolTags) {
+      if (toolTags && toolTags.length > 0) {
+        const tagIds = [...new Set(toolTags.map(tt => tt.tag_id))]
+        const { data: tagsData } = await client
+          .from('tags')
+          .select('id, name')
+          .in('id', tagIds)
+        
+        const tagMap = new Map((tagsData || []).map(t => [t.id, t]))
+        
         toolTags.forEach((tt: any) => {
           if (!toolTagsMap[tt.tool_id]) {
             toolTagsMap[tt.tool_id] = []
           }
-          if (tt.tags) {
-            toolTagsMap[tt.tool_id].push(tt.tags)
+          const tag = tagMap.get(tt.tag_id)
+          if (tag) {
+            toolTagsMap[tt.tool_id].push(tag)
           }
         })
       }
