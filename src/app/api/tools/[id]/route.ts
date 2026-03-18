@@ -43,13 +43,21 @@ export async function GET(
       .eq('id', tool.publisher_id)
       .single()
 
-    // 获取标签
+    // 获取标签 - 使用直接查询方式
     const { data: toolTags } = await client
       .from('tool_tags')
-      .select('tags(*)')
+      .select('tag_id')
       .eq('tool_id', tool.id)
 
-    const tags = toolTags?.map((tt: any) => tt.tags).filter(Boolean) || []
+    let tags: any[] = []
+    if (toolTags && toolTags.length > 0) {
+      const tagIds = toolTags.map(tt => tt.tag_id)
+      const { data: tagsData } = await client
+        .from('tags')
+        .select('id, name, slug')
+        .in('id', tagIds)
+      tags = tagsData || []
+    }
 
     // 获取评论统计
     const { data: comments } = await client

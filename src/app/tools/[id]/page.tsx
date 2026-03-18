@@ -36,7 +36,7 @@ interface Tool {
   created_at: string
   category: { id: number; name: string; color: string } | null
   publisher: { id: string; name: string; avatar: string | null } | null
-  tags: { id: number; name: string }[]
+  tags: { id: number; name: string; slug: string }[]
   avgRating: number
   reviewCount: number
 }
@@ -307,7 +307,7 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                 {tool.tags && tool.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-4">
                     {tool.tags.map((tag) => (
-                      <Link key={tag.id} href={`/tags/${encodeURIComponent(tag.name)}`}>
+                      <Link key={tag.id} href={`/tags/${tag.slug || encodeURIComponent(tag.name)}`}>
                         <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80 transition-colors">
                           {tag.name}
                         </Badge>

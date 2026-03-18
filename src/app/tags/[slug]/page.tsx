@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getSupabaseClient, tryGetSupabaseClient } from '@/storage/database/supabase-client'
+import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { ToolLogoNext } from '@/components/tools/ToolLogo'
 import { Badge } from '@/components/ui/badge'
 import { formatRelativeTime } from '@/lib/utils'
@@ -17,31 +17,18 @@ interface Props {
 // 强制动态渲染
 export const dynamic = 'force-dynamic'
 
-// 生成静态参数
-export async function generateStaticParams() {
-  const supabase = tryGetSupabaseClient()
-  if (!supabase) {
-    return []
-  }
-  
-  const { data: tags } = await supabase
-    .from('tags')
-    .select('slug')
-  
-  return tags?.map((tag) => ({
-    slug: tag.slug,
-  })) || []
-}
-
 // 生成元数据
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const supabase = getSupabaseClient()
   
+  // 解码 slug
+  const decodedSlug = decodeURIComponent(slug)
+  
   const { data: tag } = await supabase
     .from('tags')
     .select('name')
-    .eq('slug', slug)
+    .eq('slug', decodedSlug)
     .single()
 
   if (!tag) {
@@ -59,48 +46,52 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TagPage({ params }: Props) {
   const { slug } = await params
   const supabase = getSupabaseClient()
+  
+  // 解码 slug
+  const decodedSlug = decodeURIComponent(slug)
 
   // 获取标签信息
   const { data: tag, error: tagError } = await supabase
     .from('tags')
     .select('*')
-    .eq('slug', slug)
+    .eq('slug', decodedSlug)
     .single()
 
   if (tagError || !tag) {
     notFound()
   }
 
-  // 获取该标签下的工具
+  // 获取该标签下的工具 - 使用直接查询方式
   const { data: toolTags } = await supabase
     .from('tool_tags')
-    .select(`
-      tool_id,
-      ai_tools (
-        id,
-        name,
-        slug,
-        description,
-        website,
-        logo,
-        view_count,
-        favorite_count,
-        is_featured,
-        is_free,
-        created_at,
-        category:categories ( id, name, color )
-      )
-    `)
+    .select('tool_id')
     .eq('tag_id', tag.id)
-
-  // 处理工具数据
-  const tools = toolTags
-    ?.map((tt: any) => tt.ai_tools)
-    .filter(Boolean)
-    .map((tool: any) => ({
-      ...tool,
-      category: Array.isArray(tool.category) ? tool.category[0] : tool.category
-    })) || []
+  
+  let tools: any[] = []
+  if (toolTags && toolTags.length > 0) {
+    const toolIds = toolTags.map(tt => tt.tool_id)
+    const { data: toolsData } = await supabase
+      .from('ai_tools')
+      .select('id, name, slug, description, website, logo, view_count, favorite_count, is_featured, is_free, created_at, category_id')
+      .eq('status', 'approved')
+      .in('id', toolIds)
+    
+    // 获取分类信息
+    if (toolsData && toolsData.length > 0) {
+      const categoryIds = [...new Set(toolsData.map(t => t.category_id).filter(Boolean))]
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('id, name, color')
+        .in('id', categoryIds)
+      
+      const categoryMap = new Map((categoriesData || []).map(c => [c.id, c]))
+      
+      tools = toolsData.map(tool => ({
+        ...tool,
+        category: categoryMap.get(tool.category_id) || null
+      }))
+    }
+  }
 
   // 获取该标签下的资讯（tags字段包含该标签名）
   const { data: news } = await supabase
