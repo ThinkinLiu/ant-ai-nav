@@ -1,0 +1,173 @@
+# 蚂蚁AI导航 - Nginx 配置模板
+# 
+# 使用方法：
+# 1. 复制此文件内容
+# 2. 修改 server_name 为你的域名
+# 3. 修改 root 路径为实际项目路径
+# 4. 在宝塔面板网站设置中粘贴配置
+#
+# 注意：
+# - SSL 配置需要先在宝塔申请证书
+# - 代理地址默认为 http://127.0.0.1:5000
+
+# HTTP 配置（自动跳转 HTTPS）
+server {
+    listen 80;
+    listen [::]:80;
+    server_name your-domain.com www.your-domain.com;
+    
+    # 强制跳转 HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+# HTTPS 配置
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name your-domain.com www.your-domain.com;
+    
+    # 项目根目录
+    root /www/wwwroot/ant-ai-nav/public;
+    index index.html;
+    
+    # SSL 证书配置（宝塔会自动生成，以下为示例）
+    # ssl_certificate /www/server/panel/vhost/cert/your-domain.com/fullchain.pem;
+    # ssl_certificate_key /www/server/panel/vhost/cert/your-domain.com/privkey.pem;
+    
+    # SSL 优化配置
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    
+    # 安全头
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    
+    # Gzip 压缩
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml application/json application/javascript application/rss+xml application/atom+xml image/svg+xml;
+    gzip_min_length 1000;
+    
+    # 客户端上传限制
+    client_max_body_size 20M;
+    
+    # 代理到 Next.js 应用
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        
+        # WebSocket 支持
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        
+        # 代理头
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # 缓存控制
+        proxy_cache_bypass $http_upgrade;
+        
+        # 超时设置
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+    
+    # Next.js 静态资源 - 长期缓存
+    location /_next/static/ {
+        alias /www/wwwroot/ant-ai-nav/.next/static/;
+        expires 365d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+    
+    # 图片资源缓存
+    location ~* \.(jpg|jpeg|png|gif|ico|webp|svg|avif)$ {
+        proxy_pass http://127.0.0.1:5000;
+        expires 30d;
+        add_header Cache-Control "public";
+        access_log off;
+    }
+    
+    # CSS/JS 资源缓存
+    location ~* \.(css|js)$ {
+        proxy_pass http://127.0.0.1:5000;
+        expires 7d;
+        add_header Cache-Control "public";
+    }
+    
+    # 字体文件缓存
+    location ~* \.(woff|woff2|ttf|otf|eot)$ {
+        proxy_pass http://127.0.0.1:5000;
+        expires 30d;
+        add_header Cache-Control "public";
+        access_log off;
+    }
+    
+    # robots.txt
+    location = /robots.txt {
+        proxy_pass http://127.0.0.1:5000;
+        access_log off;
+    }
+    
+    # sitemap.xml
+    location = /sitemap.xml {
+        proxy_pass http://127.0.0.1:5000;
+        access_log off;
+    }
+    
+    # favicon
+    location = /favicon.ico {
+        proxy_pass http://127.0.0.1:5000;
+        expires 30d;
+        access_log off;
+    }
+    
+    # 禁止访问隐藏文件
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+    
+    # 禁止访问敏感文件
+    location ~* \.(env|git|gitignore|dockerignore|md|txt|log)$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+    
+    # 错误页面
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /www/server/nginx/html;
+    }
+    
+    # 访问日志
+    access_log /www/wwwlogs/ant-ai-nav.log;
+    error_log /www/wwwlogs/ant-ai-nav.error.log;
+}
+
+# API 子域名配置（可选）
+# server {
+#     listen 443 ssl http2;
+#     server_name api.your-domain.com;
+#     
+#     location / {
+#         proxy_pass http://127.0.0.1:5000;
+#         proxy_http_version 1.1;
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#     }
+# }
