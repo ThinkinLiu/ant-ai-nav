@@ -42,6 +42,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/admin/tools', label: '工具审核', icon: FileCheck },
       { href: '/admin/categories', label: '工具分类', icon: Layers },
+      { href: '/admin/tags', label: '标签管理', icon: Tags },
       { href: '/admin/news', label: 'AI资讯', icon: Newspaper },
       { href: '/admin/news-categories', label: '资讯分类', icon: Tags },
       { href: '/admin/hall-of-fame', label: '名人堂管理', icon: Award },
