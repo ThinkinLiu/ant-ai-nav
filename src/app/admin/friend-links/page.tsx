@@ -40,7 +40,8 @@ import {
   Clock,
   ArrowUp,
   ArrowDown,
-  GripVertical
+  GripVertical,
+  Pencil
 } from 'lucide-react'
 import { useConfirm } from '@/hooks/use-confirm'
 
@@ -80,6 +81,19 @@ export default function FriendLinksManagementPage() {
   // 详情对话框
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedLink, setSelectedLink] = useState<FriendLink | null>(null)
+
+  // 编辑对话框
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingLink, setEditingLink] = useState<FriendLink | null>(null)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    url: '',
+    description: '',
+    logo: '',
+    contact_name: '',
+    contact_email: '',
+  })
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchLinks()
@@ -205,6 +219,67 @@ export default function FriendLinksManagementPage() {
     } catch (error) {
       console.error('删除失败:', error)
       toast.error('删除失败')
+    }
+  }
+
+  // 打开编辑对话框
+  const openEditDialog = (link: FriendLink) => {
+    setEditingLink(link)
+    setEditForm({
+      name: link.name,
+      url: link.url,
+      description: link.description || '',
+      logo: link.logo || '',
+      contact_name: link.contact_name || '',
+      contact_email: link.contact_email || '',
+    })
+    setEditDialogOpen(true)
+  }
+
+  // 保存编辑
+  const handleSaveEdit = async () => {
+    if (!editingLink) return
+    
+    if (!editForm.name.trim()) {
+      toast.error('网站名称不能为空')
+      return
+    }
+    
+    if (!editForm.url.trim()) {
+      toast.error('网站地址不能为空')
+      return
+    }
+
+    // 验证 URL 格式
+    try {
+      new URL(editForm.url)
+    } catch {
+      toast.error('网站地址格式不正确')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/admin/friend-links/${editingLink.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success('保存成功')
+        setEditDialogOpen(false)
+        fetchLinks()
+      } else {
+        toast.error(result.error || '保存失败')
+      }
+    } catch (error) {
+      console.error('保存失败:', error)
+      toast.error('保存失败')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -348,8 +423,17 @@ export default function FriendLinksManagementPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() => viewDetail(link)}
+                          title="查看详情"
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openEditDialog(link)}
+                          title="编辑"
+                        >
+                          <Pencil className="h-4 w-4" />
                         </Button>
                         {link.status === 'pending' && (
                           <>
@@ -358,6 +442,7 @@ export default function FriendLinksManagementPage() {
                               variant="ghost"
                               className="text-green-600 hover:text-green-700"
                               onClick={() => handleApprove(link.id)}
+                              title="通过"
                             >
                               <Check className="h-4 w-4" />
                             </Button>
@@ -366,6 +451,7 @@ export default function FriendLinksManagementPage() {
                               variant="ghost"
                               className="text-red-600 hover:text-red-700"
                               onClick={() => openRejectDialog(link.id)}
+                              title="拒绝"
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -377,6 +463,7 @@ export default function FriendLinksManagementPage() {
                               size="sm"
                               variant="ghost"
                               onClick={() => handleSort(link.id, 'up')}
+                              title="上移"
                             >
                               <ArrowUp className="h-4 w-4" />
                             </Button>
@@ -384,6 +471,7 @@ export default function FriendLinksManagementPage() {
                               size="sm"
                               variant="ghost"
                               onClick={() => handleSort(link.id, 'down')}
+                              title="下移"
                             >
                               <ArrowDown className="h-4 w-4" />
                             </Button>
@@ -394,6 +482,7 @@ export default function FriendLinksManagementPage() {
                           variant="ghost"
                           className="text-destructive"
                           onClick={() => handleDelete(link.id)}
+                          title="删除"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -534,6 +623,102 @@ export default function FriendLinksManagementPage() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 编辑对话框 */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>编辑友情链接</DialogTitle>
+            <DialogDescription>
+              修改友情链接信息
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">网站名称 *</Label>
+              <Input
+                id="edit-name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="网站名称"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-url">网站地址 *</Label>
+              <Input
+                id="edit-url"
+                value={editForm.url}
+                onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
+                placeholder="https://example.com"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-logo">网站Logo</Label>
+              <Input
+                id="edit-logo"
+                value={editForm.logo}
+                onChange={(e) => setEditForm({ ...editForm, logo: e.target.value })}
+                placeholder="https://example.com/logo.png"
+              />
+              {editForm.logo && (
+                <div className="mt-2">
+                  <img
+                    src={editForm.logo}
+                    alt="Logo预览"
+                    className="w-10 h-10 rounded object-contain border"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">网站描述</Label>
+              <Textarea
+                id="edit-description"
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                placeholder="网站简介"
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-contact-name">联系人</Label>
+                <Input
+                  id="edit-contact-name"
+                  value={editForm.contact_name}
+                  onChange={(e) => setEditForm({ ...editForm, contact_name: e.target.value })}
+                  placeholder="联系人姓名"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-contact-email">联系邮箱</Label>
+                <Input
+                  id="edit-contact-email"
+                  type="email"
+                  value={editForm.contact_email}
+                  onChange={(e) => setEditForm({ ...editForm, contact_email: e.target.value })}
+                  placeholder="contact@example.com"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={saving}>
+              {saving ? '保存中...' : '保存'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
