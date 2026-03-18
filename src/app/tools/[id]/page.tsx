@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { formatRelativeTime } from '@/lib/utils'
 import { 
   ExternalLink, Star, Heart, Share2, MessageCircle, 
-  Eye, Clock, ArrowLeft, Send, ThumbsUp, Award
+  Eye, Clock, ArrowLeft, Send, ThumbsUp, Award, Edit
 } from 'lucide-react'
 import RelatedTools from '@/components/tools/RelatedTools'
 import { ToolLogoNext } from '@/components/tools/ToolLogo'
@@ -271,6 +271,16 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
 
                 {/* Stats */}
                 <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                  {/* 编辑入口 - 仅管理员或发布者本人可见 */}
+                  {user && (user.role === 'admin' || user.id === tool.publisher?.id) && (
+                    <Link 
+                      href={`/publisher/tools/${tool.id}/edit`}
+                      className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <Edit className="h-4 w-4" />
+                      编辑
+                    </Link>
+                  )}
                   <span className="flex items-center gap-1">
                     <Eye className="h-4 w-4" />
                     {tool.view_count} 浏览
