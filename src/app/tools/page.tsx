@@ -117,10 +117,9 @@ function ToolsPageContent() {
       params.append('sortBy', sortBy)
       params.append('sortOrder', sortOrder)
       
-      // 分类筛选
+      // 分类筛选 - 直接使用 slug
       if (activeCategory !== 'all') {
-        const cat = categories.find(c => c.slug === activeCategory)
-        if (cat) params.append('categoryId', cat.id.toString())
+        params.append('categorySlug', activeCategory)
       }
 
       const response = await fetch(`/api/tools?${params}`)

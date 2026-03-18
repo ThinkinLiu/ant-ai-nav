@@ -7,7 +7,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '12')
-    const categoryId = searchParams.get('categoryId')
+    let categoryId = searchParams.get('categoryId')
+    const categorySlug = searchParams.get('categorySlug')
     const publisherId = searchParams.get('publisherId')
     const status = searchParams.get('status') || (publisherId ? '' : 'approved') // 发布者查看自己的工具时不限制状态
     const search = searchParams.get('search')
@@ -16,6 +17,18 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get('sortOrder') || 'desc'
 
     const client = getSupabaseClient()
+    
+    // 如果传入的是 categorySlug，先转换为 categoryId
+    if (categorySlug && !categoryId) {
+      const { data: categoryData } = await client
+        .from('categories')
+        .select('id')
+        .eq('slug', categorySlug)
+        .single()
+      if (categoryData) {
+        categoryId = categoryData.id.toString()
+      }
+    }
     
     // 如果按评论数排序，需要特殊处理
     if (sortBy === 'comment_count') {
