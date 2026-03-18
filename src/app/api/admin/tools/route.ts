@@ -119,6 +119,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 获取标签
+    let toolTagsMap: Record<number, { id: number; name: string }[]> = {}
+    if (toolIds.length > 0) {
+      const { data: toolTags } = await client
+        .from('tool_tags')
+        .select('tool_id, tag_id, tags(id, name)')
+        .in('tool_id', toolIds)
+      
+      if (toolTags) {
+        toolTags.forEach((tt: any) => {
+          if (!toolTagsMap[tt.tool_id]) {
+            toolTagsMap[tt.tool_id] = []
+          }
+          if (tt.tags) {
+            toolTagsMap[tt.tool_id].push(tt.tags)
+          }
+        })
+      }
+    }
+
     // 组装数据
     const toolsWithInfo = (tools || []).map(tool => ({
       ...tool,
@@ -126,6 +146,7 @@ export async function GET(request: NextRequest) {
       publisher: publishers?.find(p => p.id === tool.publisher_id) || null,
       favorite_count: favoriteCounts[tool.id] || 0,
       comment_count: commentCounts[tool.id] || 0,
+      tags: toolTagsMap[tool.id] || [],
     }))
 
     // 获取所有分类（用于筛选下拉）

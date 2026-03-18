@@ -172,6 +172,7 @@ export async function PUT(
     if (body.isPinned !== undefined) updateData.is_pinned = body.isPinned
     if (body.rejectReason !== undefined) updateData.reject_reason = body.rejectReason
 
+    // 更新工具
     const { data: updatedTool, error } = await client
       .from('ai_tools')
       .update(updateData)
@@ -184,6 +185,65 @@ export async function PUT(
         { success: false, error: error.message },
         { status: 400 }
       )
+    }
+
+    // 处理标签更新
+    if (body.tags !== undefined) {
+      const tags = Array.isArray(body.tags) 
+        ? body.tags.filter((t: string) => t.trim()).map((t: string) => t.trim())
+        : []
+      
+      // 删除旧的标签关联
+      await client
+        .from('tool_tags')
+        .delete()
+        .eq('tool_id', parseInt(id))
+      
+      if (tags.length > 0) {
+        // 获取或创建标签
+        const tagIds: number[] = []
+        
+        for (const tagName of tags) {
+          // 查找现有标签
+          const { data: existingTag } = await client
+            .from('tags')
+            .select('id')
+            .eq('name', tagName)
+            .single()
+          
+          if (existingTag) {
+            tagIds.push(existingTag.id)
+          } else {
+            // 创建新标签
+            const slug = tagName
+              .toLowerCase()
+              .replace(/\s+/g, '-')
+              .replace(/[^\w\u4e00-\u9fa5-]/g, '')
+            
+            const { data: newTag, error: createError } = await client
+              .from('tags')
+              .insert({ name: tagName, slug })
+              .select('id')
+              .single()
+            
+            if (!createError && newTag) {
+              tagIds.push(newTag.id)
+            }
+          }
+        }
+        
+        // 创建新的标签关联
+        if (tagIds.length > 0) {
+          const toolTagsData = tagIds.map(tagId => ({
+            tool_id: parseInt(id),
+            tag_id: tagId,
+          }))
+          
+          await client
+            .from('tool_tags')
+            .insert(toolTagsData)
+        }
+      }
     }
 
     return NextResponse.json({

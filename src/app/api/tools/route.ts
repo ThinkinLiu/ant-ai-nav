@@ -428,32 +428,54 @@ export async function POST(request: NextRequest) {
 
     // 处理标签
     if (tags && tags.length > 0) {
+      const tagIds: number[] = []
+      
       for (const tagName of tags) {
-        // 查找或创建标签
+        if (!tagName || !tagName.trim()) continue
+        
+        const trimmedName = tagName.trim()
+        
+        // 按名称查找标签
         let { data: tag } = await client
           .from('tags')
           .select('id')
-          .eq('slug', tagName.toLowerCase())
+          .eq('name', trimmedName)
           .single()
 
         if (!tag) {
-          const { data: newTag } = await client
+          // 创建新标签
+          const slug = trimmedName
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^\w\u4e00-\u9fa5-]/g, '')
+          
+          const { data: newTag, error: createError } = await client
             .from('tags')
             .insert({
-              name: tagName,
-              slug: tagName.toLowerCase(),
+              name: trimmedName,
+              slug,
             })
             .select('id')
             .single()
-          tag = newTag
+          
+          if (!createError && newTag) {
+            tagIds.push(newTag.id)
+          }
+        } else {
+          tagIds.push(tag.id)
         }
+      }
 
-        if (tag) {
-          await client.from('tool_tags').insert({
-            tool_id: tool.id,
-            tag_id: tag.id,
-          })
-        }
+      // 批量创建标签关联
+      if (tagIds.length > 0) {
+        const toolTagsData = tagIds.map(tagId => ({
+          tool_id: tool.id,
+          tag_id: tagId,
+        }))
+        
+        await client
+          .from('tool_tags')
+          .insert(toolTagsData)
       }
     }
 
