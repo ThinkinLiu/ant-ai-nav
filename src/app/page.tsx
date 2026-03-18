@@ -302,15 +302,15 @@ function HomePageContent() {
       })
       const data = await response.json()
       if (data.success) {
-        setCategories(data.data.categories)
+        setCategories(data.data.categories || [])
         setTotalToolCount(data.data.totalToolCount || 0)
         setTabs(data.data.tabs || [])
-        setCurrentTab(data.data.currentTab)
+        setCurrentTab(data.data.currentTab || null)
         setTabTools(data.data.tabTools || [])
         setTabNews(data.data.tabNews || [])
         setTabFame(data.data.tabFame || [])
         setTabTimeline(data.data.tabTimeline || [])
-        setHotTools(data.data.hotTools)
+        setHotTools(data.data.hotTools || [])
       }
     } catch (error) {
       console.error('获取分类数据失败:', error)
@@ -339,7 +339,7 @@ function HomePageContent() {
         })
         const data = await response.json()
         if (data.success) {
-          setTools(data.data.latestTools)
+          setTools(data.data?.latestTools || [])
         }
       } catch (error) {
         console.error('获取首页数据失败:', error)
@@ -371,9 +371,9 @@ function HomePageContent() {
       const response = await fetch(`/api/tools?${params}`)
       const data = await response.json()
       if (data.success) {
-        setTools(data.data.data)
+        setTools(data.data?.data || [])
         // 精选推荐模式下更新分类统计（仅在首次加载时）
-        if (isFeatured === 'true' && data.data.categories) {
+        if (isFeatured === 'true' && data.data?.categories) {
           setCategories(data.data.categories)
           setTotalToolCount(data.data.totalToolCount || data.data.total || 0)
         }
