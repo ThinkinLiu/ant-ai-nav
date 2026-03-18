@@ -67,6 +67,7 @@ function ToolsPageContent() {
   const initialSortBy = searchParams.get('sortBy') || 'view_count'
   const initialCategory = searchParams.get('category') || 'all'
   const initialPage = parseInt(searchParams.get('page') || '1')
+  const filter = searchParams.get('filter') // domestic 或 foreign
   
   const [categories, setCategories] = useState<Category[]>([])
   const [tools, setTools] = useState<Tool[]>([])
@@ -90,8 +91,9 @@ function ToolsPageContent() {
     params.set('sortBy', sortBy)
     if (activeCategory !== 'all') params.set('category', activeCategory)
     if (page > 1) params.set('page', page.toString())
+    if (filter) params.set('filter', filter)
     router.replace(`/tools?${params.toString()}`, { scroll: false })
-  }, [sortBy, activeCategory, page])
+  }, [sortBy, activeCategory, page, filter])
 
   const fetchCategories = async () => {
     try {
@@ -120,6 +122,11 @@ function ToolsPageContent() {
       // 分类筛选 - 直接使用 slug
       if (activeCategory !== 'all') {
         params.append('categorySlug', activeCategory)
+      }
+      
+      // 国内/国外火爆筛选
+      if (filter) {
+        params.append('filter', filter)
       }
 
       const response = await fetch(`/api/tools?${params}`)
@@ -176,6 +183,12 @@ function ToolsPageContent() {
 
   // 获取排序标题
   const getSortTitle = () => {
+    if (filter === 'domestic') {
+      return '国内火爆'
+    } else if (filter === 'foreign') {
+      return '国外火爆'
+    }
+    
     switch (sortBy) {
       case 'view_count':
         return '热门工具'
@@ -197,9 +210,11 @@ function ToolsPageContent() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                {sortBy === 'view_count' && <Flame className="h-6 w-6 text-orange-500" />}
-                {sortBy === 'favorite_count' && <Heart className="h-6 w-6 text-pink-500" />}
-                {sortBy === 'created_at' && <Clock className="h-6 w-6 text-blue-500" />}
+                {filter === 'domestic' && <span className="text-2xl">🇨🇳</span>}
+                {filter === 'foreign' && <span className="text-2xl">🌍</span>}
+                {sortBy === 'view_count' && !filter && <Flame className="h-6 w-6 text-orange-500" />}
+                {sortBy === 'favorite_count' && !filter && <Heart className="h-6 w-6 text-pink-500" />}
+                {sortBy === 'created_at' && !filter && <Clock className="h-6 w-6 text-blue-500" />}
                 <h1 className="text-2xl font-bold">{getSortTitle()}</h1>
               </div>
               <Badge variant="secondary" className="text-sm">

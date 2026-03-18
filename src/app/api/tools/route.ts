@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 
+// 国内火爆AI工具名称列表
+const domesticHotTools = [
+  'DeepSeek', 'Kimi智能助手', '通义千问', '文心一言', '讯飞星火', '豆包',
+  '智谱清言', '腾讯混元', '百川大模型', '商量SenseChat', 'MiniMax', '阶跃星辰',
+  '天工AI', '海螺AI', '秘塔AI搜索', '即梦AI', '可灵AI', '通义万相', '文心一格',
+  '无界AI', '堆友', '美图设计室', 'liblibAI', '剪映AI', '必剪', '快影',
+  '秘塔写作猫', '火山写作', '彩云小梦', '通义灵码', '百度Comate', '豆包MarsCode',
+  '飞书AI', '钉钉AI', '石墨文档AI', '魔音工坊', 'Suno AI', 'Udio',
+]
+
+// 国外火爆AI工具名称列表
+const foreignHotTools = [
+  'ChatGPT', 'Claude', 'Gemini', 'Midjourney', 'DALL-E', 'Stable Diffusion',
+  'GitHub Copilot', 'Notion AI', 'Perplexity', 'Runway', 'Pika', 'ElevenLabs',
+  'Jasper', 'Copy.ai', 'Grammarly', 'Otter.ai', 'Descript', 'Figma AI',
+  'Canva', 'Adobe Firefly', 'Luma AI', 'Sora', 'Anthropic', 'OpenAI',
+]
+
 // 获取工具列表
 export async function GET(request: NextRequest) {
   try {
@@ -15,6 +33,7 @@ export async function GET(request: NextRequest) {
     const isFeatured = searchParams.get('isFeatured')
     const sortBy = searchParams.get('sortBy') || 'created_at'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
+    const filter = searchParams.get('filter') // 新增：domestic 或 foreign
 
     const client = getSupabaseClient()
     
@@ -249,6 +268,13 @@ export async function GET(request: NextRequest) {
     let query = client
       .from('ai_tools')
       .select('id, name, slug, description, website, logo, is_featured, is_free, is_pinned, view_count, favorite_count, created_at, category_id, status, reject_reason', { count: 'exact' })
+
+    // 国内/国外火爆筛选
+    if (filter === 'domestic') {
+      query = query.in('name', domesticHotTools)
+    } else if (filter === 'foreign') {
+      query = query.in('name', foreignHotTools)
+    }
 
     // 筛选条件
     if (categoryId) {
