@@ -309,40 +309,42 @@ function HomePageContent() {
       {/* 公告滚动条 */}
       <AnnouncementBar />
 
-      {/* Categories Section */}
-      <section className="py-8 border-b">
-        <div className="container mx-auto px-4">
-          <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
-            <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0">
-              <TabsTrigger 
-                value="all" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-              >
-                全部
-                <Badge variant="secondary" className="ml-1 text-xs">
-                  {totalToolCount}
-                </Badge>
-              </TabsTrigger>
-              {categories.map((category) => {
-                const Icon = category.icon ? iconMap[category.icon] : Star
-                return (
-                  <TabsTrigger
-                    key={category.id}
-                    value={category.slug}
-                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  >
-                    <Icon className="mr-1 h-4 w-4" />
-                    {category.name}
-                    <Badge variant="secondary" className="ml-1 text-xs">
-                      {category.toolCount}
-                    </Badge>
-                  </TabsTrigger>
-                )
-              })}
-            </TabsList>
-          </Tabs>
-        </div>
-      </section>
+      {/* Categories Section - 非精选推荐模式下显示 */}
+      {isFeatured !== 'true' && (
+        <section className="py-8 border-b">
+          <div className="container mx-auto px-4">
+            <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
+              <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0">
+                <TabsTrigger 
+                  value="all" 
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  全部
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {totalToolCount}
+                  </Badge>
+                </TabsTrigger>
+                {categories.map((category) => {
+                  const Icon = category.icon ? iconMap[category.icon] : Star
+                  return (
+                    <TabsTrigger
+                      key={category.id}
+                      value={category.slug}
+                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    >
+                      <Icon className="mr-1 h-4 w-4" />
+                      {category.name}
+                      <Badge variant="secondary" className="ml-1 text-xs">
+                        {category.toolCount}
+                      </Badge>
+                    </TabsTrigger>
+                  )
+                })}
+              </TabsList>
+            </Tabs>
+          </div>
+        </section>
+      )}
 
       {/* 首页Tab展示 */}
       {!searchQuery && !categoryId && !isFeatured && activeCategory === 'all' && tabs.length > 0 && (
@@ -532,21 +534,22 @@ function HomePageContent() {
                isFeatured === 'true' ? '精选推荐' : '最新上架'}
             </h2>
             
-            {/* 热门推荐下拉菜单 */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2 cursor-pointer hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 dark:hover:bg-orange-950 dark:hover:text-orange-400">
-                  <Flame className="h-4 w-4 text-orange-500" />
-                  <span>热门推荐</span>
-                  <ChevronRight className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 p-2">
-                <DropdownMenuLabel className="flex items-center gap-2 text-base">
-                  <Flame className="h-5 w-5 text-orange-500" />
-                  <span>🔥 热门工具 TOP 6</span>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+            {/* 热门推荐下拉菜单 - 非精选推荐模式下显示 */}
+            {isFeatured !== 'true' && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2 cursor-pointer hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 dark:hover:bg-orange-950 dark:hover:text-orange-400">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    <span>热门推荐</span>
+                    <ChevronRight className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 p-2">
+                  <DropdownMenuLabel className="flex items-center gap-2 text-base">
+                    <Flame className="h-5 w-5 text-orange-500" />
+                    <span>🔥 热门工具 TOP 6</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
                 
                 {hotTools.length > 0 ? (
                   hotTools.map((tool, index) => (
@@ -613,7 +616,43 @@ function HomePageContent() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            )}
           </div>
+
+          {/* 精选推荐模式下的分类Tab */}
+          {isFeatured === 'true' && (
+            <div className="mb-6">
+              <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
+                <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0">
+                  <TabsTrigger 
+                    value="all" 
+                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  >
+                    全部
+                    <Badge variant="secondary" className="ml-1 text-xs">
+                      {totalToolCount}
+                    </Badge>
+                  </TabsTrigger>
+                  {categories.map((category) => {
+                    const Icon = category.icon ? iconMap[category.icon] : Star
+                    return (
+                      <TabsTrigger
+                        key={category.id}
+                        value={category.slug}
+                        className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                      >
+                        <Icon className="mr-1 h-4 w-4" />
+                        {category.name}
+                        <Badge variant="secondary" className="ml-1 text-xs">
+                          {category.toolCount}
+                        </Badge>
+                      </TabsTrigger>
+                    )
+                  })}
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
 
           {/* Tools Grid */}
           {loading ? (
