@@ -294,14 +294,23 @@ export async function GET(request: NextRequest) {
           break
           
         case 'fame':
-          // 名人堂：随机选取8个
-          const fameResult = await client
-            .from('hall_of_fame')
-            .select('*')
-            .eq('is_visible', true)
-            .order('sort_order', { ascending: true })
+          // 名人堂：从推荐人物中随机选取8个，如果不足则从所有人物中补充
+          const featuredFameResult = await client
+            .from('ai_hall_of_fame')
+            .select('id, name, name_en, photo, title')
+            .eq('is_featured', true)
             .limit(30)
-          tabFame = getRandomItems(fameResult.data || [], 8)
+          
+          if (featuredFameResult.data && featuredFameResult.data.length >= 8) {
+            tabFame = getRandomItems(featuredFameResult.data, 8)
+          } else {
+            // 推荐人物不足8个，从所有人物中选取
+            const allFameResult = await client
+              .from('ai_hall_of_fame')
+              .select('id, name, name_en, photo, title')
+              .limit(30)
+            tabFame = getRandomItems(allFameResult.data || [], 8)
+          }
           break
           
         case 'timeline':

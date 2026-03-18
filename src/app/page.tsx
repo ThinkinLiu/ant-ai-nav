@@ -248,9 +248,9 @@ interface News {
 interface Fame {
   id: number
   name: string
-  avatar: string | null
-  title: string | null
-  bio: string | null
+  name_en?: string | null
+  photo: string | null
+  title?: string | null
 }
 
 interface Timeline {
@@ -611,28 +611,21 @@ function HomePageContent() {
 
                 {/* 名人堂类型Tab */}
                 {currentTab?.type === 'fame' && tabFame.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                  <div className="flex flex-wrap gap-4 justify-center">
                     {tabFame.map((person) => (
-                      <Link key={person.id} href={`/hall-of-fame/${person.id}`}>
-                        <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
-                          <CardContent className="p-4 text-center">
-                            <div className="h-12 w-12 mx-auto rounded-full overflow-hidden mb-3 bg-gradient-to-br from-blue-400 to-purple-500">
-                              {person.avatar ? (
-                                <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-white font-bold text-lg">
-                                  {person.name?.[0] || 'A'}
-                                </div>
-                              )}
+                      <Link key={person.id} href={`/hall-of-fame/${person.id}`} className="flex flex-col items-center group">
+                        <div className="h-16 w-16 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-purple-500 group-hover:ring-4 ring-primary/20 transition-all">
+                          {person.photo ? (
+                            <img src={person.photo} alt={person.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">
+                              {person.name?.[0] || 'A'}
                             </div>
-                            <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-                              {person.name}
-                            </h3>
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                              {person.title || 'AI专家'}
-                            </p>
-                          </CardContent>
-                        </Card>
+                          )}
+                        </div>
+                        <span className="text-sm font-medium mt-2 truncate max-w-[80px] text-center group-hover:text-primary transition-colors">
+                          {person.name}
+                        </span>
                       </Link>
                     ))}
                   </div>
