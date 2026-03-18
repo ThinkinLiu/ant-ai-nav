@@ -589,7 +589,7 @@ function HomePageContent() {
                 {/* 资讯类型Tab */}
                 {currentTab?.type === 'news' && tabNews.length > 0 && (
                   <Card className="overflow-hidden">
-                    <CardContent className="p-4">
+                    <CardContent className="py-1.5 px-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
                         {tabNews.map((news, index) => (
                           <Link 
@@ -638,7 +638,7 @@ function HomePageContent() {
                 {/* 大事纪类型Tab */}
                 {currentTab?.type === 'timeline' && tabTimeline.length > 0 && (
                   <Card className="overflow-hidden">
-                    <CardContent className="p-4">
+                    <CardContent className="py-1.5 px-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
                         {tabTimeline.map((event, index) => (
                           <Link 
