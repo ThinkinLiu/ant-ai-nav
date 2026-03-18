@@ -23,6 +23,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { formatRelativeTime } from '@/lib/utils'
 import { ToolLogoNext } from '@/components/tools/ToolLogo'
+import { AnnouncementBar } from '@/components/announcement/AnnouncementBar'
 
 const iconMap: Record<string, any> = {
   PenTool,
@@ -272,6 +273,9 @@ function HomePageContent() {
         <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-gradient-to-br from-blue-400/20 to-purple-400/20 blur-3xl" />
         <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-br from-pink-400/20 to-orange-400/20 blur-3xl" />
       </section>
+
+      {/* 公告滚动条 */}
+      <AnnouncementBar />
 
       {/* Categories Section */}
       <section className="py-8 border-b">
