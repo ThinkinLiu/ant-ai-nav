@@ -1,6 +1,9 @@
 import { MetadataRoute } from 'next'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 
+// 配置：每小时重新验证一次
+export const revalidate = 3600 // 1小时（单位：秒）
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = getSupabaseClient()
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://mayiai.site'
