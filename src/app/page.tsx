@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +33,9 @@ const iconMap: Record<string, any> = {
   Video,
   Briefcase,
   GraduationCap,
+  Flame,
+  TrendingUp,
+  Star,
 }
 
 interface Category {
@@ -43,6 +46,19 @@ interface Category {
   icon: string | null
   color: string | null
   toolCount: number
+}
+
+interface Tab {
+  id: number
+  name: string
+  slug: string
+  type: string
+  source_id: number | null
+  icon: string | null
+  color: string | null
+  sort_order: number
+  is_default: boolean
+  is_system: boolean
 }
 
 interface Tool {
@@ -61,11 +77,40 @@ interface Tool {
   category: Category
 }
 
+interface News {
+  id: number
+  title: string
+  summary: string
+  cover_image: string | null
+  category: string | null
+  published_at: string
+  view_count: number
+}
+
+interface Fame {
+  id: number
+  name: string
+  avatar: string | null
+  title: string | null
+  bio: string | null
+}
+
+interface Timeline {
+  id: number
+  title: string
+  description: string | null
+  event_date: string
+}
+
 interface HomeData {
   categories: Category[]
   totalToolCount: number
-  domesticTools: Tool[]
-  foreignTools: Tool[]
+  tabs: Tab[]
+  currentTab: Tab | null
+  tabTools: Tool[]
+  tabNews: News[]
+  tabFame: Fame[]
+  tabTimeline: Timeline[]
   hotTools: Tool[]
   latestTools: Tool[]
 }
@@ -79,10 +124,15 @@ function HomePageContent() {
   const [categories, setCategories] = useState<Category[]>([])
   const [totalToolCount, setTotalToolCount] = useState<number>(0)
   const [tools, setTools] = useState<Tool[]>([])
-  const [domesticTools, setDomesticTools] = useState<Tool[]>([])
-  const [foreignTools, setForeignTools] = useState<Tool[]>([])
+  const [tabs, setTabs] = useState<Tab[]>([])
+  const [currentTab, setCurrentTab] = useState<Tab | null>(null)
+  const [tabTools, setTabTools] = useState<Tool[]>([])
+  const [tabNews, setTabNews] = useState<News[]>([])
+  const [tabFame, setTabFame] = useState<Fame[]>([])
+  const [tabTimeline, setTabTimeline] = useState<Timeline[]>([])
   const [hotTools, setHotTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
+  const [tabLoading, setTabLoading] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const { user } = useAuth()
 
@@ -91,7 +141,6 @@ function HomePageContent() {
     const fetchHomeData = async () => {
       setLoading(true)
       try {
-        // 添加时间戳参数避免缓存
         const response = await fetch(`/api/home?t=${Date.now()}`, {
           cache: 'no-store'
         })
@@ -99,8 +148,12 @@ function HomePageContent() {
         if (data.success) {
           setCategories(data.data.categories)
           setTotalToolCount(data.data.totalToolCount || 0)
-          setDomesticTools(data.data.domesticTools)
-          setForeignTools(data.data.foreignTools)
+          setTabs(data.data.tabs || [])
+          setCurrentTab(data.data.currentTab)
+          setTabTools(data.data.tabTools || [])
+          setTabNews(data.data.tabNews || [])
+          setTabFame(data.data.tabFame || [])
+          setTabTimeline(data.data.tabTimeline || [])
           setHotTools(data.data.hotTools)
           setTools(data.data.latestTools)
         }
@@ -111,7 +164,6 @@ function HomePageContent() {
       }
     }
     
-    // 只有在没有搜索/筛选条件时才使用聚合API
     if (!searchQuery && !categoryId && !isFeatured && activeCategory === 'all') {
       fetchHomeData()
     }
@@ -122,7 +174,7 @@ function HomePageContent() {
     if (searchQuery || categoryId || isFeatured || activeCategory !== 'all') {
       fetchFilteredTools()
     }
-  }, [searchQuery, categoryId, isFeatured, activeCategory])
+  }, [searchQuery, categoryId, isFeatured, activeCategory, categories])
 
   const fetchFilteredTools = useCallback(async () => {
     setLoading(true)
@@ -135,7 +187,6 @@ function HomePageContent() {
         const cat = categories.find(c => c.slug === activeCategory)
         if (cat) params.append('categoryId', cat.id.toString())
       }
-      // 精选推荐显示所有工具，其他情况显示20个
       const limit = isFeatured === 'true' ? '500' : '20'
       params.append('limit', limit)
 
@@ -151,8 +202,40 @@ function HomePageContent() {
     }
   }, [searchQuery, categoryId, isFeatured, activeCategory, categories])
 
+  // 切换Tab
+  const handleTabChange = async (slug: string) => {
+    const tab = tabs.find(t => t.slug === slug)
+    if (!tab) return
+    
+    setTabLoading(true)
+    setCurrentTab(tab)
+    
+    try {
+      const response = await fetch(`/api/home?tab=${slug}&t=${Date.now()}`, {
+        cache: 'no-store'
+      })
+      const data = await response.json()
+      if (data.success) {
+        setTabTools(data.data.tabTools || [])
+        setTabNews(data.data.tabNews || [])
+        setTabFame(data.data.tabFame || [])
+        setTabTimeline(data.data.tabTimeline || [])
+      }
+    } catch (error) {
+      console.error('获取Tab数据失败:', error)
+    } finally {
+      setTabLoading(false)
+    }
+  }
+
   const handleCategoryChange = (slug: string) => {
     setActiveCategory(slug)
+  }
+
+  // 获取Tab图标
+  const getTabIcon = (iconName: string | null) => {
+    if (!iconName) return Star
+    return iconMap[iconName] || Star
   }
 
   return (
@@ -225,101 +308,172 @@ function HomePageContent() {
         </div>
       </section>
 
-      {/* 国内火爆AI工具 - 1排 */}
-      {!searchQuery && !categoryId && !isFeatured && activeCategory === 'all' && domesticTools.length > 0 && (
-        <section className="py-8 bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50 dark:from-red-950/20 dark:via-orange-950/20 dark:to-yellow-950/20">
+      {/* 首页Tab展示 */}
+      {!searchQuery && !categoryId && !isFeatured && activeCategory === 'all' && tabs.length > 0 && (
+        <section className="py-8 bg-gradient-to-r from-orange-50 via-red-50 to-pink-50 dark:from-orange-950/20 dark:via-red-950/20 dark:to-pink-950/20">
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Flame className="h-6 w-6 text-red-500" />
-                <h2 className="text-2xl font-bold">国内火爆AI工具</h2>
-                <Badge variant="destructive" className="ml-2">HOT</Badge>
-              </div>
-              <Button variant="outline" size="sm" asChild className="gap-1 hover:bg-red-50 hover:text-red-600 hover:border-red-300 dark:hover:bg-red-950 dark:hover:text-red-400">
-                <Link href="/hot-china">
-                  查看更多
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-              {domesticTools.map((tool) => (
-                <Link key={tool.id} href={`/tools/${tool.id}`}>
-                  <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+            <Tabs value={currentTab?.slug || tabs[0]?.slug} onValueChange={handleTabChange}>
+              <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0 mb-6">
+                {tabs.map((tab) => {
+                  const Icon = getTabIcon(tab.icon)
+                  return (
+                    <TabsTrigger
+                      key={tab.id}
+                      value={tab.slug}
+                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                      style={tab.color ? { 
+                        '--tab-active-bg': tab.color,
+                      } as React.CSSProperties : {}}
+                    >
+                      <Icon className="mr-1 h-4 w-4" />
+                      {tab.name}
+                    </TabsTrigger>
+                  )
+                })}
+              </TabsList>
+            </Tabs>
+
+            {/* Tab内容 */}
+            {tabLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                {[...Array(8)].map((_, i) => (
+                  <Card key={i} className="overflow-hidden h-full">
                     <CardContent className="p-4 text-center">
-                      <div className="h-12 w-12 mx-auto rounded-lg overflow-hidden mb-3">
-                        <ToolLogoNext 
-                          logo={tool.logo} 
-                          name={tool.name} 
-                          website={tool.website}
-                          className="h-full w-full rounded-lg"
-                          size={48}
-                          fallbackBgColor={tool.category?.color || '#EF4444'}
-                        />
-                      </div>
-                      <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-                        {tool.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                        {tool.category?.name || 'AI工具'}
-                      </p>
+                      <div className="h-12 w-12 mx-auto rounded-lg bg-muted animate-pulse mb-3" />
+                      <div className="h-4 bg-muted animate-pulse rounded w-3/4 mx-auto" />
                     </CardContent>
                   </Card>
-                </Link>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                {/* 工具类型Tab */}
+                {['hot_tools', 'domestic_tools', 'foreign_tools', 'lobster_tools', 'category', 'tag', 'ranking'].includes(currentTab?.type || '') && tabTools.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                    {tabTools.map((tool) => (
+                      <Link key={tool.id} href={`/tools/${tool.id}`}>
+                        <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+                          <CardContent className="p-4 text-center">
+                            <div className="h-12 w-12 mx-auto rounded-lg overflow-hidden mb-3">
+                              <ToolLogoNext 
+                                logo={tool.logo} 
+                                name={tool.name} 
+                                website={tool.website}
+                                className="h-full w-full rounded-lg"
+                                size={48}
+                                fallbackBgColor={tool.category?.color || currentTab?.color || '#EF4444'}
+                              />
+                            </div>
+                            <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                              {tool.name}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                              {tool.category?.name || 'AI工具'}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* 资讯类型Tab */}
+                {currentTab?.type === 'news' && tabNews.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {tabNews.map((news) => (
+                      <Link key={news.id} href={`/news/${news.id}`}>
+                        <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+                          {news.cover_image && (
+                            <div className="aspect-video overflow-hidden">
+                              <img
+                                src={news.cover_image}
+                                alt={news.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                            </div>
+                          )}
+                          <CardContent className="p-4">
+                            <h3 className="font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                              {news.title}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {formatRelativeTime(news.published_at)}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* 名人堂类型Tab */}
+                {currentTab?.type === 'fame' && tabFame.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                    {tabFame.map((person) => (
+                      <Link key={person.id} href={`/hall-of-fame/${person.id}`}>
+                        <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+                          <CardContent className="p-4 text-center">
+                            <div className="h-12 w-12 mx-auto rounded-full overflow-hidden mb-3 bg-gradient-to-br from-blue-400 to-purple-500">
+                              {person.avatar ? (
+                                <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-white font-bold text-lg">
+                                  {person.name?.[0] || 'A'}
+                                </div>
+                              )}
+                            </div>
+                            <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                              {person.name}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                              {person.title || 'AI专家'}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* 大事纪类型Tab */}
+                {currentTab?.type === 'timeline' && tabTimeline.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {tabTimeline.map((event) => (
+                      <Link key={event.id} href={`/timeline/${event.id}`}>
+                        <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+                          <CardContent className="p-4">
+                            <div className="text-xs text-muted-foreground mb-2">
+                              {new Date(event.event_date).toLocaleDateString('zh-CN')}
+                            </div>
+                            <h3 className="font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                              {event.title}
+                            </h3>
+                            {event.description && (
+                              <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                {event.description}
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* 空状态 */}
+                {tabTools.length === 0 && tabNews.length === 0 && tabFame.length === 0 && tabTimeline.length === 0 && (
+                  <div className="text-center py-8">
+                    <span className="text-4xl mb-4 block">🔍</span>
+                    <p className="text-muted-foreground">该Tab暂无内容</p>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </section>
       )}
 
-      {/* 国外火爆AI工具 - 1排 */}
-      {!searchQuery && !categoryId && !isFeatured && activeCategory === 'all' && foreignTools.length > 0 && (
-        <section className="py-8 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-6 w-6 text-blue-500" />
-                <h2 className="text-2xl font-bold">国外火爆AI工具</h2>
-                <Badge className="ml-2 bg-blue-500 hover:bg-blue-600">GLOBAL</Badge>
-              </div>
-              <Button variant="outline" size="sm" asChild className="gap-1 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 dark:hover:bg-blue-950 dark:hover:text-blue-400">
-                <Link href="/hot-global">
-                  查看更多
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-              {foreignTools.map((tool) => (
-                <Link key={tool.id} href={`/tools/${tool.id}`}>
-                  <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
-                    <CardContent className="p-4 text-center">
-                      <div className="h-12 w-12 mx-auto rounded-lg overflow-hidden mb-3">
-                        <ToolLogoNext 
-                          logo={tool.logo} 
-                          name={tool.name} 
-                          website={tool.website}
-                          className="h-full w-full rounded-lg"
-                          size={48}
-                          fallbackBgColor={tool.category?.color || '#3B82F6'}
-                        />
-                      </div>
-                      <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-                        {tool.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                        {tool.category?.name || 'AI工具'}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 最新上架 - 2排 */}
+      {/* 最新上架 */}
       <section className="py-12">
         <div className="container mx-auto px-4">
           {/* Sort Options */}
@@ -349,7 +503,6 @@ function HomePageContent() {
                   hotTools.map((tool, index) => (
                     <DropdownMenuItem key={tool.id} asChild className="cursor-pointer p-0">
                       <Link href={`/tools/${tool.id}`} className="flex items-start gap-3 p-3 w-full hover:bg-muted/50 rounded-md">
-                        {/* 排名标识 */}
                         <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                           index === 0 ? 'bg-yellow-400 text-yellow-900' :
                           index === 1 ? 'bg-gray-300 text-gray-700' :
@@ -359,7 +512,6 @@ function HomePageContent() {
                           {index + 1}
                         </div>
                         
-                        {/* 工具信息 */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-medium truncate">{tool.name}</span>
@@ -370,7 +522,6 @@ function HomePageContent() {
                           <p className="text-xs text-muted-foreground truncate mt-0.5">
                             {tool.description}
                           </p>
-                          {/* 热度指标 */}
                           <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Eye className="h-3 w-3" />
@@ -386,7 +537,6 @@ function HomePageContent() {
                           </div>
                         </div>
                         
-                        {/* 热度火焰 */}
                         <div className="flex items-center gap-0.5">
                           {index < 3 && (
                             <>

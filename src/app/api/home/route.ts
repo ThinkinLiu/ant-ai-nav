@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 
 // 国内火爆AI工具名称列表
@@ -19,13 +19,17 @@ const foreignHotTools = [
   'Canva', 'Adobe Firefly', 'Luma AI', 'Sora', 'Anthropic', 'OpenAI',
 ]
 
+// 龙虾专区关键字
+const lobsterKeywords = ['龙虾', 'OpenClaw', 'Lobster']
+
 /**
  * 首页聚合API - 一次请求获取所有首页数据
- * 包含：分类列表(带工具数量)、国内火爆工具(8个)、热门工具(TOP 6)、最新工具(16个)
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const client = getSupabaseClient()
+    const { searchParams } = new URL(request.url)
+    const tabSlug = searchParams.get('tab') // 获取当前Tab
     
     // 1. 获取分类列表
     const { data: categories, error: categoriesError } = await client
@@ -45,12 +49,10 @@ export async function GET() {
     const { data: countData, error: countError } = await client
       .rpc('get_tool_counts_by_category')
 
-    // 如果RPC不存在，使用备用方案
     let countMap = new Map<number, number>()
     
     if (countError || !countData) {
-      // 备用方案：直接查询所有工具的category_id
-      const { data: allTools, error: toolsError } = await client
+      const { data: allTools } = await client
         .from('ai_tools')
         .select('category_id')
         .eq('status', 'approved')
@@ -68,25 +70,18 @@ export async function GET() {
       }
     }
 
-    // 3. 并行获取国内火爆工具、国外火爆工具、热门工具和最新工具
-    const [domesticToolsResult, foreignToolsResult, hotToolsResult, latestToolsResult] = await Promise.all([
-      // 国内火爆AI工具（按名称匹配，最多8个）
-      client
-        .from('ai_tools')
-        .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
-        .eq('status', 'approved')
-        .in('name', domesticHotTools)
-        .limit(8),
-      
-      // 国外火爆AI工具（按名称匹配，最多8个）
-      client
-        .from('ai_tools')
-        .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
-        .eq('status', 'approved')
-        .in('name', foreignHotTools)
-        .limit(8),
-      
-      // 热门工具（按浏览量排序）
+    // 3. 获取Tab配置
+    const { data: tabs, error: tabsError } = await client
+      .from('home_tabs')
+      .select('*')
+      .order('sort_order', { ascending: true })
+
+    if (tabsError) {
+      console.error('获取Tab配置错误:', tabsError.message)
+    }
+
+    // 4. 并行获取热门工具和最新工具
+    const [hotToolsResult, latestToolsResult] = await Promise.all([
       client
         .from('ai_tools')
         .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
@@ -96,7 +91,6 @@ export async function GET() {
         .order('favorite_count', { ascending: false })
         .limit(6),
       
-      // 最新上架（16个，2排，优先展示置顶工具）
       client
         .from('ai_tools')
         .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
@@ -106,12 +100,6 @@ export async function GET() {
         .limit(16)
     ])
 
-    if (domesticToolsResult.error) {
-      console.error('获取国内火爆工具错误:', domesticToolsResult.error.message)
-    }
-    if (foreignToolsResult.error) {
-      console.error('获取国外火爆工具错误:', foreignToolsResult.error.message)
-    }
     if (hotToolsResult.error) {
       return NextResponse.json(
         { success: false, error: hotToolsResult.error.message },
@@ -125,7 +113,7 @@ export async function GET() {
       )
     }
 
-    // 创建分类映射（用于工具关联）
+    // 创建分类映射
     const categoryMap = new Map(
       (categories || []).map(c => [c.id, c])
     )
@@ -139,17 +127,155 @@ export async function GET() {
       toolCount: countMap.get(category.id) || 0,
     }))
 
-    // 组装工具数据（添加分类信息）
-    const domesticTools = (domesticToolsResult.data || []).map(tool => ({
-      ...tool,
-      category: categoryMap.get(tool.category_id) || null,
-    }))
+    // 获取Tab数据
+    let tabTools: any[] = []
+    let tabNews: any[] = []
+    let tabFame: any[] = []
+    let tabTimeline: any[] = []
+    
+    // 找到当前Tab或默认Tab
+    const currentTab = tabs?.find(t => t.slug === tabSlug) || tabs?.find(t => t.is_default) || tabs?.[0]
+    
+    if (currentTab) {
+      // 根据Tab类型获取数据
+      switch (currentTab.type) {
+        case 'hot_tools':
+          const hotResult = await client
+            .from('ai_tools')
+            .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
+            .eq('status', 'approved')
+            .order('view_count', { ascending: false })
+            .limit(16)
+          tabTools = (hotResult.data || []).map(tool => ({
+            ...tool,
+            category: categoryMap.get(tool.category_id) || null,
+          }))
+          break
+          
+        case 'domestic_tools':
+          const domesticResult = await client
+            .from('ai_tools')
+            .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
+            .eq('status', 'approved')
+            .in('name', domesticHotTools)
+            .limit(16)
+          tabTools = (domesticResult.data || []).map(tool => ({
+            ...tool,
+            category: categoryMap.get(tool.category_id) || null,
+          }))
+          break
+          
+        case 'foreign_tools':
+          const foreignResult = await client
+            .from('ai_tools')
+            .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
+            .eq('status', 'approved')
+            .in('name', foreignHotTools)
+            .limit(16)
+          tabTools = (foreignResult.data || []).map(tool => ({
+            ...tool,
+            category: categoryMap.get(tool.category_id) || null,
+          }))
+          break
+          
+        case 'lobster_tools':
+          // 龙虾专区：名称包含"龙虾"或"OpenClaw"的工具
+          const lobsterResult = await client
+            .from('ai_tools')
+            .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
+            .eq('status', 'approved')
+            .or(lobsterKeywords.map(k => `name.ilike.%${k}%`).join(','))
+            .limit(16)
+          tabTools = (lobsterResult.data || []).map(tool => ({
+            ...tool,
+            category: categoryMap.get(tool.category_id) || null,
+          }))
+          break
+          
+        case 'category':
+          if (currentTab.source_id) {
+            const categoryResult = await client
+              .from('ai_tools')
+              .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
+              .eq('status', 'approved')
+              .eq('category_id', currentTab.source_id)
+              .limit(16)
+            tabTools = (categoryResult.data || []).map(tool => ({
+              ...tool,
+              category: categoryMap.get(tool.category_id) || null,
+            }))
+          }
+          break
+          
+        case 'tag':
+          if (currentTab.source_id) {
+            const tagResult = await client
+              .from('tool_tags')
+              .select(`
+                tool_id,
+                ai_tools (
+                  id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id
+                )
+              `)
+              .eq('tag_id', currentTab.source_id)
+              .limit(16)
+            tabTools = tagResult.data
+              ?.map((tt: any) => tt.ai_tools)
+              .filter(Boolean)
+              .filter((t: any) => t.status === 'approved')
+              .map((tool: any) => ({
+                ...tool,
+                category: categoryMap.get(tool.category_id) || null,
+              })) || []
+          }
+          break
+          
+        case 'news':
+          const newsResult = await client
+            .from('ai_news')
+            .select('id, title, summary, cover_image, category, published_at, view_count')
+            .eq('status', 'approved')
+            .order('published_at', { ascending: false })
+            .limit(16)
+          tabNews = newsResult.data || []
+          break
+          
+        case 'fame':
+          const fameResult = await client
+            .from('hall_of_fame')
+            .select('*')
+            .eq('is_visible', true)
+            .order('sort_order', { ascending: true })
+            .limit(16)
+          tabFame = fameResult.data || []
+          break
+          
+        case 'timeline':
+          const timelineResult = await client
+            .from('ai_timeline')
+            .select('*')
+            .eq('is_visible', true)
+            .order('event_date', { ascending: false })
+            .limit(16)
+          tabTimeline = timelineResult.data || []
+          break
+          
+        case 'ranking':
+          const rankingResult = await client
+            .from('ai_tools')
+            .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
+            .eq('status', 'approved')
+            .order('view_count', { ascending: false })
+            .limit(16)
+          tabTools = (rankingResult.data || []).map(tool => ({
+            ...tool,
+            category: categoryMap.get(tool.category_id) || null,
+          }))
+          break
+      }
+    }
 
-    const foreignTools = (foreignToolsResult.data || []).map(tool => ({
-      ...tool,
-      category: categoryMap.get(tool.category_id) || null,
-    }))
-
+    // 组装工具数据
     const hotTools = (hotToolsResult.data || []).map(tool => ({
       ...tool,
       category: categoryMap.get(tool.category_id) || null,
@@ -165,8 +291,12 @@ export async function GET() {
       data: {
         categories: categoriesWithCount,
         totalToolCount,
-        domesticTools,
-        foreignTools,
+        tabs: tabs || [],
+        currentTab: currentTab || null,
+        tabTools,
+        tabNews,
+        tabFame,
+        tabTimeline,
         hotTools,
         latestTools,
       },
