@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next'
+import { headers } from 'next/headers'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 
 // 配置：每小时重新验证一次
@@ -6,7 +7,13 @@ export const revalidate = 3600 // 1小时（单位：秒）
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = getSupabaseClient()
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://mayiai.site'
+  
+  // 从请求头获取当前域名
+  const headersList = await headers()
+  const host = headersList.get('host') || 'mayiai.site'
+  const protocol = headersList.get('x-forwarded-proto') || 'https'
+  const baseUrl = `${protocol}://${host}`
+  
   const now = new Date()
   
   // 并行获取所有动态数据
@@ -56,7 +63,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // 获取所有标签
     supabase
       .from('tags')
-      .select('slug, updated_at')
+      .select('slug, created_at')
       .order('created_at', { ascending: false }),
   ])
   
@@ -206,7 +213,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 标签详情页（动态）
   const tagPages: MetadataRoute.Sitemap = tags.map((tag) => ({
     url: `${baseUrl}/tags/${tag.slug}`,
-    lastModified: tag.updated_at ? new Date(tag.updated_at) : now,
+    lastModified: tag.created_at ? new Date(tag.created_at) : now,
     changeFrequency: 'weekly' as const,
     priority: 0.6,
   }))
