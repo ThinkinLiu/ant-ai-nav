@@ -20,37 +20,16 @@ export const dynamic = 'force-dynamic'
 // 生成元数据
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = getSupabaseClient()
   
   // 解码 slug
   const decodedSlug = decodeURIComponent(slug)
   
-  // 支持通过 slug 或 name 查询
-  let { data: tag } = await supabase
-    .from('tags')
-    .select('name')
-    .eq('slug', decodedSlug)
-    .single()
-
-  // 如果通过 slug 找不到，尝试通过 name 查询
-  if (!tag) {
-    const { data: tagByName } = await supabase
-      .from('tags')
-      .select('name')
-      .eq('name', decodedSlug)
-      .single()
-    tag = tagByName
-  }
-
-  if (!tag) {
-    return {
-      title: '标签不存在',
-    }
-  }
+  // 标签名直接使用 URL 中的值
+  const tagName = decodedSlug
 
   return {
-    title: `${tag.name} - 标签`,
-    description: `探索与「${tag.name}」相关的AI工具和资讯`,
+    title: `${tagName} - 标签`,
+    description: `探索与「${tagName}」相关的AI工具和资讯`,
   }
 }
 
@@ -82,39 +61,41 @@ export default async function TagPage({ params }: Props) {
     }
   }
 
-  if (tagError || !tag) {
-    notFound()
-  }
+  // 如果标签表中没有记录，使用 URL 中的标签名作为虚拟标签
+  const tagName = tag?.name || decodedSlug
+  const tagExists = !!tag
 
-  // 获取该标签下的工具 - 使用直接查询方式
-  const { data: toolTags } = await supabase
-    .from('tool_tags')
-    .select('tool_id')
-    .eq('tag_id', tag.id)
-  
+  // 获取该标签下的工具 - 只有标签存在时才查询
   let tools: any[] = []
-  if (toolTags && toolTags.length > 0) {
-    const toolIds = toolTags.map(tt => tt.tool_id)
-    const { data: toolsData } = await supabase
-      .from('ai_tools')
-      .select('id, name, slug, description, website, logo, view_count, favorite_count, is_featured, is_free, created_at, category_id')
-      .eq('status', 'approved')
-      .in('id', toolIds)
+  if (tagExists && tag) {
+    const { data: toolTags } = await supabase
+      .from('tool_tags')
+      .select('tool_id')
+      .eq('tag_id', tag.id)
     
-    // 获取分类信息
-    if (toolsData && toolsData.length > 0) {
-      const categoryIds = [...new Set(toolsData.map(t => t.category_id).filter(Boolean))]
-      const { data: categoriesData } = await supabase
-        .from('categories')
-        .select('id, name, color')
-        .in('id', categoryIds)
+    if (toolTags && toolTags.length > 0) {
+      const toolIds = toolTags.map(tt => tt.tool_id)
+      const { data: toolsData } = await supabase
+        .from('ai_tools')
+        .select('id, name, slug, description, website, logo, view_count, favorite_count, is_featured, is_free, created_at, category_id')
+        .eq('status', 'approved')
+        .in('id', toolIds)
       
-      const categoryMap = new Map((categoriesData || []).map(c => [c.id, c]))
-      
-      tools = toolsData.map(tool => ({
-        ...tool,
-        category: categoryMap.get(tool.category_id) || null
-      }))
+      // 获取分类信息
+      if (toolsData && toolsData.length > 0) {
+        const categoryIds = [...new Set(toolsData.map(t => t.category_id).filter(Boolean))]
+        const { data: categoriesData } = await supabase
+          .from('categories')
+          .select('id, name, color')
+          .in('id', categoryIds)
+        
+        const categoryMap = new Map((categoriesData || []).map(c => [c.id, c]))
+        
+        tools = toolsData.map(tool => ({
+          ...tool,
+          category: categoryMap.get(tool.category_id) || null
+        }))
+      }
     }
   }
 
@@ -123,9 +104,14 @@ export default async function TagPage({ params }: Props) {
     .from('ai_news')
     .select('id, title, summary, cover_image, category, published_at, view_count, tags')
     .eq('status', 'approved')
-    .contains('tags', [tag.name])
+    .contains('tags', [tagName])
     .order('published_at', { ascending: false })
     .limit(20)
+
+  // 如果既没有标签记录，也没有相关资讯和工具，显示 404
+  if (!tagExists && tools.length === 0 && (!news || news.length === 0)) {
+    notFound()
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -147,10 +133,10 @@ export default async function TagPage({ params }: Props) {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <span className="text-4xl">🏷️</span>
-            <h1 className="text-3xl font-bold">{tag.name}</h1>
+            <h1 className="text-3xl font-bold">{tagName}</h1>
           </div>
           <p className="text-muted-foreground">
-            探索与「{tag.name}」相关的AI工具和资讯
+            探索与「{tagName}」相关的AI工具和资讯
           </p>
           <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
             <span>{tools.length} 个工具</span>
