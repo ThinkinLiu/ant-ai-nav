@@ -65,7 +65,6 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
 
   useEffect(() => {
     fetchTool()
-    fetchComments()
     if (user && token) {
       checkFavorite()
     }
@@ -77,6 +76,12 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
       const data = await response.json()
       if (data.success) {
         setTool(data.data)
+        // 获取到工具详情后，使用工具ID获取评论
+        fetchComments(data.data.id)
+        // 检查收藏状态
+        if (user && token) {
+          checkFavoriteById(data.data.id)
+        }
       }
     } catch (error) {
       console.error('获取工具详情失败:', error)
@@ -85,9 +90,9 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
     }
   }
 
-  const fetchComments = async () => {
+  const fetchComments = async (toolId: number) => {
     try {
-      const response = await fetch(`/api/comments?toolId=${resolvedParams.id}`)
+      const response = await fetch(`/api/comments?toolId=${toolId}`)
       const data = await response.json()
       if (data.success) {
         setComments(data.data.data)
@@ -97,9 +102,9 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
     }
   }
 
-  const checkFavorite = async () => {
+  const checkFavoriteById = async (toolId: number) => {
     try {
-      const response = await fetch(`/api/favorites?toolId=${resolvedParams.id}`, {
+      const response = await fetch(`/api/favorites?toolId=${toolId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await response.json()
@@ -109,6 +114,10 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
     } catch (error) {
       console.error('检查收藏状态失败:', error)
     }
+  }
+
+  const checkFavorite = async () => {
+    // 此方法已废弃，使用 checkFavoriteById
   }
 
   const handleFavorite = async () => {
@@ -171,7 +180,9 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
       if (data.success) {
         setCommentContent('')
         setCommentRating(0)
-        fetchComments()
+        if (tool) {
+          fetchComments(tool.id)
+        }
       }
     } catch (error) {
       console.error('发表评论失败:', error)

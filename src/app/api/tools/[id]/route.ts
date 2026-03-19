@@ -9,12 +9,22 @@ export async function GET(
     const { id } = await params
     const client = getSupabaseClient()
 
-    // 获取工具详情
-    const { data: tool, error } = await client
+    // 尝试先按 ID 查询，如果失败则按 slug 查询
+    let query = client
       .from('ai_tools')
       .select('*')
-      .eq('id', parseInt(id))
-      .single()
+    
+    // 判断是否为数字 ID
+    const isNumericId = !isNaN(parseInt(id))
+    
+    if (isNumericId) {
+      query = query.eq('id', parseInt(id))
+    } else {
+      // 按 slug 查询
+      query = query.eq('slug', decodeURIComponent(id))
+    }
+
+    const { data: tool, error } = await query.single()
 
     if (error || !tool) {
       return NextResponse.json(
