@@ -3,7 +3,7 @@
 
 # ==================== 阶段1: 依赖安装 ====================
 # 使用阿里云镜像加速
-FROM docker.1ms.run/library/node:20-alpine AS deps
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:20-alpine AS deps
 
 # 安装 pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -17,7 +17,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # ==================== 阶段2: 构建 ====================
-FROM docker.1ms.run/library/node:20-alpine AS builder
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:20-alpine AS builder
 
 # 安装 pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -52,7 +52,7 @@ ENV NODE_ENV=production
 RUN pnpm build
 
 # ==================== 阶段3: 运行 ====================
-FROM docker.1ms.run/library/node:20-alpine AS runner
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:20-alpine AS runner
 
 WORKDIR /app
 
