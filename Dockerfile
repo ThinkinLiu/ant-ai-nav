@@ -46,7 +46,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # 构建项目
-RUN pnpm build
+RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm build
 
 # ==================== 阶段3: 运行 ====================
 FROM node:20-alpine AS runner

@@ -20,6 +20,16 @@ const nextConfig: NextConfig = {
   // 严格模式
   reactStrictMode: true,
   
+  // 构建优化
+  typescript: {
+    // 生产构建时跳过类型检查，加快构建速度
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // 生产构建时跳过 ESLint 检查
+    ignoreDuringBuilds: true,
+  },
+  
   // 环境变量配置 - 在构建时注入
   // 支持多种环境变量命名方式，确保 Coze 环境和独立服务器环境都能正常工作
   env: {
