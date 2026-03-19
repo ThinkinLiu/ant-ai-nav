@@ -87,21 +87,8 @@ export async function GET(request: NextRequest) {
       ? await client.from('users').select('id, name, email, avatar').in('id', publisherIds)
       : { data: [] }
 
-    // 获取收藏数统计
+    // 获取工具ID列表
     const toolIds = tools?.map(t => t.id) || []
-    let favoriteCounts: Record<number, number> = {}
-    if (toolIds.length > 0) {
-      const { data: favorites } = await client
-        .from('favorites')
-        .select('tool_id')
-        .in('tool_id', toolIds)
-      
-      if (favorites) {
-        favorites.forEach(f => {
-          favoriteCounts[f.tool_id] = (favoriteCounts[f.tool_id] || 0) + 1
-        })
-      }
-    }
 
     // 获取评论数统计
     let commentCounts: Record<number, number> = {}
@@ -153,7 +140,6 @@ export async function GET(request: NextRequest) {
       ...tool,
       category: categories?.find(c => c.id === tool.category_id) || null,
       publisher: publishers?.find(p => p.id === tool.publisher_id) || null,
-      favorite_count: favoriteCounts[tool.id] || 0,
       comment_count: commentCounts[tool.id] || 0,
       tags: toolTagsMap[tool.id] || [],
     }))
