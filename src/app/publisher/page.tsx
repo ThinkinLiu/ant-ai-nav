@@ -228,7 +228,7 @@ export default function PublisherDashboard() {
 
   // 分类筛选
   const handleCategoryFilter = (categoryId: string) => {
-    setCategoryFilter(categoryId ? parseInt(categoryId) : '')
+    setCategoryFilter(categoryId === 'all' ? '' : categoryId ? parseInt(categoryId) : '')
     setCurrentPage(1)
   }
 
@@ -446,12 +446,12 @@ export default function PublisherDashboard() {
                 {/* 分类筛选 */}
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">分类：</span>
-                  <Select value={categoryFilter ? categoryFilter.toString() : ''} onValueChange={handleCategoryFilter}>
+                  <Select value={categoryFilter ? categoryFilter.toString() : 'all'} onValueChange={handleCategoryFilter}>
                     <SelectTrigger className="w-32 h-8">
                       <SelectValue placeholder="全部分类" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">全部分类</SelectItem>
+                      <SelectItem value="all">全部分类</SelectItem>
                       {categories.map((category) => (
                         <SelectItem key={category.id} value={category.id.toString()}>
                           {category.name}
