@@ -5,6 +5,9 @@ import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import ImageUploader from '@/components/ui/image-uploader'
+import { ToolLogo } from '@/components/tools/ToolLogo'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -28,7 +31,7 @@ import { formatRelativeTime } from '@/lib/utils'
 import { 
   Check, X, Eye, ExternalLink, Search, EyeOff, ChevronLeft, 
   ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw, ArrowUpDown,
-  Pin, PinOff, Edit, Loader2, Sparkles, Trash2
+  Pin, PinOff, Edit, Loader2, Sparkles, Trash2, Upload, Link2
 } from 'lucide-react'
 
 interface Tool {
@@ -57,6 +60,7 @@ interface Tool {
 interface Category {
   id: number
   name: string
+  color?: string
 }
 
 interface Publisher {
@@ -160,6 +164,7 @@ function AdminToolsContent() {
     pricing_info: '',
     tags: '',
   })
+  const [logoInputMode, setLogoInputMode] = useState<string>('upload')
 
   // 删除确认弹窗状态
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; tool: Tool | null }>({
@@ -936,14 +941,65 @@ function AdminToolsContent() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Logo URL</label>
-                <Input
-                  value={editForm.logo}
-                  onChange={(e) => setEditForm({ ...editForm, logo: e.target.value })}
-                  placeholder="https://icons.duckduckgo.com/ip3/domain.com.ico"
-                />
+            </div>
+            
+            {/* Logo 上传/URL 输入 */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium">工具图标</label>
+              
+              {/* 图标预览 */}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 rounded-xl overflow-hidden border-2 bg-muted">
+                  <ToolLogo
+                    logo={editForm.logo || null}
+                    name={editForm.name || '工具'}
+                    website={editForm.website}
+                    className="w-full h-full object-cover"
+                    size={64}
+                    fallbackBgColor={categories.find(c => c.id.toString() === editForm.categoryId)?.color}
+                  />
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <p>图标预览（与首页显示一致）</p>
+                  <p className="text-xs">为空时自动使用网站图标服务生成</p>
+                </div>
               </div>
+
+              {/* 输入方式切换 */}
+              <Tabs value={logoInputMode} onValueChange={setLogoInputMode}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload" className="flex items-center gap-2">
+                    <Upload className="h-4 w-4" />
+                    上传图片
+                  </TabsTrigger>
+                  <TabsTrigger value="url" className="flex items-center gap-2">
+                    <Link2 className="h-4 w-4" />
+                    输入 URL
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="upload" className="mt-4">
+                  <ImageUploader
+                    value={editForm.logo}
+                    onChange={(url) => setEditForm({ ...editForm, logo: url })}
+                    folder="logos"
+                    aspectRatio="square"
+                    maxSize={2}
+                    placeholder="点击上传图标"
+                  />
+                </TabsContent>
+                
+                <TabsContent value="url" className="mt-4">
+                  <Input
+                    value={editForm.logo}
+                    onChange={(e) => setEditForm({ ...editForm, logo: e.target.value })}
+                    placeholder="https://example.com/logo.png"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    输入图标的完整 URL 地址
+                  </p>
+                </TabsContent>
+              </Tabs>
             </div>
             
             <div className="space-y-2">
