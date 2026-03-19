@@ -119,7 +119,7 @@ export default function TagPage({ params }: Props) {
       }
       setTools(toolsData)
 
-      // 获取该标签下的资讯 - 多种方式匹配
+      // 获取该标签下的资讯 - 使用 filter 方法查询 JSONB 数组
       let newsData: NewsItem[] = []
       
       // 方式1：精确匹配标签名
@@ -127,7 +127,7 @@ export default function TagPage({ params }: Props) {
         .from('ai_news')
         .select('id, title, summary, cover_image, category, published_at, view_count, tags')
         .eq('status', 'approved')
-        .contains('tags', [name])
+        .filter('tags', 'cs', JSON.stringify([name]))
         .order('published_at', { ascending: false })
         .limit(20)
       
@@ -139,7 +139,7 @@ export default function TagPage({ params }: Props) {
           .from('ai_news')
           .select('id, title, summary, cover_image, category, published_at, view_count, tags')
           .eq('status', 'approved')
-          .contains('tags', [decodedSlug])
+          .filter('tags', 'cs', JSON.stringify([decodedSlug]))
           .order('published_at', { ascending: false })
           .limit(20)
         
