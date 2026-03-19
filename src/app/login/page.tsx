@@ -226,38 +226,38 @@ function LoginForm() {
   const hasOAuth = oauthProviders.wechat || oauthProviders.qq
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="space-y-1 text-center">
-        <div className="flex justify-center mb-4">
-          <Image
-            src="/logo.png"
-            alt="蚂蚁AI导航"
-            width={48}
-            height={48}
-            className="h-12 w-12 rounded-xl"
-          />
-        </div>
-        <CardTitle className="text-2xl font-bold">欢迎回来</CardTitle>
-        <CardDescription>
-          登录你的蚂蚁AI导航账号
-        </CardDescription>
-      </CardHeader>
-      
-      <Tabs value={loginType} onValueChange={(v) => setLoginType(v as 'email' | 'phone')}>
-        <TabsList className="grid w-full grid-cols-2 mx-6 mt-2">
-          <TabsTrigger value="email" className="gap-2">
-            <Mail className="h-4 w-4" />
-            邮箱登录
-          </TabsTrigger>
-          <TabsTrigger value="phone" className="gap-2" disabled={!smsEnabled}>
-            <Phone className="h-4 w-4" />
-            手机登录
-          </TabsTrigger>
-        </TabsList>
+    <Tabs value={loginType} onValueChange={(v) => setLoginType(v as 'email' | 'phone')}>
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-4 text-center pb-0">
+          <div className="flex justify-center mb-2">
+            <Image
+              src="/logo.png"
+              alt="蚂蚁AI导航"
+              width={48}
+              height={48}
+              className="h-12 w-12 rounded-xl"
+            />
+          </div>
+          <CardTitle className="text-2xl font-bold">欢迎回来</CardTitle>
+          <CardDescription>
+            登录你的蚂蚁AI导航账号
+          </CardDescription>
+          
+          <TabsList className="grid w-full grid-cols-2 mt-2">
+            <TabsTrigger value="email" className="gap-1.5">
+              <Mail className="h-4 w-4" />
+              邮箱登录
+            </TabsTrigger>
+            <TabsTrigger value="phone" className="gap-1.5">
+              <Phone className="h-4 w-4" />
+              手机登录
+            </TabsTrigger>
+          </TabsList>
+        </CardHeader>
         
-        <TabsContent value="email">
+        <TabsContent value="email" className="mt-0">
           <form onSubmit={handleEmailSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               {error && (
                 <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg">
                   {error}
@@ -347,9 +347,15 @@ function LoginForm() {
           </form>
         </TabsContent>
         
-        <TabsContent value="phone">
+        <TabsContent value="phone" className="mt-0">
           <form onSubmit={handlePhoneSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
+              {/* 短信服务未启用提示 */}
+              {!smsEnabled && (
+                <div className="p-4 text-sm text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400 rounded-lg text-center">
+                  短信登录服务暂未开启，请联系管理员
+                </div>
+              )}
               {error && (
                 <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg">
                   {error}
@@ -364,6 +370,7 @@ function LoginForm() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
+                  disabled={!smsEnabled}
                 />
               </div>
               <div className="space-y-2">
@@ -378,12 +385,13 @@ function LoginForm() {
                     maxLength={6}
                     required
                     className="flex-1"
+                    disabled={!smsEnabled}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleSendSmsCode}
-                    disabled={countdown > 0 || sendingCode}
+                    disabled={countdown > 0 || sendingCode || !smsEnabled}
                     className="shrink-0"
                   >
                     {sendingCode ? (
@@ -398,7 +406,7 @@ function LoginForm() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4 pt-6">
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || !smsEnabled}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 登录
               </Button>
@@ -445,8 +453,8 @@ function LoginForm() {
             </CardFooter>
           </form>
         </TabsContent>
-      </Tabs>
-    </Card>
+      </Card>
+    </Tabs>
   )
 }
 
