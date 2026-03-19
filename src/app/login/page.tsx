@@ -243,16 +243,19 @@ function LoginForm() {
             登录你的蚂蚁AI导航账号
           </CardDescription>
           
-          <TabsList className="grid w-full grid-cols-2 mt-2">
-            <TabsTrigger value="email" className="gap-1.5">
-              <Mail className="h-4 w-4" />
-              邮箱登录
-            </TabsTrigger>
-            <TabsTrigger value="phone" className="gap-1.5">
-              <Phone className="h-4 w-4" />
-              手机登录
-            </TabsTrigger>
-          </TabsList>
+          {/* 只有短信服务启用时才显示Tab切换 */}
+          {smsEnabled && (
+            <TabsList className="grid w-full grid-cols-2 mt-2">
+              <TabsTrigger value="email" className="gap-1.5">
+                <Mail className="h-4 w-4" />
+                邮箱登录
+              </TabsTrigger>
+              <TabsTrigger value="phone" className="gap-1.5">
+                <Phone className="h-4 w-4" />
+                手机登录
+              </TabsTrigger>
+            </TabsList>
+          )}
         </CardHeader>
         
         <TabsContent value="email" className="mt-0">
@@ -347,112 +350,106 @@ function LoginForm() {
           </form>
         </TabsContent>
         
-        <TabsContent value="phone" className="mt-0">
-          <form onSubmit={handlePhoneSubmit}>
-            <CardContent className="space-y-4 pt-6">
-              {/* 短信服务未启用提示 */}
-              {!smsEnabled && (
-                <div className="p-4 text-sm text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400 rounded-lg text-center">
-                  短信登录服务暂未开启，请联系管理员
-                </div>
-              )}
-              {error && (
-                <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  {error}
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="phone">手机号</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="请输入手机号"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                  disabled={!smsEnabled}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="smsCode">验证码</Label>
-                <div className="flex gap-2">
+        {smsEnabled && (
+          <TabsContent value="phone" className="mt-0">
+            <form onSubmit={handlePhoneSubmit}>
+              <CardContent className="space-y-4 pt-6">
+                {error && (
+                  <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    {error}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="phone">手机号</Label>
                   <Input
-                    id="smsCode"
-                    type="text"
-                    placeholder="请输入验证码"
-                    value={smsCode}
-                    onChange={(e) => setSmsCode(e.target.value)}
-                    maxLength={6}
+                    id="phone"
+                    type="tel"
+                    placeholder="请输入手机号"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     required
-                    className="flex-1"
-                    disabled={!smsEnabled}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleSendSmsCode}
-                    disabled={countdown > 0 || sendingCode || !smsEnabled}
-                    className="shrink-0"
-                  >
-                    {sendingCode ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : countdown > 0 ? (
-                      `${countdown}秒`
-                    ) : (
-                      '获取验证码'
-                    )}
-                  </Button>
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4 pt-6">
-              <Button type="submit" className="w-full" disabled={isLoading || !smsEnabled}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                登录
-              </Button>
-              
-              {/* 社交登录 */}
-              {hasOAuth && (
-                <>
-                  <div className="flex items-center gap-2 w-full">
-                    <Separator className="flex-1" />
-                    <span className="text-xs text-muted-foreground">或使用以下方式登录</span>
-                    <Separator className="flex-1" />
+                <div className="space-y-2">
+                  <Label htmlFor="smsCode">验证码</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="smsCode"
+                      type="text"
+                      placeholder="请输入验证码"
+                      value={smsCode}
+                      onChange={(e) => setSmsCode(e.target.value)}
+                      maxLength={6}
+                      required
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleSendSmsCode}
+                      disabled={countdown > 0 || sendingCode}
+                      className="shrink-0"
+                    >
+                      {sendingCode ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : countdown > 0 ? (
+                        `${countdown}秒`
+                      ) : (
+                        '获取验证码'
+                      )}
+                    </Button>
                   </div>
-                  
-                  <div className="flex gap-3 w-full">
-                    {oauthProviders.wechat && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => handleOAuthLogin('wechat')}
-                      >
-                        <span className="mr-2 text-lg">💬</span>
-                        微信登录
-                      </Button>
-                    )}
-                    {oauthProviders.qq && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => handleOAuthLogin('qq')}
-                      >
-                        <span className="mr-2 text-lg">🐧</span>
-                        QQ登录
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
-              
-              <p className="text-sm text-center text-muted-foreground">
-                首次登录将自动注册账号
-              </p>
-            </CardFooter>
-          </form>
-        </TabsContent>
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-4 pt-6">
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  登录
+                </Button>
+                
+                {/* 社交登录 */}
+                {hasOAuth && (
+                  <>
+                    <div className="flex items-center gap-2 w-full">
+                      <Separator className="flex-1" />
+                      <span className="text-xs text-muted-foreground">或使用以下方式登录</span>
+                      <Separator className="flex-1" />
+                    </div>
+                    
+                    <div className="flex gap-3 w-full">
+                      {oauthProviders.wechat && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => handleOAuthLogin('wechat')}
+                        >
+                          <span className="mr-2 text-lg">💬</span>
+                          微信登录
+                        </Button>
+                      )}
+                      {oauthProviders.qq && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => handleOAuthLogin('qq')}
+                        >
+                          <span className="mr-2 text-lg">🐧</span>
+                          QQ登录
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                )}
+                
+                <p className="text-sm text-center text-muted-foreground">
+                  首次登录将自动注册账号
+                </p>
+              </CardFooter>
+            </form>
+          </TabsContent>
+        )}
       </Card>
     </Tabs>
   )
