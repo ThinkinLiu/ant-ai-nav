@@ -120,6 +120,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 检查发件人邮箱是否与用户名一致
+    if (from_email !== user_name) {
+      return NextResponse.json(
+        { success: false, error: '发件人邮箱必须与用户名（SMTP认证账号）一致，否则邮件发送会失败' },
+        { status: 400 }
+      )
+    }
+
     // 获取现有配置
     const { data: existingSettings } = await client
       .from('smtp_settings')

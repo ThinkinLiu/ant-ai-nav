@@ -150,15 +150,30 @@ export async function POST(request: NextRequest) {
       })
     } catch (emailError: any) {
       console.error('发送邮件失败:', emailError)
+      console.error('错误详情:', emailError.message)
+      
       // 邮件发送失败，返回具体错误
       let errorMessage = '邮件发送失败，请稍后重试'
+      
       if (emailError.code === 'ECONNECTION') {
-        errorMessage = '无法连接邮件服务器，请检查SMTP配置'
+        errorMessage = '无法连接邮件服务器，请检查SMTP服务器地址和端口'
       } else if (emailError.code === 'EAUTH') {
-        errorMessage = '邮箱认证失败，请检查邮箱账号和授权码'
+        errorMessage = '邮箱认证失败，请检查邮箱账号和密码/授权码'
       } else if (emailError.code === 'EENVELOPE') {
-        errorMessage = '收件人地址无效'
+        errorMessage = '发件人地址无效，请检查发件人邮箱配置'
+      } else if (emailError.message?.includes("doesn't conform with authentication")) {
+        // 发件人和认证账号不一致
+        errorMessage = '发件人邮箱与SMTP认证账号不一致，请在后台将发件人邮箱改为与认证账号相同'
+      } else if (emailError.responseCode === 440) {
+        errorMessage = '发件人邮箱配置错误，发件人必须与SMTP认证账号一致'
+      } else if (emailError.responseCode === 550) {
+        errorMessage = '收件人邮箱地址不存在或无效'
+      } else if (emailError.responseCode === 551) {
+        errorMessage = '收件人邮箱不存在'
+      } else if (emailError.responseCode === 554) {
+        errorMessage = '邮件被拒绝，可能是发件人或收件人地址无效'
       }
+      
       return NextResponse.json(
         { success: false, error: errorMessage },
         { status: 500 }

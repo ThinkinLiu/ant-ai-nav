@@ -208,6 +208,9 @@ export default function SMTPSettingsPage() {
           {/* 发件人配置 */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground">发件人设置</h3>
+            <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-sm text-yellow-800 dark:text-yellow-200">
+              <strong>重要提示：</strong>发件人邮箱必须与用户名（SMTP认证账号）一致，否则邮件发送会失败。
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="from_email">
@@ -216,10 +219,11 @@ export default function SMTPSettingsPage() {
                 <Input
                   id="from_email"
                   type="email"
-                  placeholder="noreply@example.com"
+                  placeholder="与用户名相同"
                   value={settings.from_email}
                   onChange={(e) => setSettings({ ...settings, from_email: e.target.value })}
                 />
+                <p className="text-xs text-muted-foreground">请填写与用户名相同的邮箱地址</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="from_name">发件人名称</Label>
