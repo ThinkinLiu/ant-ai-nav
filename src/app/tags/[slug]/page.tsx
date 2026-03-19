@@ -186,9 +186,7 @@ export default function TagPage({ params }: Props) {
           </p>
           <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
             <span>{tools.length} 个工具</span>
-            {news.length > 0 && (
-              <span>{news.length} 篇资讯</span>
-            )}
+            <span>{news.length} 篇资讯</span>
           </div>
         </div>
 
@@ -209,11 +207,9 @@ export default function TagPage({ params }: Props) {
             >
               <Wrench className="h-4 w-4" />
               相关工具
-              {hasTools && (
-                <Badge variant="secondary" className="ml-1">
-                  {tools.length}
-                </Badge>
-              )}
+              <Badge variant="secondary" className="ml-1">
+                {tools.length}
+              </Badge>
             </button>
             <button
               onClick={() => hasNews && setActiveTab('news')}
@@ -229,11 +225,9 @@ export default function TagPage({ params }: Props) {
             >
               <Newspaper className="h-4 w-4" />
               相关资讯
-              {hasNews && (
-                <Badge variant="secondary" className="ml-1">
-                  {news.length}
-                </Badge>
-              )}
+              <Badge variant="secondary" className="ml-1">
+                {news.length}
+              </Badge>
             </button>
           </div>
         )}
