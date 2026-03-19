@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, FileCheck, BarChart3, ArrowLeft, MessageCircle, 
   UserCheck, Settings, Trophy, Database, Newspaper, Award, Calendar, Mail, 
   Link2, HardDriveDownload, Layers, Tags, ChevronDown, ChevronRight,
-  FolderOpen, UsersRound, Cog, DatabaseBackup, LayoutGrid, Megaphone
+  FolderOpen, UsersRound, Cog, DatabaseBackup, LayoutGrid, Megaphone, Key
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -68,6 +68,7 @@ const navGroups: NavGroup[] = [
       { href: '/admin/traffic-sources', label: '排行榜配置', icon: Trophy },
       { href: '/admin/seo', label: 'SEO设置', icon: Settings },
       { href: '/admin/smtp', label: '邮件服务', icon: Mail },
+      { href: '/admin/oauth', label: '社交登录', icon: Key },
     ]
   },
   {

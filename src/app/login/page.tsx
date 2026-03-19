@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/AuthContext'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import Image from 'next/image'
+import { Separator } from '@/components/ui/separator'
 
 // 英文错误信息翻译为中文
 const translateError = (error: string): string => {
@@ -41,12 +42,18 @@ const translateError = (error: string): string => {
   return error || '登录失败，请稍后重试'
 }
 
+interface OAuthProviders {
+  wechat: boolean
+  qq: boolean
+}
+
 function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [oauthProviders, setOauthProviders] = useState<OAuthProviders>({ wechat: false, qq: false })
   const { login } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -59,6 +66,25 @@ function LoginForm() {
       setError('登录已过期，请重新登录')
     }
   }, [isExpired])
+
+  // 获取已启用的OAuth登录方式
+  useEffect(() => {
+    const fetchOAuthProviders = async () => {
+      try {
+        const response = await fetch('/api/oauth/providers')
+        const data = await response.json()
+        if (data.success) {
+          setOauthProviders({
+            wechat: data.data.includes('wechat'),
+            qq: data.data.includes('qq'),
+          })
+        }
+      } catch (error) {
+        console.error('获取OAuth配置失败:', error)
+      }
+    }
+    fetchOAuthProviders()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,6 +104,23 @@ function LoginForm() {
       setIsLoading(false)
     }
   }
+
+  // 发起OAuth登录
+  const handleOAuthLogin = (provider: 'wechat' | 'qq') => {
+    // 获取当前域名
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+    const redirectUri = encodeURIComponent(`${baseUrl}/api/oauth/callback/${provider}`)
+    
+    if (provider === 'wechat') {
+      // 微信登录
+      window.location.href = `/api/oauth/authorize/wechat?redirect_uri=${redirectUri}&state=${encodeURIComponent(redirect)}`
+    } else if (provider === 'qq') {
+      // QQ登录
+      window.location.href = `/api/oauth/authorize/qq?redirect_uri=${redirectUri}&state=${encodeURIComponent(redirect)}`
+    }
+  }
+
+  const hasOAuth = oauthProviders.wechat || oauthProviders.qq
 
   return (
     <Card className="w-full max-w-md">
@@ -140,6 +183,43 @@ function LoginForm() {
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             登录
           </Button>
+          
+          {/* 社交登录 */}
+          {hasOAuth && (
+            <>
+              <div className="flex items-center gap-2 w-full">
+                <Separator className="flex-1" />
+                <span className="text-xs text-muted-foreground">或使用以下方式登录</span>
+                <Separator className="flex-1" />
+              </div>
+              
+              <div className="flex gap-3 w-full">
+                {oauthProviders.wechat && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleOAuthLogin('wechat')}
+                  >
+                    <span className="mr-2 text-lg">💬</span>
+                    微信登录
+                  </Button>
+                )}
+                {oauthProviders.qq && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleOAuthLogin('qq')}
+                  >
+                    <span className="mr-2 text-lg">🐧</span>
+                    QQ登录
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+          
           <p className="text-sm text-center text-muted-foreground">
             还没有账号？{' '}
             <Link href="/register" className="text-primary hover:underline">
