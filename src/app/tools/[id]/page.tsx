@@ -278,6 +278,16 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                 </div>
 
+                {/* Mobile: 官网入口 - 移动端显示在标题下方 */}
+                <div className="mt-6 lg:hidden">
+                  <Button className="w-full gap-2" asChild>
+                    <a href={tool.website} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                      访问官网
+                    </a>
+                  </Button>
+                </div>
+
                 <Separator className="my-6" />
 
                 {/* Stats */}
@@ -340,6 +350,42 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                 </CardContent>
               </Card>
             )}
+
+            {/* Mobile: 发布者和定价信息 - 移动端显示在用户评价上方 */}
+            <div className="lg:hidden space-y-4">
+              {/* Pricing Info */}
+              {tool.pricing_info && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">💰 定价信息</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">{tool.pricing_info}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Publisher Info */}
+              {tool.publisher && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">发布者</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={tool.publisher.avatar || undefined} />
+                        <AvatarFallback>{tool.publisher.name?.[0] || 'U'}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{tool.publisher.name}</p>
+                        <p className="text-xs text-muted-foreground">发布者</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
             {/* Comments */}
             <Card>
@@ -466,9 +512,9 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
               </CardContent>
             </Card>
 
-            {/* Publisher Info */}
+            {/* Publisher Info - 桌面端显示 */}
             {tool.publisher && (
-              <Card>
+              <Card className="hidden lg:block">
                 <CardHeader>
                   <CardTitle className="text-base">发布者</CardTitle>
                 </CardHeader>
@@ -487,9 +533,9 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
               </Card>
             )}
 
-            {/* Pricing Info */}
+            {/* Pricing Info - 桌面端显示 */}
             {tool.pricing_info && (
-              <Card>
+              <Card className="hidden lg:block">
                 <CardHeader>
                   <CardTitle className="text-base">定价信息</CardTitle>
                 </CardHeader>
