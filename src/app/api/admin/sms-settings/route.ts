@@ -1,42 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
+import { verifyAdmin } from '@/lib/auth'
 
 // 获取短信配置
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // 验证管理员权限
+    const authResult = await verifyAdmin(request)
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, error: '请先登录' },
-        { status: 401 }
+        { success: false, error: authResult.error },
+        { status: authResult.status }
       )
     }
 
-    const token = authHeader.substring(7)
-    const client = getSupabaseClient(token)
-
-    // 验证用户权限
-    const { data: { user } } = await client.auth.getUser()
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: '无效的登录状态' },
-        { status: 401 }
-      )
-    }
-
-    // 检查是否是管理员
-    const { data: userData } = await client
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!userData || userData.role !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: '无权限访问' },
-        { status: 403 }
-      )
-    }
+    const client = getSupabaseClient()
 
     // 获取短信配置
     const { data: settings, error } = await client
@@ -73,39 +51,16 @@ export async function GET(request: NextRequest) {
 // 更新短信配置
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // 验证管理员权限
+    const authResult = await verifyAdmin(request)
+    if (!authResult.success) {
       return NextResponse.json(
-        { success: false, error: '请先登录' },
-        { status: 401 }
+        { success: false, error: authResult.error },
+        { status: authResult.status }
       )
     }
 
-    const token = authHeader.substring(7)
-    const client = getSupabaseClient(token)
-
-    // 验证用户权限
-    const { data: { user } } = await client.auth.getUser()
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: '无效的登录状态' },
-        { status: 401 }
-      )
-    }
-
-    // 检查是否是管理员
-    const { data: userData } = await client
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!userData || userData.role !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: '无权限访问' },
-        { status: 403 }
-      )
-    }
+    const client = getSupabaseClient()
 
     const body = await request.json()
     const { provider, access_key_id, access_key_secret, sign_name, template_code, is_enabled, api_url, extra_config } = body

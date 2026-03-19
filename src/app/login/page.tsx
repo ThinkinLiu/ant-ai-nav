@@ -191,8 +191,12 @@ function LoginForm() {
       
       if (data.success) {
         // 保存token到localStorage
-        localStorage.setItem('token', data.token)
+        localStorage.setItem('auth_token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
+        
+        // 初始化活动时间
+        const now = Date.now()
+        localStorage.setItem('last_activity_time', now.toString())
         
         if (data.isNewUser) {
           toast.success('注册成功，欢迎加入！')
@@ -200,7 +204,9 @@ function LoginForm() {
           toast.success('登录成功')
         }
         
-        router.push(redirect)
+        // 刷新页面以更新AuthContext
+        window.location.href = redirect
+        return
       } else {
         setError(data.error || '登录失败')
       }

@@ -51,7 +51,11 @@ export default function OAuthSettingsPage() {
   const fetchSettings = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        toast.error('请先登录')
+        return
+      }
       const response = await fetch('/api/admin/oauth-settings', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -93,7 +97,11 @@ export default function OAuthSettingsPage() {
 
     setSaving(provider)
     try {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        toast.error('请先登录')
+        return
+      }
       const response = await fetch('/api/admin/oauth-settings', {
         method: 'POST',
         headers: {

@@ -105,7 +105,11 @@ export default function SMSSettingsPage() {
   const fetchSettings = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        toast.error('请先登录')
+        return
+      }
       const response = await fetch('/api/admin/sms-settings', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -141,7 +145,11 @@ export default function SMSSettingsPage() {
 
     setSaving(true)
     try {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        toast.error('请先登录')
+        return
+      }
       const response = await fetch('/api/admin/sms-settings', {
         method: 'POST',
         headers: {
