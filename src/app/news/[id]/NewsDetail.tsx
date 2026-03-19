@@ -179,7 +179,7 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
                     {news.tags.map((tag, index) => (
                       <Link
                         key={index}
-                        href={`/tags/${encodeURIComponent(tag)}`}
+                        href={`/tags/${encodeURIComponent(tag)}?tab=news`}
                         className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm hover:bg-primary/20 transition-colors"
                       >
                         {tag}

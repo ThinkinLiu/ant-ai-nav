@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { ToolLogoNext } from '@/components/tools/ToolLogo'
 import { Badge } from '@/components/ui/badge'
@@ -44,6 +45,7 @@ interface NewsItem {
 
 export default function TagPage({ params }: Props) {
   const { slug } = use(params)
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [tagName, setTagName] = useState('')
   const [tools, setTools] = useState<Tool[]>([])
@@ -51,6 +53,7 @@ export default function TagPage({ params }: Props) {
   const [activeTab, setActiveTab] = useState<'tools' | 'news'>('tools')
   
   const decodedSlug = decodeURIComponent(slug)
+  const tabParam = searchParams.get('tab')
 
   useEffect(() => {
     fetchData()
@@ -132,8 +135,10 @@ export default function TagPage({ params }: Props) {
         notFound()
       }
 
-      // 根据内容自动选择默认 tab
-      if (toolsData.length === 0 && newsData && newsData.length > 0) {
+      // 根据 URL 参数或内容自动选择默认 tab
+      if (tabParam === 'news' && newsData && newsData.length > 0) {
+        setActiveTab('news')
+      } else if (toolsData.length === 0 && newsData && newsData.length > 0) {
         setActiveTab('news')
       }
     } catch (error) {
