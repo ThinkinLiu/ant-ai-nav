@@ -119,8 +119,11 @@ export default function TagPage({ params }: Props) {
       }
       setTools(toolsData)
 
-      // 获取该标签下的资讯
-      const { data: newsData } = await supabase
+      // 获取该标签下的资讯 - 多种方式匹配
+      let newsData: NewsItem[] = []
+      
+      // 方式1：精确匹配标签名
+      const { data: newsExact } = await supabase
         .from('ai_news')
         .select('id, title, summary, cover_image, category, published_at, view_count, tags')
         .eq('status', 'approved')
@@ -128,17 +131,34 @@ export default function TagPage({ params }: Props) {
         .order('published_at', { ascending: false })
         .limit(20)
       
-      setNews(newsData || [])
+      if (newsExact && newsExact.length > 0) {
+        newsData = newsExact
+      } else {
+        // 方式2：尝试用 decodedSlug 匹配
+        const { data: newsBySlug } = await supabase
+          .from('ai_news')
+          .select('id, title, summary, cover_image, category, published_at, view_count, tags')
+          .eq('status', 'approved')
+          .contains('tags', [decodedSlug])
+          .order('published_at', { ascending: false })
+          .limit(20)
+        
+        if (newsBySlug && newsBySlug.length > 0) {
+          newsData = newsBySlug
+        }
+      }
+      
+      setNews(newsData)
 
       // 如果既没有标签记录，也没有相关资讯和工具，显示 404
-      if (!tagExists && toolsData.length === 0 && (!newsData || newsData.length === 0)) {
+      if (!tagExists && toolsData.length === 0 && newsData.length === 0) {
         notFound()
       }
 
-      // 根据 URL 参数或内容自动选择默认 tab
-      if (tabParam === 'news' && newsData && newsData.length > 0) {
+      // 根据 URL 参数设置默认 tab（从资讯页进入时优先选中资讯 tab）
+      if (tabParam === 'news') {
         setActiveTab('news')
-      } else if (toolsData.length === 0 && newsData && newsData.length > 0) {
+      } else if (toolsData.length === 0 && newsData.length > 0) {
         setActiveTab('news')
       }
     } catch (error) {
@@ -147,9 +167,6 @@ export default function TagPage({ params }: Props) {
       setLoading(false)
     }
   }
-
-  const hasTools = tools.length > 0
-  const hasNews = news.length > 0
 
   if (loading) {
     return (
@@ -191,170 +208,151 @@ export default function TagPage({ params }: Props) {
         </div>
 
         {/* Tab Bar */}
-        {(hasTools || hasNews) && (
-          <div className="flex border-b mb-6">
-            <button
-              onClick={() => hasTools && setActiveTab('tools')}
-              disabled={!hasTools}
-              className={cn(
-                'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
-                activeTab === 'tools'
-                  ? 'border-primary text-primary'
-                  : hasTools
-                    ? 'border-transparent text-muted-foreground hover:text-foreground'
-                    : 'border-transparent text-muted-foreground/50 cursor-not-allowed'
-              )}
-            >
-              <Wrench className="h-4 w-4" />
-              相关工具
-              <Badge variant="secondary" className="ml-1">
-                {tools.length}
-              </Badge>
-            </button>
-            <button
-              onClick={() => hasNews && setActiveTab('news')}
-              disabled={!hasNews}
-              className={cn(
-                'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
-                activeTab === 'news'
-                  ? 'border-primary text-primary'
-                  : hasNews
-                    ? 'border-transparent text-muted-foreground hover:text-foreground'
-                    : 'border-transparent text-muted-foreground/50 cursor-not-allowed'
-              )}
-            >
-              <Newspaper className="h-4 w-4" />
-              相关资讯
-              <Badge variant="secondary" className="ml-1">
-                {news.length}
-              </Badge>
-            </button>
-          </div>
-        )}
+        <div className="flex border-b mb-6">
+          <button
+            onClick={() => setActiveTab('tools')}
+            className={cn(
+              'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
+              activeTab === 'tools'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Wrench className="h-4 w-4" />
+            相关工具
+            <Badge variant="secondary" className="ml-1">
+              {tools.length}
+            </Badge>
+          </button>
+          <button
+            onClick={() => setActiveTab('news')}
+            className={cn(
+              'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
+              activeTab === 'news'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Newspaper className="h-4 w-4" />
+            相关资讯
+            <Badge variant="secondary" className="ml-1">
+              {news.length}
+            </Badge>
+          </button>
+        </div>
 
         {/* Tools Section */}
-        {activeTab === 'tools' && hasTools && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tools.map((tool) => (
-              <Link
-                key={tool.id}
-                href={`/tools/${tool.slug}`}
-                className="group bg-card border rounded-xl p-4 hover:shadow-lg transition-all"
-              >
-                <div className="flex items-start gap-3">
-                  <ToolLogoNext
-                    logo={tool.logo}
-                    name={tool.name}
-                    website={tool.website}
-                    size={48}
-                    className="h-12 w-12 rounded-lg shrink-0"
-                    fallbackBgColor={tool.category?.color || '#6366F1'}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-1">
-                      {tool.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                      {tool.description}
-                    </p>
+        {activeTab === 'tools' && (
+          tools.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {tools.map((tool) => (
+                <Link
+                  key={tool.id}
+                  href={`/tools/${tool.slug}`}
+                  className="group bg-card border rounded-xl p-4 hover:shadow-lg transition-all"
+                >
+                  <div className="flex items-start gap-3">
+                    <ToolLogoNext
+                      logo={tool.logo}
+                      name={tool.name}
+                      website={tool.website}
+                      size={48}
+                      className="h-12 w-12 rounded-lg shrink-0"
+                      fallbackBgColor={tool.category?.color || '#6366F1'}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-1">
+                        {tool.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                        {tool.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-                  {tool.category && (
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs"
-                      style={{ borderColor: tool.category.color, color: tool.category.color }}
-                    >
-                      {tool.category.name}
-                    </Badge>
-                  )}
-                  <span className="flex items-center gap-1">
-                    <Eye className="h-3 w-3" />
-                    {tool.view_count}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Heart className="h-3 w-3" />
-                    {tool.favorite_count}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
+                  <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                    {tool.category && (
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs"
+                        style={{ borderColor: tool.category.color, color: tool.category.color }}
+                      >
+                        {tool.category.name}
+                      </Badge>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      {tool.view_count}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Heart className="h-3 w-3" />
+                      {tool.favorite_count}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <span className="text-6xl mb-4 block">🛠️</span>
+              <h2 className="text-xl font-semibold mb-2">暂无相关工具</h2>
+              <p className="text-muted-foreground">
+                该标签下暂无工具，切换查看相关资讯
+              </p>
+            </div>
+          )
         )}
 
         {/* News Section */}
-        {activeTab === 'news' && hasNews && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {news.map((item) => (
-              <Link
-                key={item.id}
-                href={`/news/${item.id}`}
-                className="group bg-card border rounded-xl overflow-hidden hover:shadow-lg transition-all"
-              >
-                {item.cover_image && (
-                  <div className="aspect-video overflow-hidden">
-                    <img
-                      src={item.cover_image}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
+        {activeTab === 'news' && (
+          news.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {news.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/news/${item.id}`}
+                  className="group bg-card border rounded-xl overflow-hidden hover:shadow-lg transition-all"
+                >
+                  {item.cover_image && (
+                    <div className="aspect-video overflow-hidden">
+                      <img
+                        src={item.cover_image}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-2">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
+                      {item.summary}
+                    </p>
+                    <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {formatRelativeTime(item.published_at)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {item.view_count}
+                      </span>
+                    </div>
                   </div>
-                )}
-                <div className="p-4">
-                  <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-2">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
-                    {item.summary}
-                  </p>
-                  <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {formatRelativeTime(item.published_at)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      {item.view_count}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <span className="text-6xl mb-4 block">📰</span>
+              <h2 className="text-xl font-semibold mb-2">暂无相关资讯</h2>
+              <p className="text-muted-foreground">
+                该标签下暂无资讯，切换查看相关工具
+              </p>
+            </div>
+          )
         )}
 
-        {/* Empty State */}
-        {!hasTools && !hasNews && (
-          <div className="text-center py-12">
-            <span className="text-6xl mb-4 block">🔍</span>
-            <h2 className="text-xl font-semibold mb-2">暂无相关内容</h2>
-            <p className="text-muted-foreground">
-              该标签下暂无工具和资讯
-            </p>
-          </div>
-        )}
-
-        {/* Tab Empty State */}
-        {activeTab === 'tools' && !hasTools && hasNews && (
-          <div className="text-center py-12">
-            <span className="text-6xl mb-4 block">🛠️</span>
-            <h2 className="text-xl font-semibold mb-2">暂无相关工具</h2>
-            <p className="text-muted-foreground">
-              该标签下暂无工具，切换查看相关资讯
-            </p>
-          </div>
-        )}
-
-        {activeTab === 'news' && !hasNews && hasTools && (
-          <div className="text-center py-12">
-            <span className="text-6xl mb-4 block">📰</span>
-            <h2 className="text-xl font-semibold mb-2">暂无相关资讯</h2>
-            <p className="text-muted-foreground">
-              该标签下暂无资讯，切换查看相关工具
-            </p>
-          </div>
-        )}
       </div>
     </div>
   )
