@@ -278,8 +278,8 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                 </div>
 
-                {/* Action Buttons - 显示在标题下方 */}
-                <div className="mt-6 flex flex-wrap gap-2">
+                {/* Action Buttons - 显示在标题下方，靠右展示 */}
+                <div className="mt-6 flex flex-wrap gap-2 justify-end">
                   <Button className="gap-2 bg-blue-600 hover:bg-blue-700" asChild>
                     <a href={tool.website} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4" />
