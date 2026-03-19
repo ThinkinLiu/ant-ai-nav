@@ -232,8 +232,8 @@ function LoginForm() {
   const hasOAuth = oauthProviders.wechat || oauthProviders.qq
 
   return (
-    <Tabs value={loginType} onValueChange={(v) => setLoginType(v as 'email' | 'phone')}>
-      <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md">
+      <Tabs value={loginType} onValueChange={(v) => setLoginType(v as 'email' | 'phone')}>
         <CardHeader className="space-y-4 text-center pb-0">
           <div className="flex justify-center mb-2">
             <Image
@@ -456,8 +456,8 @@ function LoginForm() {
             </form>
           </TabsContent>
         )}
-      </Card>
-    </Tabs>
+      </Tabs>
+    </Card>
   )
 }
 
