@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import RichTextEditor from '@/components/ui/rich-text-editor'
 import {
   Select,
   SelectContent,
@@ -868,11 +869,14 @@ function AdminToolsContent() {
             
             <div className="space-y-2">
               <label className="text-sm font-medium">详细介绍</label>
-              <Textarea
+              <p className="text-xs text-muted-foreground">
+                支持富文本编辑，可从微信、百度等网站直接复制图文粘贴
+              </p>
+              <RichTextEditor
                 value={editForm.long_description}
-                onChange={(e) => setEditForm({ ...editForm, long_description: e.target.value })}
+                onChange={(value) => setEditForm({ ...editForm, long_description: value })}
                 placeholder="请输入详细介绍（可选）"
-                rows={4}
+                minHeight={150}
               />
             </div>
             

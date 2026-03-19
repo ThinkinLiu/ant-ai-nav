@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Loader2, AlertCircle, Upload, Link2 } from 'lucide-react'
 import ImageUploader from '@/components/ui/image-uploader'
+import RichTextEditor from '@/components/ui/rich-text-editor'
 import { ToolLogo } from '@/components/tools/ToolLogo'
 
 interface Category {
@@ -282,12 +283,14 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
 
             <div className="space-y-2">
               <Label htmlFor="longDescription">详细介绍</Label>
-              <Textarea
-                id="longDescription"
-                placeholder="详细介绍这个工具的功能、特点、使用场景等"
-                rows={5}
+              <p className="text-xs text-muted-foreground">
+                支持富文本编辑，可从微信、百度等网站直接复制图文粘贴
+              </p>
+              <RichTextEditor
                 value={formData.longDescription}
-                onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, longDescription: value })}
+                placeholder="详细介绍这个工具的功能、特点、使用场景等..."
+                minHeight={200}
               />
             </div>
 

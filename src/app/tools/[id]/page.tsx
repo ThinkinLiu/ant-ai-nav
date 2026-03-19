@@ -325,7 +325,7 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                   <CardTitle>详细介绍</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-wrap">{tool.long_description}</p>
+                  <div className="text-muted-foreground prose prose-sm dark:prose-invert max-w-none long-description-content" dangerouslySetInnerHTML={{ __html: tool.long_description }} />
                 </CardContent>
               </Card>
             )}
