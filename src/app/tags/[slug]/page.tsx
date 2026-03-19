@@ -25,11 +25,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // 解码 slug
   const decodedSlug = decodeURIComponent(slug)
   
-  const { data: tag } = await supabase
+  // 支持通过 slug 或 name 查询
+  let { data: tag } = await supabase
     .from('tags')
     .select('name')
     .eq('slug', decodedSlug)
     .single()
+
+  // 如果通过 slug 找不到，尝试通过 name 查询
+  if (!tag) {
+    const { data: tagByName } = await supabase
+      .from('tags')
+      .select('name')
+      .eq('name', decodedSlug)
+      .single()
+    tag = tagByName
+  }
 
   if (!tag) {
     return {
@@ -50,12 +61,26 @@ export default async function TagPage({ params }: Props) {
   // 解码 slug
   const decodedSlug = decodeURIComponent(slug)
 
-  // 获取标签信息
-  const { data: tag, error: tagError } = await supabase
+  // 获取标签信息 - 支持通过 slug 或 name 查询
+  let { data: tag, error: tagError } = await supabase
     .from('tags')
     .select('*')
     .eq('slug', decodedSlug)
     .single()
+
+  // 如果通过 slug 找不到，尝试通过 name 查询
+  if (tagError || !tag) {
+    const { data: tagByName } = await supabase
+      .from('tags')
+      .select('*')
+      .eq('name', decodedSlug)
+      .single()
+    
+    if (tagByName) {
+      tag = tagByName
+      tagError = null
+    }
+  }
 
   if (tagError || !tag) {
     notFound()
