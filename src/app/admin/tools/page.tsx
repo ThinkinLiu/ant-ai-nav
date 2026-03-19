@@ -28,7 +28,7 @@ import { formatRelativeTime } from '@/lib/utils'
 import { 
   Check, X, Eye, ExternalLink, Search, EyeOff, ChevronLeft, 
   ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw, ArrowUpDown,
-  Pin, PinOff, Edit, Loader2, Sparkles
+  Pin, PinOff, Edit, Loader2, Sparkles, Trash2
 } from 'lucide-react'
 
 interface Tool {
@@ -160,6 +160,13 @@ function AdminToolsContent() {
     pricing_info: '',
     tags: '',
   })
+
+  // 删除确认弹窗状态
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; tool: Tool | null }>({
+    open: false,
+    tool: null,
+  })
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const fetchTools = useCallback(async () => {
     setLoading(true)
@@ -445,6 +452,29 @@ function AdminToolsContent() {
     }
   }
 
+  // 删除工具
+  const handleDelete = async () => {
+    if (!deleteDialog.tool) return
+    setDeleteLoading(true)
+    try {
+      const response = await fetch(`/api/tools/${deleteDialog.tool.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      const data = await response.json()
+      if (data.success) {
+        setDeleteDialog({ open: false, tool: null })
+        fetchTools()
+      }
+    } catch (error) {
+      console.error('删除失败:', error)
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
@@ -627,6 +657,15 @@ function AdminToolsContent() {
                         onClick={() => handleOpenEdit(tool)}
                       >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        title="删除"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteDialog({ open: true, tool })}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                       
                       {tool.status === 'pending' && (
@@ -962,6 +1001,31 @@ function AdminToolsContent() {
             <Button onClick={handleEditSubmit} disabled={editLoading}>
               {editLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除确认弹窗 */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, tool: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">确认删除</DialogTitle>
+            <DialogDescription>
+              您确定要删除该工具吗？此操作无法撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm font-medium mb-1">{deleteDialog.tool?.name}</p>
+            <p className="text-sm text-muted-foreground line-clamp-2">{deleteDialog.tool?.description}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, tool: null })}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteLoading}>
+              {deleteLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              确认删除
             </Button>
           </DialogFooter>
         </DialogContent>
