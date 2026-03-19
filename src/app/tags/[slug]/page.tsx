@@ -1,17 +1,19 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useCallback } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { ToolLogoNext } from '@/components/tools/ToolLogo'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { formatRelativeTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { 
   Eye, Heart, ArrowLeft,
-  Calendar, Wrench, Newspaper, Loader2
+  Calendar, Wrench, Newspaper, Loader2,
+  ChevronLeft, ChevronRight
 } from 'lucide-react'
 
 interface Props {
@@ -43,129 +45,319 @@ interface NewsItem {
   tags: string[] | null
 }
 
+const PAGE_SIZE = 12
+
 export default function TagPage({ params }: Props) {
   const { slug } = use(params)
   const searchParams = useSearchParams()
+  const router = useRouter()
+  
   const [loading, setLoading] = useState(true)
   const [tagName, setTagName] = useState('')
   const [tools, setTools] = useState<Tool[]>([])
   const [news, setNews] = useState<NewsItem[]>([])
+  const [toolsTotal, setToolsTotal] = useState(0)
+  const [newsTotal, setNewsTotal] = useState(0)
   const [activeTab, setActiveTab] = useState<'tools' | 'news'>('tools')
+  const [toolsPage, setToolsPage] = useState(1)
+  const [newsPage, setNewsPage] = useState(1)
   
   const decodedSlug = decodeURIComponent(slug)
   const tabParam = searchParams.get('tab')
+  const pageParam = searchParams.get('page')
 
+  // 获取工具数据
+  const fetchTools = useCallback(async (tagId: number | null, page: number) => {
+    const supabase = getSupabaseClient()
+    const start = (page - 1) * PAGE_SIZE
+    const end = start + PAGE_SIZE - 1
+    
+    if (!tagId) {
+      setTools([])
+      setToolsTotal(0)
+      return
+    }
+
+    // 获取工具ID列表
+    const { data: toolTags } = await supabase
+      .from('tool_tags')
+      .select('tool_id')
+      .eq('tag_id', tagId)
+    
+    if (!toolTags || toolTags.length === 0) {
+      setTools([])
+      setToolsTotal(0)
+      return
+    }
+
+    const toolIds = toolTags.map(tt => tt.tool_id)
+    
+    // 获取总数
+    const { count } = await supabase
+      .from('ai_tools')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'approved')
+      .in('id', toolIds)
+    
+    setToolsTotal(count || 0)
+
+    // 获取分页数据
+    const { data: toolsResult } = await supabase
+      .from('ai_tools')
+      .select('id, name, slug, description, website, logo, view_count, favorite_count, is_featured, is_free, created_at, category_id')
+      .eq('status', 'approved')
+      .in('id', toolIds)
+      .range(start, end)
+    
+    if (toolsResult && toolsResult.length > 0) {
+      const categoryIds = [...new Set(toolsResult.map(t => t.category_id).filter(Boolean))]
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('id, name, color')
+        .in('id', categoryIds)
+      
+      const categoryMap = new Map((categoriesData || []).map(c => [c.id, c]))
+      
+      const toolsData = toolsResult.map(tool => ({
+        ...tool,
+        category: categoryMap.get(tool.category_id) || null
+      }))
+      setTools(toolsData)
+    } else {
+      setTools([])
+    }
+  }, [])
+
+  // 获取资讯数据
+  const fetchNews = useCallback(async (name: string, page: number) => {
+    const supabase = getSupabaseClient()
+    const start = (page - 1) * PAGE_SIZE
+    const end = start + PAGE_SIZE - 1
+    
+    // 获取总数
+    const { count } = await supabase
+      .from('ai_news')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'approved')
+      .filter('tags', 'cs', JSON.stringify([name]))
+    
+    setNewsTotal(count || 0)
+
+    // 获取分页数据
+    const { data: newsData } = await supabase
+      .from('ai_news')
+      .select('id, title, summary, cover_image, category, published_at, view_count, tags')
+      .eq('status', 'approved')
+      .filter('tags', 'cs', JSON.stringify([name]))
+      .order('published_at', { ascending: false })
+      .range(start, end)
+    
+    setNews(newsData || [])
+  }, [])
+
+  // 初始化加载
   useEffect(() => {
-    fetchData()
-  }, [decodedSlug])
+    const init = async () => {
+      setLoading(true)
+      try {
+        const supabase = getSupabaseClient()
 
-  const fetchData = async () => {
-    setLoading(true)
-    try {
-      const supabase = getSupabaseClient()
-
-      // 获取标签信息 - 支持通过 slug 或 name 查询
-      let { data: tag } = await supabase
-        .from('tags')
-        .select('*')
-        .eq('slug', decodedSlug)
-        .single()
-
-      // 如果通过 slug 找不到，尝试通过 name 查询
-      if (!tag) {
-        const { data: tagByName } = await supabase
+        // 获取标签信息
+        let { data: tag } = await supabase
           .from('tags')
           .select('*')
-          .eq('name', decodedSlug)
+          .eq('slug', decodedSlug)
           .single()
-        tag = tagByName
-      }
 
-      const name = tag?.name || decodedSlug
-      setTagName(name)
-      const tagExists = !!tag
-
-      // 获取该标签下的工具
-      let toolsData: Tool[] = []
-      if (tagExists && tag) {
-        const { data: toolTags } = await supabase
-          .from('tool_tags')
-          .select('tool_id')
-          .eq('tag_id', tag.id)
-        
-        if (toolTags && toolTags.length > 0) {
-          const toolIds = toolTags.map(tt => tt.tool_id)
-          const { data: toolsResult } = await supabase
-            .from('ai_tools')
-            .select('id, name, slug, description, website, logo, view_count, favorite_count, is_featured, is_free, created_at, category_id')
-            .eq('status', 'approved')
-            .in('id', toolIds)
-          
-          if (toolsResult && toolsResult.length > 0) {
-            const categoryIds = [...new Set(toolsResult.map(t => t.category_id).filter(Boolean))]
-            const { data: categoriesData } = await supabase
-              .from('categories')
-              .select('id, name, color')
-              .in('id', categoryIds)
-            
-            const categoryMap = new Map((categoriesData || []).map(c => [c.id, c]))
-            
-            toolsData = toolsResult.map(tool => ({
-              ...tool,
-              category: categoryMap.get(tool.category_id) || null
-            }))
-          }
+        if (!tag) {
+          const { data: tagByName } = await supabase
+            .from('tags')
+            .select('*')
+            .eq('name', decodedSlug)
+            .single()
+          tag = tagByName
         }
-      }
-      setTools(toolsData)
 
-      // 获取该标签下的资讯 - 使用 filter 方法查询 JSONB 数组
-      let newsData: NewsItem[] = []
-      
-      // 方式1：精确匹配标签名
-      const { data: newsExact } = await supabase
-        .from('ai_news')
-        .select('id, title, summary, cover_image, category, published_at, view_count, tags')
-        .eq('status', 'approved')
-        .filter('tags', 'cs', JSON.stringify([name]))
-        .order('published_at', { ascending: false })
-        .limit(20)
-      
-      if (newsExact && newsExact.length > 0) {
-        newsData = newsExact
-      } else {
-        // 方式2：尝试用 decodedSlug 匹配
-        const { data: newsBySlug } = await supabase
+        const name = tag?.name || decodedSlug
+        setTagName(name)
+        const tagId = tag?.id || null
+        const tagExists = !!tag
+
+        // 根据 URL 参数设置默认 tab 和页码
+        const initialTab = tabParam === 'news' ? 'news' : 'tools'
+        const initialPage = parseInt(pageParam || '1') || 1
+        setActiveTab(initialTab)
+        
+        if (initialTab === 'tools') {
+          setToolsPage(initialPage)
+        } else {
+          setNewsPage(initialPage)
+        }
+
+        // 同时获取工具和资讯的统计数据
+        await Promise.all([
+          fetchTools(tagId, initialTab === 'tools' ? initialPage : 1),
+          fetchNews(name, initialTab === 'news' ? initialPage : 1)
+        ])
+
+        // 如果既没有标签记录，也没有相关资讯和工具，显示 404
+        const hasTools = tagId !== null
+        // 检查是否有资讯（通过 count 判断）
+        const { count: newsCount } = await supabase
           .from('ai_news')
-          .select('id, title, summary, cover_image, category, published_at, view_count, tags')
+          .select('id', { count: 'exact', head: true })
           .eq('status', 'approved')
-          .filter('tags', 'cs', JSON.stringify([decodedSlug]))
-          .order('published_at', { ascending: false })
-          .limit(20)
+          .filter('tags', 'cs', JSON.stringify([name]))
         
-        if (newsBySlug && newsBySlug.length > 0) {
-          newsData = newsBySlug
+        if (!tagExists && !hasTools && (!newsCount || newsCount === 0)) {
+          notFound()
+        }
+
+        // 如果工具为空但有资讯，自动切换到资讯 tab
+        if (initialTab === 'tools' && !hasTools && newsCount && newsCount > 0) {
+          setActiveTab('news')
+        }
+      } catch (error) {
+        console.error('获取数据失败:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    init()
+  }, [decodedSlug, tabParam, pageParam, fetchTools, fetchNews])
+
+  // Tab 切换时更新 URL 和加载数据
+  const handleTabChange = (tab: 'tools' | 'news') => {
+    setActiveTab(tab)
+    const newPage = tab === 'tools' ? toolsPage : newsPage
+    router.push(`/tags/${encodeURIComponent(decodedSlug)}?tab=${tab}&page=${newPage}`)
+    
+    // 加载对应数据
+    if (tab === 'tools' && tools.length === 0) {
+      // 重新获取工具数据
+      const fetchTagTools = async () => {
+        const supabase = getSupabaseClient()
+        let { data: tag } = await supabase
+          .from('tags')
+          .select('id')
+          .eq('slug', decodedSlug)
+          .single()
+        
+        if (!tag) {
+          const { data: tagByName } = await supabase
+            .from('tags')
+            .select('id')
+            .eq('name', decodedSlug)
+            .single()
+          tag = tagByName
+        }
+        
+        if (tag) {
+          fetchTools(tag.id, 1)
         }
       }
-      
-      setNews(newsData)
-
-      // 如果既没有标签记录，也没有相关资讯和工具，显示 404
-      if (!tagExists && toolsData.length === 0 && newsData.length === 0) {
-        notFound()
-      }
-
-      // 根据 URL 参数设置默认 tab（从资讯页进入时优先选中资讯 tab）
-      if (tabParam === 'news') {
-        setActiveTab('news')
-      } else if (toolsData.length === 0 && newsData.length > 0) {
-        setActiveTab('news')
-      }
-    } catch (error) {
-      console.error('获取数据失败:', error)
-    } finally {
-      setLoading(false)
+      fetchTagTools()
+    } else if (tab === 'news' && news.length === 0) {
+      fetchNews(tagName, 1)
     }
+  }
+
+  // 分页处理
+  const handlePageChange = (page: number) => {
+    if (activeTab === 'tools') {
+      setToolsPage(page)
+      // 重新获取数据
+      const fetchTagTools = async () => {
+        const supabase = getSupabaseClient()
+        let { data: tag } = await supabase
+          .from('tags')
+          .select('id')
+          .eq('slug', decodedSlug)
+          .single()
+        
+        if (!tag) {
+          const { data: tagByName } = await supabase
+            .from('tags')
+            .select('id')
+            .eq('name', decodedSlug)
+            .single()
+          tag = tagByName
+        }
+        
+        if (tag) {
+          fetchTools(tag.id, page)
+        }
+      }
+      fetchTagTools()
+    } else {
+      setNewsPage(page)
+      fetchNews(tagName || decodedSlug, page)
+    }
+    router.push(`/tags/${encodeURIComponent(decodedSlug)}?tab=${activeTab}&page=${page}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // 分页组件
+  const Pagination = ({ total, currentPage, onPageChange }: { total: number; currentPage: number; onPageChange: (page: number) => void }) => {
+    const totalPages = Math.ceil(total / PAGE_SIZE)
+    
+    if (totalPages <= 1) return null
+    
+    const pages: (number | string)[] = []
+    
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages)
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
+      }
+    }
+    
+    return (
+      <div className="flex items-center justify-center gap-2 mt-8">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        
+        {pages.map((page, index) => (
+          typeof page === 'number' ? (
+            <Button
+              key={index}
+              variant={page === currentPage ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onPageChange(page)}
+            >
+              {page}
+            </Button>
+          ) : (
+            <span key={index} className="px-2 text-muted-foreground">
+              {page}
+            </span>
+          )
+        ))}
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    )
   }
 
   if (loading) {
@@ -202,15 +394,15 @@ export default function TagPage({ params }: Props) {
             探索与「{tagName}」相关的AI工具和资讯
           </p>
           <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
-            <span>{tools.length} 个工具</span>
-            <span>{news.length} 篇资讯</span>
+            <span>{toolsTotal} 个工具</span>
+            <span>{newsTotal} 篇资讯</span>
           </div>
         </div>
 
         {/* Tab Bar */}
         <div className="flex border-b mb-6">
           <button
-            onClick={() => setActiveTab('tools')}
+            onClick={() => handleTabChange('tools')}
             className={cn(
               'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
               activeTab === 'tools'
@@ -221,11 +413,11 @@ export default function TagPage({ params }: Props) {
             <Wrench className="h-4 w-4" />
             相关工具
             <Badge variant="secondary" className="ml-1">
-              {tools.length}
+              {toolsTotal}
             </Badge>
           </button>
           <button
-            onClick={() => setActiveTab('news')}
+            onClick={() => handleTabChange('news')}
             className={cn(
               'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
               activeTab === 'news'
@@ -236,7 +428,7 @@ export default function TagPage({ params }: Props) {
             <Newspaper className="h-4 w-4" />
             相关资讯
             <Badge variant="secondary" className="ml-1">
-              {news.length}
+              {newsTotal}
             </Badge>
           </button>
         </div>
@@ -244,53 +436,56 @@ export default function TagPage({ params }: Props) {
         {/* Tools Section */}
         {activeTab === 'tools' && (
           tools.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tools.map((tool) => (
-                <Link
-                  key={tool.id}
-                  href={`/tools/${tool.slug}`}
-                  className="group bg-card border rounded-xl p-4 hover:shadow-lg transition-all"
-                >
-                  <div className="flex items-start gap-3">
-                    <ToolLogoNext
-                      logo={tool.logo}
-                      name={tool.name}
-                      website={tool.website}
-                      size={48}
-                      className="h-12 w-12 rounded-lg shrink-0"
-                      fallbackBgColor={tool.category?.color || '#6366F1'}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-1">
-                        {tool.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                        {tool.description}
-                      </p>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {tools.map((tool) => (
+                  <Link
+                    key={tool.id}
+                    href={`/tools/${tool.slug}`}
+                    className="group bg-card border rounded-xl p-4 hover:shadow-lg transition-all"
+                  >
+                    <div className="flex items-start gap-3">
+                      <ToolLogoNext
+                        logo={tool.logo}
+                        name={tool.name}
+                        website={tool.website}
+                        size={48}
+                        className="h-12 w-12 rounded-lg shrink-0"
+                        fallbackBgColor={tool.category?.color || '#6366F1'}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-1">
+                          {tool.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                          {tool.description}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-                    {tool.category && (
-                      <Badge 
-                        variant="outline" 
-                        className="text-xs"
-                        style={{ borderColor: tool.category.color, color: tool.category.color }}
-                      >
-                        {tool.category.name}
-                      </Badge>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      {tool.view_count}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Heart className="h-3 w-3" />
-                      {tool.favorite_count}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                    <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                      {tool.category && (
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs"
+                          style={{ borderColor: tool.category.color, color: tool.category.color }}
+                        >
+                          {tool.category.name}
+                        </Badge>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {tool.view_count}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Heart className="h-3 w-3" />
+                        {tool.favorite_count}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <Pagination total={toolsTotal} currentPage={toolsPage} onPageChange={handlePageChange} />
+            </>
           ) : (
             <div className="text-center py-12">
               <span className="text-6xl mb-4 block">🛠️</span>
@@ -305,43 +500,46 @@ export default function TagPage({ params }: Props) {
         {/* News Section */}
         {activeTab === 'news' && (
           news.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {news.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/news/${item.id}`}
-                  className="group bg-card border rounded-xl overflow-hidden hover:shadow-lg transition-all"
-                >
-                  {item.cover_image && (
-                    <div className="aspect-video overflow-hidden">
-                      <img
-                        src={item.cover_image}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {news.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/news/${item.id}`}
+                    className="group bg-card border rounded-xl overflow-hidden hover:shadow-lg transition-all"
+                  >
+                    {item.cover_image && (
+                      <div className="aspect-video overflow-hidden">
+                        <img
+                          src={item.cover_image}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-2">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
+                        {item.summary}
+                      </p>
+                      <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatRelativeTime(item.published_at)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Eye className="h-3 w-3" />
+                          {item.view_count}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                  <div className="p-4">
-                    <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-2">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
-                      {item.summary}
-                    </p>
-                    <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatRelativeTime(item.published_at)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
-                        {item.view_count}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+              <Pagination total={newsTotal} currentPage={newsPage} onPageChange={handlePageChange} />
+            </>
           ) : (
             <div className="text-center py-12">
               <span className="text-6xl mb-4 block">📰</span>
