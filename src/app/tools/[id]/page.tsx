@@ -278,13 +278,25 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                 </div>
 
-                {/* Mobile: 官网入口 - 移动端显示在标题下方 */}
-                <div className="mt-6 lg:hidden">
-                  <Button className="w-full gap-2" asChild>
+                {/* Action Buttons - 显示在标题下方 */}
+                <div className="mt-6 flex flex-wrap gap-2">
+                  <Button className="gap-2 bg-blue-600 hover:bg-blue-700" asChild>
                     <a href={tool.website} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4" />
                       访问官网
                     </a>
+                  </Button>
+                  <Button
+                    variant={isFavorited ? 'default' : 'outline'}
+                    className="gap-2"
+                    onClick={handleFavorite}
+                  >
+                    <Heart className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
+                    {isFavorited ? '已收藏' : '收藏'}
+                  </Button>
+                  <Button variant="outline" className="gap-2" onClick={handleShare}>
+                    <Share2 className="h-4 w-4" />
+                    分享
                   </Button>
                 </div>
 
@@ -486,32 +498,6 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Actions */}
-            <Card>
-              <CardContent className="p-6 space-y-4">
-                <Button className="w-full gap-2" asChild>
-                  <a href={tool.website} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" />
-                    访问官网
-                  </a>
-                </Button>
-                <div className="flex gap-2">
-                  <Button
-                    variant={isFavorited ? 'default' : 'outline'}
-                    className="flex-1 gap-2"
-                    onClick={handleFavorite}
-                  >
-                    <Heart className={`h-4 w-4 ${isFavorited ? 'fill-current' : ''}`} />
-                    {isFavorited ? '已收藏' : '收藏'}
-                  </Button>
-                  <Button variant="outline" className="flex-1 gap-2" onClick={handleShare}>
-                    <Share2 className="h-4 w-4" />
-                    分享
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Publisher Info - 桌面端显示 */}
             {tool.publisher && (
               <Card className="hidden lg:block">
