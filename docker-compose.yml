@@ -17,6 +17,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_SUPABASE_URL
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY
+        - COZE_WORKLOAD_IDENTITY_API_KEY
+        - COZE_WORKLOAD_IDENTITY_CLIENT_ID
+        - COZE_WORKLOAD_IDENTITY_CLIENT_SECRET
+        - COZE_INTEGRATION_BASE_URL
     image: ant-ai-nav:latest
     container_name: ant-ai-nav
     

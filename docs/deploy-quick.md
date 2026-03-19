@@ -12,9 +12,18 @@
 # 安装 Docker
 curl -fsSL https://get.docker.com | sh
 
-# 启动 Docker
-systemctl start docker
-systemctl enable docker
+# 配置国内镜像加速
+mkdir -p /etc/docker
+cat > /etc/docker/daemon.json << 'EOF'
+{
+  "registry-mirrors": [
+    "https://docker.1ms.run",
+    "https://docker.xuanyuan.me"
+  ]
+}
+EOF
+systemctl daemon-reload
+systemctl restart docker
 
 # 验证
 docker -v
@@ -30,17 +39,24 @@ cd /www/wwwroot/ant-ai-nav
 # 2. 克隆代码
 git clone https://github.com/your-username/ant-ai-nav.git .
 
-# 3. 配置环境变量
+# 3. 配置环境变量（重要！构建时需要）
 cat > .env.local << 'EOF'
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key
-SUPABASE_SERVICE_ROLE_KEY=your-key
-NEXT_PUBLIC_SITE_URL=https://your-domain.com
+# Supabase 数据库配置
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Coze SDK 配置
+COZE_WORKLOAD_IDENTITY_API_KEY=your-api-key
+COZE_WORKLOAD_IDENTITY_CLIENT_ID=your-client-id
+COZE_WORKLOAD_IDENTITY_CLIENT_SECRET=your-client-secret
+COZE_INTEGRATION_BASE_URL=https://integration.coze.cn
+
+# 应用配置
+NODE_ENV=production
 EOF
 
-# 4. 一键部署
-chmod +x deploy-docker.sh
-./deploy-docker.sh ant-ai-nav
+# 4. 构建（会自动读取 .env.local 中的环境变量）
+docker-compose up -d --build
 ```
 
 ### 常用命令
