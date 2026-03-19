@@ -492,12 +492,19 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
               </CardContent>
             </Card>
 
-            {/* Related Tools */}
-            <RelatedTools toolId={tool.id} />
+            {/* Related Tools - 移动端显示在主内容区域 */}
+            <div className="lg:hidden">
+              <RelatedTools toolId={tool.id} />
+            </div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Related Tools - PC端显示在右侧栏 */}
+            <div className="hidden lg:block">
+              <RelatedTools toolId={tool.id} variant="compact" />
+            </div>
+
             {/* Publisher Info - 桌面端显示 */}
             {tool.publisher && (
               <Card className="hidden lg:block">

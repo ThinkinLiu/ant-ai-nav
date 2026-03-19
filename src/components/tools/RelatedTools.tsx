@@ -32,9 +32,10 @@ interface RelatedTool {
 
 interface RelatedToolsProps {
   toolId: number
+  variant?: 'default' | 'compact'  // default: 宽松布局, compact: 侧边栏紧凑布局
 }
 
-export default function RelatedTools({ toolId }: RelatedToolsProps) {
+export default function RelatedTools({ toolId, variant = 'default' }: RelatedToolsProps) {
   const [tools, setTools] = useState<RelatedTool[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -61,18 +62,18 @@ export default function RelatedTools({ toolId }: RelatedToolsProps) {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className={variant === 'compact' ? '' : ''}>
+        <CardHeader className={variant === 'compact' ? 'pb-2' : ''}>
+          <CardTitle className={`flex items-center gap-2 ${variant === 'compact' ? 'text-base' : ''}`}>
             <Sparkles className="h-5 w-5 text-primary" />
             相关推荐
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div className={variant === 'compact' ? 'space-y-3' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'}>
+            {(variant === 'compact' ? [1, 2, 3] : [1, 2, 3, 4, 5, 6]).map((i) => (
               <div key={i} className="animate-pulse">
-                <div className="h-24 bg-muted rounded-lg"></div>
+                <div className={variant === 'compact' ? 'h-16 bg-muted rounded-lg' : 'h-24 bg-muted rounded-lg'}></div>
               </div>
             ))}
           </div>
@@ -84,6 +85,71 @@ export default function RelatedTools({ toolId }: RelatedToolsProps) {
   if (tools.length === 0) {
     return null
   }
+
+  // 侧边栏紧凑布局
+  if (variant === 'compact') {
+    // 只显示前4个
+    const displayTools = tools.slice(0, 4)
+    
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="h-4 w-4 text-primary" />
+              相关推荐
+            </CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={fetchRelatedTools}
+              className="text-muted-foreground hover:text-foreground h-7"
+            >
+              <Shuffle className="h-3 w-3 mr-1" />
+              换一批
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {displayTools.map((tool) => (
+            <Link
+              key={tool.id}
+              href={`/tools/${tool.slug || tool.id}`}
+              className="group flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+            >
+              <ToolLogoNext 
+                logo={tool.logo}
+                name={tool.name}
+                website={tool.website}
+                size={40}
+                className="h-10 w-10 rounded-lg shrink-0"
+                fallbackBgColor={tool.category?.color || '#6366F1'}
+              />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                  {tool.name}
+                </h3>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <Badge 
+                    variant="outline" 
+                    className="text-[10px] px-1.5 py-0 h-4"
+                    style={{ 
+                      borderColor: tool.category?.color || '#6366F1',
+                      color: tool.category?.color || '#6366F1'
+                    }}
+                  >
+                    {tool.category?.name || '未分类'}
+                  </Badge>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // 默认宽松布局
 
   return (
     <Card>
