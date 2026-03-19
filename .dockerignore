@@ -54,8 +54,14 @@ __mocks__
 
 # 部署脚本
 deploy.sh
+deploy-docker.sh
 update.sh
 ecosystem.config.js
+
+# Babel 配置（使用 SWC 更快）
+.babelrc
+.babelrc.js
+babel.config.js
 
 # 其他
 .DS_Store
