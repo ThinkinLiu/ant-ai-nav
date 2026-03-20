@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 
 /**
- * 获取所有标签（带工具数量统计）
+ * 获取所有标签（带工具数量和资讯数量统计）
  */
 export async function GET(request: NextRequest) {
   try {
@@ -31,20 +31,34 @@ export async function GET(request: NextRequest) {
     }
     
     // 获取每个标签的工具数量
-    const { data: toolCounts, error: countError } = await supabase
+    const { data: toolCounts } = await supabase
       .rpc('get_tool_counts_by_tag')
     
-    const countMap = new Map<number, number>()
+    const toolCountMap = new Map<number, number>()
     if (toolCounts) {
       for (const item of toolCounts) {
-        countMap.set(item.tag_id, item.count)
+        toolCountMap.set(item.tag_id, item.count)
+      }
+    }
+    
+    // 获取每个标签的资讯数量
+    const { data: newsCounts } = await supabase
+      .from('news_tags')
+      .select('tag_id')
+    
+    const newsCountMap = new Map<number, number>()
+    if (newsCounts) {
+      for (const item of newsCounts) {
+        const count = newsCountMap.get(item.tag_id) || 0
+        newsCountMap.set(item.tag_id, count + 1)
       }
     }
     
     // 组装数据
     const tagsWithCount = (tags || []).map(tag => ({
       ...tag,
-      toolCount: countMap.get(tag.id) || 0,
+      toolCount: toolCountMap.get(tag.id) || 0,
+      newsCount: newsCountMap.get(tag.id) || 0,
     }))
     
     return NextResponse.json({

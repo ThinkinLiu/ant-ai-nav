@@ -18,9 +18,10 @@ import { useAuth } from '@/contexts/AuthContext'
 import { formatRelativeTime } from '@/lib/utils'
 import { ToolLogo } from '@/components/tools/ToolLogo'
 import { 
-  Plus, Edit, Trash2, Save, Tag, Search, X, ExternalLink, Eye, Heart, Loader2
+  Plus, Edit, Trash2, Save, Tag, Search, X, ExternalLink, Eye, Heart, Loader2, Newspaper
 } from 'lucide-react'
 import { toast } from 'sonner'
+import Image from 'next/image'
 
 interface Tag {
   id: number
@@ -28,6 +29,7 @@ interface Tag {
   slug: string
   created_at: string
   toolCount?: number
+  newsCount?: number
 }
 
 interface TagTool {
@@ -44,6 +46,19 @@ interface TagTool {
   category: { id: number; name: string; color: string } | null
 }
 
+interface TagNews {
+  id: number
+  title: string
+  slug: string
+  summary: string
+  cover_image: string | null
+  source: string
+  view_count: number
+  status: string
+  created_at: string
+  category: { id: number; name: string; color: string } | null
+}
+
 export default function TagsAdminPage() {
   const { token } = useAuth()
   const [tags, setTags] = useState<Tag[]>([])
@@ -53,9 +68,12 @@ export default function TagsAdminPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [toolsDialogOpen, setToolsDialogOpen] = useState(false)
+  const [newsDialogOpen, setNewsDialogOpen] = useState(false)
   const [currentTag, setCurrentTag] = useState<Tag | null>(null)
   const [tagTools, setTagTools] = useState<TagTool[]>([])
+  const [tagNews, setTagNews] = useState<TagNews[]>([])
   const [toolsLoading, setToolsLoading] = useState(false)
+  const [newsLoading, setNewsLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   
   // 表单数据
@@ -171,9 +189,15 @@ export default function TagsAdminPage() {
   }
 
   const handleDelete = async (tag: Tag) => {
-    // 检查是否有关联的工具
-    if (tag.toolCount && tag.toolCount > 0) {
-      if (!confirm(`标签"${tag.name}"关联了 ${tag.toolCount} 个工具，删除后关联将解除。确定要删除吗？`)) {
+    // 检查是否有关联的工具或资讯
+    const hasRelations = (tag.toolCount && tag.toolCount > 0) || (tag.newsCount && tag.newsCount > 0)
+    
+    if (hasRelations) {
+      const toolInfo = tag.toolCount ? `${tag.toolCount} 个工具` : ''
+      const newsInfo = tag.newsCount ? `${tag.newsCount} 个资讯` : ''
+      const relations = [toolInfo, newsInfo].filter(Boolean).join('、')
+      
+      if (!confirm(`标签"${tag.name}"关联了 ${relations}，删除后关联将解除。确定要删除吗？`)) {
         return
       }
     } else {
@@ -226,6 +250,31 @@ export default function TagsAdminPage() {
     }
   }
 
+  // 查看关联资讯
+  const handleViewNews = async (tag: Tag) => {
+    setCurrentTag(tag)
+    setNewsDialogOpen(true)
+    setNewsLoading(true)
+    setTagNews([])
+    
+    try {
+      const response = await fetch(`/api/admin/tags/${tag.id}/news`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await response.json()
+      if (data.success) {
+        setTagNews(data.data)
+      } else {
+        toast.error(data.error || '获取资讯列表失败')
+      }
+    } catch (error) {
+      console.error('获取关联资讯失败:', error)
+      toast.error('获取关联资讯失败')
+    } finally {
+      setNewsLoading(false)
+    }
+  }
+
   // 移除工具与标签的关联
   const handleRemoveTool = async (toolId: number) => {
     if (!currentTag) return
@@ -266,6 +315,40 @@ export default function TagsAdminPage() {
         } else {
           toast.error(updateData.error || '移除失败')
         }
+      }
+    } catch (error) {
+      console.error('移除关联失败:', error)
+      toast.error('移除关联失败')
+    }
+  }
+
+  // 移除资讯与标签的关联
+  const handleRemoveNews = async (newsId: number) => {
+    if (!currentTag) return
+    
+    if (!confirm('确定要移除该资讯与此标签的关联吗？')) {
+      return
+    }
+    
+    try {
+      // 直接从 news_tags 表删除关联
+      const response = await fetch(`/api/admin/news/${newsId}/tags`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ tagId: currentTag.id }),
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        toast.success('已移除关联')
+        // 刷新列表
+        setTagNews(prev => prev.filter(n => n.id !== newsId))
+        fetchTags()
+      } else {
+        toast.error(data.error || '移除失败')
       }
     } catch (error) {
       console.error('移除关联失败:', error)
@@ -347,6 +430,13 @@ export default function TagsAdminPage() {
                       onClick={() => handleViewTools(tag)}
                     >
                       关联工具: {tag.toolCount || 0} 个
+                    </button>
+                    <span>•</span>
+                    <button
+                      className="hover:text-primary cursor-pointer underline underline-offset-2"
+                      onClick={() => handleViewNews(tag)}
+                    >
+                      关联资讯: {tag.newsCount || 0} 个
                     </button>
                     <span>•</span>
                     <span>ID: {tag.id}</span>
@@ -546,6 +636,108 @@ export default function TagsAdminPage() {
                         size="sm"
                         className="text-red-500 hover:text-red-600 hover:bg-red-50"
                         onClick={() => handleRemoveTool(tool.id)}
+                        title="移除关联"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 关联资讯对话框 */}
+      <Dialog open={newsDialogOpen} onOpenChange={setNewsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Newspaper className="h-5 w-5" />
+              标签「{currentTag?.name}」关联的资讯
+              <Badge variant="secondary">{tagNews.length} 个</Badge>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto py-4">
+            {newsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : tagNews.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                暂无关联的资讯
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {tagNews.map((news) => (
+                  <div
+                    key={news.id}
+                    className="flex items-center gap-4 p-3 border rounded-lg hover:bg-muted/50"
+                  >
+                    <div className="w-16 h-12 rounded overflow-hidden shrink-0 bg-muted">
+                      {news.cover_image ? (
+                        <Image
+                          src={news.cover_image}
+                          alt={news.title}
+                          width={64}
+                          height={48}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Newspaper className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium line-clamp-1">{news.title}</span>
+                        <Badge 
+                          variant={news.status === 'published' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {news.status === 'published' ? '已发布' : news.status === 'draft' ? '草稿' : news.status}
+                        </Badge>
+                        {news.category && (
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs"
+                            style={{ borderColor: news.category.color, color: news.category.color }}
+                          >
+                            {news.category.name}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
+                        {news.summary}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Eye className="h-3 w-3" />
+                          {news.view_count}
+                        </span>
+                        <span>{news.source}</span>
+                        <span>{formatRelativeTime(news.created_at)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        title="查看详情"
+                      >
+                        <Link href={`/news/${news.id}`} target="_blank">
+                          <ExternalLink className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => handleRemoveNews(news.id)}
                         title="移除关联"
                       >
                         <X className="h-4 w-4" />
