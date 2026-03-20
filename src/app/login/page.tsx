@@ -49,6 +49,8 @@ interface OAuthProviders {
   qq: boolean
 }
 
+export const dynamic = 'force-dynamic'
+
 function LoginForm() {
   const [loginType, setLoginType] = useState<'email' | 'phone'>('email')
   const [email, setEmail] = useState('')
@@ -84,11 +86,14 @@ function LoginForm() {
       try {
         const response = await fetch('/api/oauth/providers')
         const data = await response.json()
+        console.log('[OAuth] API响应:', data)
         if (data.success) {
-          setOauthProviders({
+          const providers = {
             wechat: data.data.includes('wechat'),
             qq: data.data.includes('qq'),
-          })
+          }
+          console.log('[OAuth] 设置提供者:', providers)
+          setOauthProviders(providers)
         }
       } catch (error) {
         console.error('获取OAuth配置失败:', error)
@@ -230,6 +235,7 @@ function LoginForm() {
   }
 
   const hasOAuth = oauthProviders.wechat || oauthProviders.qq
+  console.log('[OAuth] hasOAuth:', hasOAuth, 'providers:', oauthProviders)
 
   return (
     <Card className="w-full max-w-md">
