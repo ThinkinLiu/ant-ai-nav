@@ -50,16 +50,16 @@ export const favorites = pgTable("favorites", {
 }, (table) => [
 	index("favorites_tool_id_idx").using("btree", table.toolId.asc().nullsLast().op("int4_ops")),
 	index("favorites_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
-]);
-
-export const tags = pgTable("tags", {
-	id: serial().primaryKey().notNull(),
-	name: varchar({ length: 50 }).notNull(),
-	slug: varchar({ length: 50 }).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	index("tags_slug_idx").using("btree", table.slug.asc().nullsLast().op("text_ops")),
-	unique("tags_slug_unique").on(table.slug),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "fk_favorites_user_id"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.toolId],
+			foreignColumns: [aiTools.id],
+			name: "fk_favorites_tool_id"
+		}).onDelete("cascade"),
 ]);
 
 export const toolTags = pgTable("tool_tags", {
@@ -70,22 +70,6 @@ export const toolTags = pgTable("tool_tags", {
 }, (table) => [
 	index("tool_tags_tag_id_idx").using("btree", table.tagId.asc().nullsLast().op("int4_ops")),
 	index("tool_tags_tool_id_idx").using("btree", table.toolId.asc().nullsLast().op("int4_ops")),
-]);
-
-export const users = pgTable("users", {
-	id: varchar({ length: 36 }).primaryKey().notNull(),
-	email: varchar({ length: 255 }).notNull(),
-	name: varchar({ length: 128 }),
-	avatar: text(),
-	role: varchar({ length: 20 }).default('user').notNull(),
-	bio: text(),
-	website: varchar({ length: 500 }),
-	isActive: boolean("is_active").default(true).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
-}, (table) => [
-	index("users_email_idx").using("btree", table.email.asc().nullsLast().op("text_ops")),
-	index("users_role_idx").using("btree", table.role.asc().nullsLast().op("text_ops")),
 ]);
 
 export const publisherApplications = pgTable("publisher_applications", {
@@ -116,6 +100,24 @@ export const publisherApplications = pgTable("publisher_applications", {
 	check("publisher_applications_status_check", sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])`),
 ]);
 
+export const users = pgTable("users", {
+	id: varchar({ length: 36 }).primaryKey().notNull(),
+	email: varchar({ length: 255 }).notNull(),
+	name: varchar({ length: 128 }),
+	avatar: text(),
+	role: varchar({ length: 20 }).default('user').notNull(),
+	bio: text(),
+	website: varchar({ length: 500 }),
+	isActive: boolean("is_active").default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
+	phone: varchar({ length: 20 }),
+}, (table) => [
+	index("idx_users_phone").using("btree", table.phone.asc().nullsLast().op("text_ops")),
+	index("users_email_idx").using("btree", table.email.asc().nullsLast().op("text_ops")),
+	index("users_role_idx").using("btree", table.role.asc().nullsLast().op("text_ops")),
+]);
+
 export const comments = pgTable("comments", {
 	id: serial().primaryKey().notNull(),
 	toolId: integer("tool_id").notNull(),
@@ -133,6 +135,20 @@ export const comments = pgTable("comments", {
 	index("comments_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	index("idx_comments_is_featured").using("btree", table.isFeatured.asc().nullsLast().op("bool_ops")),
 ]);
+
+export const smtpSettings = pgTable("smtp_settings", {
+	id: serial().primaryKey().notNull(),
+	host: varchar({ length: 255 }).notNull(),
+	port: integer().default(587).notNull(),
+	secure: boolean().default(true),
+	userName: varchar("user_name", { length: 255 }).notNull(),
+	password: text().notNull(),
+	fromEmail: varchar("from_email", { length: 255 }).notNull(),
+	fromName: varchar("from_name", { length: 255 }),
+	isActive: boolean("is_active").default(true),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+});
 
 export const categories = pgTable("categories", {
 	id: serial().primaryKey().notNull(),
@@ -159,6 +175,46 @@ export const rankingUpdateLog = pgTable("ranking_update_log", {
 	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
 }, (table) => [
 	unique("ranking_update_log_update_date_key").on(table.updateDate),
+]);
+
+export const aiHallOfFame = pgTable("ai_hall_of_fame", {
+	id: serial().primaryKey().notNull(),
+	name: varchar({ length: 100 }).notNull(),
+	nameEn: varchar("name_en", { length: 100 }),
+	photo: text(),
+	title: varchar({ length: 200 }),
+	summary: text().notNull(),
+	bio: text(),
+	achievements: jsonb(),
+	organization: varchar({ length: 200 }),
+	organizationUrl: varchar("organization_url", { length: 500 }),
+	country: varchar({ length: 50 }),
+	category: varchar({ length: 50 }),
+	tags: jsonb(),
+	isFeatured: boolean("is_featured").default(false),
+	viewCount: integer("view_count").default(0),
+	birthYear: integer("birth_year"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
+	deathYear: integer("death_year"),
+}, (table) => [
+	index("ai_hall_of_fame_category_idx").using("btree", table.category.asc().nullsLast().op("text_ops")),
+	index("ai_hall_of_fame_is_featured_idx").using("btree", table.isFeatured.asc().nullsLast().op("bool_ops")),
+	index("ai_hall_of_fame_view_count_idx").using("btree", table.viewCount.asc().nullsLast().op("int4_ops")),
+]);
+
+export const emailVerificationCodes = pgTable("email_verification_codes", {
+	id: serial().primaryKey().notNull(),
+	email: varchar({ length: 255 }).notNull(),
+	code: varchar({ length: 6 }).notNull(),
+	type: varchar({ length: 20 }).default('register').notNull(),
+	isUsed: boolean("is_used").default(false),
+	expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'string' }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+}, (table) => [
+	index("idx_email_verification_code").using("btree", table.code.asc().nullsLast().op("text_ops")),
+	index("idx_email_verification_email").using("btree", table.email.asc().nullsLast().op("text_ops")),
+	index("idx_email_verification_expires").using("btree", table.expiresAt.asc().nullsLast().op("timestamptz_ops")),
 ]);
 
 export const aiToolRankings = pgTable("ai_tool_rankings", {
@@ -191,109 +247,271 @@ export const aiToolRankings = pgTable("ai_tool_rankings", {
 	unique("ai_tool_rankings_tool_id_ranking_date_key").on(table.toolId, table.rankingDate),
 ]);
 
-// SEO配置表
+export const aiTimeline = pgTable("ai_timeline", {
+	id: serial().primaryKey().notNull(),
+	year: integer().notNull(),
+	month: integer(),
+	day: integer(),
+	title: varchar({ length: 200 }).notNull(),
+	titleEn: varchar("title_en", { length: 200 }),
+	description: text().notNull(),
+	category: varchar({ length: 50 }),
+	importance: varchar({ length: 20 }).default('normal'),
+	icon: varchar({ length: 50 }),
+	image: text(),
+	relatedPersonId: integer("related_person_id"),
+	relatedUrl: varchar("related_url", { length: 500 }),
+	tags: jsonb(),
+	viewCount: integer("view_count").default(0),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("ai_timeline_category_idx").using("btree", table.category.asc().nullsLast().op("text_ops")),
+	index("ai_timeline_importance_idx").using("btree", table.importance.asc().nullsLast().op("text_ops")),
+	index("ai_timeline_year_idx").using("btree", table.year.desc().nullsFirst().op("int4_ops")),
+	foreignKey({
+			columns: [table.relatedPersonId],
+			foreignColumns: [aiHallOfFame.id],
+			name: "ai_timeline_related_person_id_fkey"
+		}),
+]);
+
+export const friendLinks = pgTable("friend_links", {
+	id: serial().primaryKey().notNull(),
+	name: varchar({ length: 100 }).notNull(),
+	url: varchar({ length: 500 }).notNull(),
+	description: text(),
+	logo: varchar({ length: 500 }),
+	contactEmail: varchar("contact_email", { length: 255 }),
+	contactName: varchar("contact_name", { length: 100 }),
+	status: varchar({ length: 20 }).default('pending'),
+	submitterIp: varchar("submitter_ip", { length: 50 }),
+	rejectReason: text("reject_reason"),
+	sortOrder: integer("sort_order").default(0),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+}, (table) => [
+	index("idx_friend_links_sort").using("btree", table.sortOrder.asc().nullsLast().op("int4_ops")),
+	index("idx_friend_links_status").using("btree", table.status.asc().nullsLast().op("text_ops")),
+	unique("friend_links_url_key").on(table.url),
+	check("friend_links_status_check", sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])`),
+]);
+
 export const seoSettings = pgTable("seo_settings", {
 	id: serial().primaryKey().notNull(),
-	// 网站基本信息
 	siteName: varchar("site_name", { length: 200 }).default('蚂蚁AI导航'),
 	siteDescription: text("site_description"),
 	siteKeywords: text("site_keywords"),
 	siteUrl: varchar("site_url", { length: 500 }),
-	
-	// Open Graph
 	ogTitle: varchar("og_title", { length: 200 }),
 	ogDescription: text("og_description"),
 	ogImage: text("og_image"),
 	ogType: varchar("og_type", { length: 50 }).default('website'),
-	
-	// Twitter Card
 	twitterCard: varchar("twitter_card", { length: 50 }).default('summary_large_image'),
 	twitterSite: varchar("twitter_site", { length: 100 }),
 	twitterCreator: varchar("twitter_creator", { length: 100 }),
-	
-	// 结构化数据
 	structuredData: jsonb("structured_data"),
-	
-	// 其他SEO设置
 	robotsTxt: text("robots_txt"),
 	googleSiteVerification: varchar("google_site_verification", { length: 200 }),
 	baiduSiteVerification: varchar("baidu_site_verification", { length: 200 }),
-	
-	// 统计代码
 	googleAnalyticsId: varchar("google_analytics_id", { length: 100 }),
 	baiduAnalyticsId: varchar("baidu_analytics_id", { length: 100 }),
 	customHeadScripts: text("custom_head_scripts"),
 	customBodyScripts: text("custom_body_scripts"),
-	
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	laAnalyticsId: varchar("la_analytics_id", { length: 50 }),
 });
 
-// 网站功能设置表
-export const siteSettings = pgTable("site_settings", {
-	id: serial().primaryKey().notNull(),
-	// 排行榜设置
-	rankingEnabled: boolean("ranking_enabled").default(true),  // 是否启用排行榜
-	rankingTitle: varchar("ranking_title", { length: 100 }).default('AI工具排行榜'),
-	rankingDescription: text("ranking_description"),
-	
-	// 其他功能开关
-	commentsEnabled: boolean("comments_enabled").default(true),  // 是否启用评论
-	favoritesEnabled: boolean("favorites_enabled").default(true), // 是否启用收藏
-	
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-});
-
-// 流量数据源配置表
 export const trafficDataSources = pgTable("traffic_data_sources", {
 	id: serial().primaryKey().notNull(),
-	name: varchar({ length: 100 }).notNull(),           // 数据源名称 (similarweb, semrush, etc.)
-	displayName: varchar("display_name", { length: 200 }), // 显示名称
-	apiKey: varchar("api_key", { length: 500 }),        // API密钥
-	apiEndpoint: varchar("api_endpoint", { length: 500 }), // API端点
-	isActive: boolean("is_active").default(false),      // 是否启用
-	priority: integer().default(0),                     // 优先级（数字越大优先级越高）
-	config: jsonb(),                                    // 额外配置
+	name: varchar({ length: 100 }).notNull(),
+	displayName: varchar("display_name", { length: 200 }),
+	apiKey: varchar("api_key", { length: 500 }),
+	apiEndpoint: varchar("api_endpoint", { length: 500 }),
+	isActive: boolean("is_active").default(false),
+	priority: integer().default(0),
+	config: jsonb(),
 	lastSyncAt: timestamp("last_sync_at", { withTimezone: true, mode: 'string' }),
-	syncStatus: varchar("sync_status", { length: 20 }), // pending, success, failed
-	syncError: text("sync_error"),                      // 同步错误信息
+	syncStatus: varchar("sync_status", { length: 20 }),
+	syncError: text("sync_error"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 });
 
-// AI资讯表
 export const aiNews = pgTable("ai_news", {
 	id: serial().primaryKey().notNull(),
-	title: varchar({ length: 200 }).notNull(),          // 标题
-	slug: varchar({ length: 200 }).notNull(),           // URL slug
-	summary: text().notNull(),                          // 摘要
-	content: text().notNull(),                          // 正文内容
-	coverImage: text("cover_image"),                    // 封面图片
-	category: varchar({ length: 50 }),                  // 分类 (industry, research, product, tutorial, other)
-	tags: jsonb(),                                      // 标签数组
-	source: varchar({ length: 200 }),                   // 来源
-	sourceUrl: text("source_url"),                      // 来源链接
-	authorId: varchar("author_id", { length: 36 }).notNull().references(() => users.id), // 作者ID
-	status: varchar({ length: 20 }).default('draft').notNull(), // 状态: draft, pending, approved, rejected
-	isFeatured: boolean("is_featured").default(false),  // 是否推荐
-	isPinned: boolean("is_pinned").default(false),      // 是否置顶
-	viewCount: integer("view_count").default(0),        // 浏览次数
-	likeCount: integer("like_count").default(0),        // 点赞数
-	commentCount: integer("comment_count").default(0),  // 评论数
-	reviewedBy: varchar("reviewed_by", { length: 36 }).references(() => users.id), // 审核人ID
-	reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: 'string' }), // 审核时间
-	rejectReason: text("reject_reason"),                // 拒绝原因
-	publishedAt: timestamp("published_at", { withTimezone: true, mode: 'string' }), // 发布时间
+	title: varchar({ length: 300 }).notNull(),
+	titleEn: varchar("title_en", { length: 300 }),
+	summary: text().notNull(),
+	content: text(),
+	source: varchar({ length: 100 }),
+	sourceUrl: varchar("source_url", { length: 500 }),
+	author: varchar({ length: 100 }),
+	category: varchar({ length: 50 }),
+	tags: jsonb(),
+	coverImage: text("cover_image"),
+	isFeatured: boolean("is_featured").default(false),
+	isHot: boolean("is_hot").default(false),
+	viewCount: integer("view_count").default(0),
+	likeCount: integer("like_count").default(0),
+	publishedAt: timestamp("published_at", { withTimezone: true, mode: 'string' }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
+	authorId: varchar("author_id", { length: 36 }),
+	slug: varchar({ length: 255 }),
+	status: varchar({ length: 20 }).default('draft'),
+	rejectReason: text("reject_reason"),
+}, (table) => [
+	index("ai_news_author_id_idx").using("btree", table.authorId.asc().nullsLast().op("text_ops")),
+	index("ai_news_category_idx").using("btree", table.category.asc().nullsLast().op("text_ops")),
+	index("ai_news_is_featured_idx").using("btree", table.isFeatured.asc().nullsLast().op("bool_ops")),
+	index("ai_news_is_hot_idx").using("btree", table.isHot.asc().nullsLast().op("bool_ops")),
+	index("ai_news_published_at_idx").using("btree", table.publishedAt.desc().nullsFirst().op("timestamptz_ops")),
+	index("ai_news_slug_idx").using("btree", table.slug.asc().nullsLast().op("text_ops")),
+	index("ai_news_status_idx").using("btree", table.status.asc().nullsLast().op("text_ops")),
+]);
+
+export const siteSettings = pgTable("site_settings", {
+	id: serial().primaryKey().notNull(),
+	rankingEnabled: boolean("ranking_enabled").default(true),
+	rankingTitle: varchar("ranking_title", { length: 100 }).default('AI工具排行榜'),
+	rankingDescription: text("ranking_description"),
+	commentsEnabled: boolean("comments_enabled").default(true),
+	favoritesEnabled: boolean("favorites_enabled").default(true),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+});
+
+export const oauthSettings = pgTable("oauth_settings", {
+	id: serial().primaryKey().notNull(),
+	provider: varchar({ length: 20 }).notNull(),
+	appId: varchar("app_id", { length: 100 }).notNull(),
+	appSecret: text("app_secret").notNull(),
+	isEnabled: boolean("is_enabled").default(false),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 }, (table) => [
-	index("ai_news_slug_idx").using("btree", table.slug.asc().nullsLast().op("text_ops")),
-	index("ai_news_status_idx").using("btree", table.status.asc().nullsLast().op("text_ops")),
-	index("ai_news_category_idx").using("btree", table.category.asc().nullsLast().op("text_ops")),
-	index("ai_news_author_id_idx").using("btree", table.authorId.asc().nullsLast().op("text_ops")),
-	index("ai_news_published_at_idx").using("btree", table.publishedAt.desc().nullsFirst().op("timestamptz_ops")),
-	index("ai_news_is_featured_idx").using("btree", table.isFeatured.asc().nullsLast().op("bool_ops")),
-	index("ai_news_is_pinned_idx").using("btree", table.isPinned.asc().nullsLast().op("bool_ops")),
-	unique("ai_news_slug_unique").on(table.slug),
+	unique("oauth_settings_provider_key").on(table.provider),
+]);
+
+export const newsCategories = pgTable("news_categories", {
+	id: serial().primaryKey().notNull(),
+	name: varchar({ length: 50 }).notNull(),
+	slug: varchar({ length: 50 }).notNull(),
+	description: text(),
+	icon: varchar({ length: 10 }),
+	color: varchar({ length: 20 }),
+	sortOrder: integer("sort_order").default(0),
+	isActive: boolean("is_active").default(true),
+	isDefault: boolean("is_default").default(false),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+}, (table) => [
+	unique("news_categories_slug_key").on(table.slug),
+]);
+
+export const announcements = pgTable("announcements", {
+	id: serial().primaryKey().notNull(),
+	title: varchar({ length: 200 }).notNull(),
+	content: text(),
+	linkUrl: varchar("link_url", { length: 500 }),
+	isActive: boolean("is_active").default(true),
+	sortOrder: integer("sort_order").default(0),
+	expireAt: timestamp("expire_at", { withTimezone: true, mode: 'string' }),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+});
+
+export const homeTabs = pgTable("home_tabs", {
+	id: serial().primaryKey().notNull(),
+	name: varchar({ length: 100 }).notNull(),
+	slug: varchar({ length: 100 }).notNull(),
+	type: varchar({ length: 50 }).notNull(),
+	sourceId: integer("source_id"),
+	icon: varchar({ length: 50 }),
+	color: varchar({ length: 20 }),
+	sortOrder: integer("sort_order").default(0),
+	isDefault: boolean("is_default").default(false),
+	isSystem: boolean("is_system").default(false),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	isVisible: boolean("is_visible").default(true),
+}, (table) => [
+	unique("home_tabs_slug_key").on(table.slug),
+]);
+
+export const userOauthAccounts = pgTable("user_oauth_accounts", {
+	id: serial().primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	provider: varchar({ length: 20 }).notNull(),
+	providerUserId: varchar("provider_user_id", { length: 100 }).notNull(),
+	providerData: jsonb("provider_data"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("idx_user_oauth_accounts_provider").using("btree", table.provider.asc().nullsLast().op("text_ops"), table.providerUserId.asc().nullsLast().op("text_ops")),
+	index("idx_user_oauth_accounts_user").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "user_oauth_accounts_user_id_fkey"
+		}).onDelete("cascade"),
+	unique("user_oauth_accounts_user_id_provider_key").on(table.userId, table.provider),
+	unique("user_oauth_accounts_provider_provider_user_id_key").on(table.provider, table.providerUserId),
+]);
+
+export const smsSettings = pgTable("sms_settings", {
+	id: serial().primaryKey().notNull(),
+	provider: varchar({ length: 20 }).notNull(),
+	accessKeyId: text("access_key_id"),
+	accessKeySecret: text("access_key_secret"),
+	signName: varchar("sign_name", { length: 50 }),
+	templateCode: varchar("template_code", { length: 50 }),
+	isEnabled: boolean("is_enabled").default(false),
+	apiUrl: text("api_url"),
+	extraConfig: jsonb("extra_config"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
+});
+
+export const smsVerificationCodes = pgTable("sms_verification_codes", {
+	id: serial().primaryKey().notNull(),
+	phone: varchar({ length: 20 }).notNull(),
+	code: varchar({ length: 6 }).notNull(),
+	type: varchar({ length: 20 }).default('login').notNull(),
+	isUsed: boolean("is_used").default(false),
+	expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'string' }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("idx_sms_codes_phone").using("btree", table.phone.asc().nullsLast().op("text_ops")),
+	index("idx_sms_codes_phone_code").using("btree", table.phone.asc().nullsLast().op("text_ops"), table.code.asc().nullsLast().op("text_ops")),
+]);
+
+export const newsTags = pgTable("news_tags", {
+	id: serial().primaryKey().notNull(),
+	newsId: integer("news_id").notNull(),
+	tagId: integer("tag_id").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+}, (table) => [
+	index("idx_news_tags_news_id").using("btree", table.newsId.asc().nullsLast().op("int4_ops")),
+	index("idx_news_tags_tag_id").using("btree", table.tagId.asc().nullsLast().op("int4_ops")),
+	foreignKey({
+			columns: [table.newsId],
+			foreignColumns: [aiNews.id],
+			name: "news_tags_news_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.tagId],
+			foreignColumns: [tags.id],
+			name: "news_tags_tag_id_fkey"
+		}).onDelete("cascade"),
+	unique("news_tags_news_id_tag_id_key").on(table.newsId, table.tagId),
+]);
+
+export const tags = pgTable("tags", {
+	id: serial().primaryKey().notNull(),
+	name: varchar({ length: 50 }).notNull(),
+	slug: varchar({ length: 50 }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("tags_slug_idx").using("btree", table.slug.asc().nullsLast().op("text_ops")),
+	unique("tags_slug_unique").on(table.slug),
 ]);
