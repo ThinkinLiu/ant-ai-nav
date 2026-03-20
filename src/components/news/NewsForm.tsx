@@ -50,7 +50,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
     source: '',
     sourceUrl: '',
     isFeatured: false,
-    isPinned: false,
+    isHot: false,
   })
 
   // 编辑模式：加载现有数据
@@ -79,7 +79,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
           source: news.source || '',
           sourceUrl: news.source_url || '',
           isFeatured: news.is_featured || false,
-          isPinned: news.is_pinned || false,
+          isHot: news.is_hot || false,
         })
       } else {
         toast.error(result.error || '加载失败')
@@ -144,7 +144,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
         source: formData.source.trim(),
         sourceUrl: formData.sourceUrl.trim(),
         isFeatured: user.role === 'admin' ? formData.isFeatured : false,
-        isPinned: user.role === 'admin' ? formData.isPinned : false,
+        isHot: user.role === 'admin' ? formData.isHot : false,
       }
 
       let response
@@ -397,15 +397,15 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
 
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>置顶文章</Label>
+                      <Label>热门文章</Label>
                       <p className="text-xs text-muted-foreground">
-                        置顶显示在列表最前面
+                        标记为热门文章
                       </p>
                     </div>
                     <Switch
-                      checked={formData.isPinned}
+                      checked={formData.isHot}
                       onCheckedChange={(checked) =>
-                        setFormData({ ...formData, isPinned: checked })
+                        setFormData({ ...formData, isHot: checked })
                       }
                     />
                   </div>
@@ -453,7 +453,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
               <p>• 发布后需要管理员审核通过才能显示</p>
               <p>• 草稿可以随时保存和编辑</p>
               {user.role === 'admin' && (
-                <p>• 管理员可以设置推荐和置顶</p>
+                <p>• 管理员可以设置推荐和热门</p>
               )}
             </CardContent>
           </Card>

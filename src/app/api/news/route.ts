@@ -41,8 +41,9 @@ export async function GET(request: NextRequest) {
       query = query.order('view_count', { ascending: sortOrder === 'asc' })
     } else if (sortBy === 'created_at') {
       query = query.order('created_at', { ascending: sortOrder === 'asc' })
-    } else if (sortBy === 'is_pinned') {
-      query = query.order('is_pinned', { ascending: false })
+    } else if (sortBy === 'is_hot' || sortBy === 'is_pinned') {
+      // 使用 is_hot 字段代替 is_pinned
+      query = query.order('is_hot', { ascending: false })
       query = query.order('published_at', { ascending: false })
     }
 

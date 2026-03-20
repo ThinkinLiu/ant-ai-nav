@@ -90,7 +90,7 @@ export async function PUT(
     const updateData: any = {}
     const allowedFields = [
       'title', 'slug', 'summary', 'content', 'coverImage', 'category',
-      'tags', 'source', 'sourceUrl', 'isFeatured', 'isPinned'
+      'tags', 'source', 'sourceUrl', 'isFeatured', 'isHot'
     ]
 
     allowedFields.forEach(field => {
