@@ -25,14 +25,17 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog'
-import { Plus, Search, Edit, Trash2, Eye, Check, X, Sparkles, Loader2 } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Eye, Check, X, Sparkles, Loader2, AlertTriangle } from 'lucide-react'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { useConfirm } from '@/hooks/use-confirm'
@@ -90,6 +93,16 @@ export default function NewsManagementPage() {
   const [searchResults, setSearchResults] = useState<SearchNewsItem[]>([])
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
   const [importing, setImporting] = useState(false)
+
+  // 审核相关状态
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
+  const [reviewingNews, setReviewingNews] = useState<any>(null)
+  const [reviewAction, setReviewAction] = useState<'approved' | 'rejected'>('approved')
+  const [rejectReason, setRejectReason] = useState('')
+  const [reviewing, setReviewing] = useState(false)
+
+  // 批量选择审核
+  const [batchSelectedIds, setBatchSelectedIds] = useState<Set<number>>(new Set())
 
   // 获取分类配置
   const fetchCategories = async () => {
@@ -170,24 +183,27 @@ export default function NewsManagementPage() {
     }
   }
 
-  const handleReview = async (id: number, status: 'approved' | 'rejected', reason?: string) => {
-    if (!user) return
+  const handleReview = async () => {
+    if (!reviewingNews) return
+    setReviewing(true)
 
     try {
-      const response = await fetch(`/api/news/${id}/review`, {
+      const response = await fetch(`/api/news/${reviewingNews.id}/review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status,
-          reviewedBy: user.id,
-          rejectReason: reason,
+          status: reviewAction,
+          rejectReason: reviewAction === 'rejected' ? rejectReason : undefined,
         }),
       })
 
       const result = await response.json()
 
       if (result.success) {
-        toast.success('审核成功')
+        toast.success(reviewAction === 'approved' ? '审核通过' : '已拒绝')
+        setReviewDialogOpen(false)
+        setReviewingNews(null)
+        setRejectReason('')
         fetchNews()
       } else {
         toast.error(result.error || '审核失败')
@@ -195,6 +211,83 @@ export default function NewsManagementPage() {
     } catch (error) {
       console.error('审核失败:', error)
       toast.error('审核失败')
+    } finally {
+      setReviewing(false)
+    }
+  }
+
+  // 打开审核弹窗
+  const openReviewDialog = (item: any, action: 'approved' | 'rejected') => {
+    setReviewingNews(item)
+    setReviewAction(action)
+    setRejectReason('')
+    setReviewDialogOpen(true)
+  }
+
+  // 批量审核通过
+  const handleBatchApprove = async () => {
+    if (batchSelectedIds.size === 0) {
+      toast.error('请选择要审核的资讯')
+      return
+    }
+
+    const confirmed = await confirm({
+      title: '批量审核',
+      description: `确定要通过选中的 ${batchSelectedIds.size} 条资讯吗？`,
+      confirmText: '通过',
+    })
+
+    if (!confirmed) return
+
+    let successCount = 0
+    let failCount = 0
+
+    for (const id of batchSelectedIds) {
+      try {
+        const response = await fetch(`/api/news/${id}/review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'approved' }),
+        })
+        const result = await response.json()
+        if (result.success) {
+          successCount++
+        } else {
+          failCount++
+        }
+      } catch {
+        failCount++
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`成功审核 ${successCount} 条资讯`)
+    }
+    if (failCount > 0) {
+      toast.error(`${failCount} 条审核失败`)
+    }
+    setBatchSelectedIds(new Set())
+    fetchNews()
+  }
+
+  // 切换批量选择
+  const toggleBatchSelect = (id: number) => {
+    const newSelected = new Set(batchSelectedIds)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setBatchSelectedIds(newSelected)
+  }
+
+  // 全选/取消全选（仅待审核）
+  const toggleBatchSelectAll = () => {
+    const pendingNews = news.filter(n => n.status === 'pending')
+    if (batchSelectedIds.size === pendingNews.length) {
+      setBatchSelectedIds(new Set())
+    } else {
+      setBatchSelectedIds(new Set(pendingNews.map(n => n.id)))
     }
   }
 
@@ -384,9 +477,29 @@ export default function NewsManagementPage() {
           </div>
 
           {/* 表格 */}
+          {/* 批量审核操作栏 */}
+          {user.role === 'admin' && news.some(n => n.status === 'pending') && (
+            <div className="flex items-center gap-4 mb-4 p-3 bg-muted/50 rounded-lg">
+              <Checkbox
+                checked={batchSelectedIds.size === news.filter(n => n.status === 'pending').length && batchSelectedIds.size > 0}
+                onCheckedChange={toggleBatchSelectAll}
+              />
+              <span className="text-sm text-muted-foreground">
+                已选择 {batchSelectedIds.size} 条待审核资讯
+              </span>
+              {batchSelectedIds.size > 0 && (
+                <Button size="sm" onClick={handleBatchApprove}>
+                  <Check className="mr-2 h-4 w-4" />
+                  批量通过
+                </Button>
+              )}
+            </div>
+          )}
+
           <Table>
             <TableHeader>
               <TableRow>
+                {user.role === 'admin' && <TableHead className="w-10"></TableHead>}
                 <TableHead>标题</TableHead>
                 <TableHead>分类</TableHead>
                 <TableHead>状态</TableHead>
@@ -398,20 +511,38 @@ export default function NewsManagementPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     加载中...
                   </TableCell>
                 </TableRow>
               ) : news.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     暂无数据
                   </TableCell>
                 </TableRow>
               ) : (
                 news.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.title}</TableCell>
+                    {user.role === 'admin' && (
+                      <TableCell>
+                        {item.status === 'pending' && (
+                          <Checkbox
+                            checked={batchSelectedIds.has(item.id)}
+                            onCheckedChange={() => toggleBatchSelect(item.id)}
+                          />
+                        )}
+                      </TableCell>
+                    )}
+                    <TableCell>
+                      <div className="font-medium">{item.title}</div>
+                      {item.status === 'rejected' && item.reject_reason && (
+                        <div className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          拒绝原因: {item.reject_reason}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {item.category && categories.find(c => c.slug === item.category)?.name}
                     </TableCell>
@@ -433,19 +564,18 @@ export default function NewsManagementPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleReview(item.id, 'approved')}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => openReviewDialog(item, 'approved')}
                             >
-                              <Check className="h-4 w-4 text-green-600" />
+                              <Check className="h-4 w-4" />
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
-                                const reason = prompt('请输入拒绝原因：')
-                                if (reason) handleReview(item.id, 'rejected', reason)
-                              }}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => openReviewDialog(item, 'rejected')}
                             >
-                              <X className="h-4 w-4 text-red-600" />
+                              <X className="h-4 w-4" />
                             </Button>
                           </>
                         )}
@@ -617,6 +747,74 @@ export default function NewsManagementPage() {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 审核弹窗 */}
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {reviewAction === 'approved' ? '审核通过' : '审核拒绝'}
+            </DialogTitle>
+            <DialogDescription>
+              {reviewingNews && (
+                <div className="mt-2 p-3 bg-muted rounded-lg">
+                  <p className="font-medium">{reviewingNews.title}</p>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                    {reviewingNews.summary}
+                  </p>
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {reviewAction === 'rejected' && (
+            <div className="space-y-2 py-4">
+              <Label htmlFor="rejectReason">拒绝原因</Label>
+              <Textarea
+                id="rejectReason"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="请输入拒绝原因，将通知作者..."
+                rows={3}
+              />
+            </div>
+          )}
+
+          {reviewAction === 'approved' && (
+            <p className="text-sm text-muted-foreground py-4">
+              确定通过该资讯的审核吗？通过后将自动发布。
+            </p>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReviewDialogOpen(false)}
+              disabled={reviewing}
+            >
+              取消
+            </Button>
+            <Button
+              variant={reviewAction === 'approved' ? 'default' : 'destructive'}
+              onClick={handleReview}
+              disabled={reviewing || (reviewAction === 'rejected' && !rejectReason.trim())}
+            >
+              {reviewing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  {reviewAction === 'approved' ? (
+                    <Check className="mr-2 h-4 w-4" />
+                  ) : (
+                    <X className="mr-2 h-4 w-4" />
+                  )}
+                </>
+              )}
+              {reviewAction === 'approved' ? '确认通过' : '确认拒绝'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

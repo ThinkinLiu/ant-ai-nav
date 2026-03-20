@@ -9,19 +9,12 @@ export async function POST(
   try {
     const { id } = await params
     const body = await request.json()
-    const { status, reviewedBy, rejectReason } = body
+    const { status, rejectReason } = body
 
     // 验证状态
     if (!['approved', 'rejected'].includes(status)) {
       return NextResponse.json(
         { success: false, error: '无效的审核状态' },
-        { status: 400 }
-      )
-    }
-
-    if (!reviewedBy) {
-      return NextResponse.json(
-        { success: false, error: '缺少审核人信息' },
         { status: 400 }
       )
     }
@@ -45,8 +38,6 @@ export async function POST(
     // 构建更新对象
     const updateData: any = {
       status,
-      reviewed_by: reviewedBy,
-      reviewed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
 
