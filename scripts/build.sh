@@ -105,19 +105,43 @@ echo ""
 echo "✅ 环境变量配置完成"
 echo ""
 
-# 验证环境变量（调试用，可以删除）
+# 验证环境变量（调试用）
 echo "🔍 环境变量验证:"
 echo "  NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:0:50}..."
 echo "  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:0:20}..."
 echo ""
 
-# 安装依赖
+# 禁用遥测
+export NEXT_TELEMETRY_DISABLED=1
+
+# 安装依赖（使用缓存）
 echo "📦 安装依赖..."
 pnpm install --frozen-lockfile
 
-# 运行构建
+# 运行构建（优化配置）
 echo "🔨 执行构建..."
-pnpm run build
+
+# 根据可用内存自动调整
+TOTAL_MEM=$(cat /proc/meminfo 2>/dev/null | grep MemTotal | awk '{print $2}' || echo "0")
+if [ "$TOTAL_MEM" -gt 8000000 ]; then
+  # 8GB+ 内存，使用 4GB
+  NODE_OPTS="--max-old-space-size=4096"
+elif [ "$TOTAL_MEM" -gt 4000000 ]; then
+  # 4GB+ 内存，使用 2GB
+  NODE_OPTS="--max-old-space-size=2048"
+else
+  # 默认 1.5GB
+  NODE_OPTS="--max-old-space-size=1536"
+fi
+
+echo "  内存配置: $NODE_OPTS"
+echo ""
+
+# 禁用 source maps 加快构建
+export NEXT_BUILD_SOURCEMAPS=0
+
+# 执行构建
+NODE_OPTIONS="$NODE_OPTS" pnpm build
 
 echo ""
 echo "✅ 构建完成！"

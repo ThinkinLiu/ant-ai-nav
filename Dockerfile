@@ -1,5 +1,5 @@
 # 蚂蚁AI导航 - Docker 镜像构建文件
-# 多阶段构建，优化镜像大小
+# 多阶段构建，优化镜像大小和构建速度
 
 # ==================== 阶段1: 依赖安装 ====================
 FROM node:20-alpine AS deps
@@ -12,7 +12,10 @@ WORKDIR /app
 # 复制依赖文件
 COPY package.json pnpm-lock.yaml ./
 
-# 安装依赖
+# 使用国内镜像加速（可选）
+# RUN pnpm config set registry https://registry.npmmirror.com
+
+# 安装依赖（使用 frozen-lockfile 确保一致性）
 RUN pnpm install --frozen-lockfile
 
 # ==================== 阶段2: 构建 ====================
@@ -35,9 +38,11 @@ ARG COZE_INTEGRATION_BASE_URL
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV COZE_WORKLOAD_IDENTITY_API_KEY=$COZE_WORKLOAD_IDENTITY_API_KEY
-ENV COZE_WORKLOAD_IDENTITY_CLIENT_ID=$COZE_WORKLOAD_IDENTITY_CLIENT_ID
+ENV COZE_WORKLOAD_IDENTITY_CLIENT_ID=$COZE_WORKLOAD_IDENTITY_CLIENT_SECRET
 ENV COZE_WORKLOAD_IDENTITY_CLIENT_SECRET=$COZE_WORKLOAD_IDENTITY_CLIENT_SECRET
 ENV COZE_INTEGRATION_BASE_URL=$COZE_INTEGRATION_BASE_URL
+
+# 禁用遥测，加快构建
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
@@ -45,8 +50,12 @@ ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# 构建项目（低内存优化）
-RUN NODE_OPTIONS="--max-old-space-size=768" pnpm build
+# 构建项目
+# 内存优化：增加到 2GB，如果服务器内存充足可以更大
+# 禁用 source map 生成以加快构建
+RUN NODE_OPTIONS="--max-old-space-size=2048" \
+    NEXT_BUILD_SOURCEMAPS=0 \
+    pnpm build
 
 # ==================== 阶段3: 运行 ====================
 FROM node:20-alpine AS runner

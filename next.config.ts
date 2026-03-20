@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
         hostname: '**',
       },
     ],
+    // 优化图片处理
+    formats: ['image/avif', 'image/webp'],
   },
   
   // 生产环境优化
@@ -20,23 +22,32 @@ const nextConfig: NextConfig = {
   // 严格模式
   reactStrictMode: true,
   
-  // 构建优化
+  // 构建优化 - 跳过类型检查加快构建
   typescript: {
-    // 生产构建时跳过类型检查，加快构建速度
     ignoreBuildErrors: true,
   },
   
+  // 实验性优化
+  experimental: {
+    // 优化包导入，减少构建时间
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      'recharts',
+      'date-fns',
+      '@tiptap/react',
+      '@tiptap/starter-kit',
+    ],
+  },
+  
   // 环境变量配置 - 在构建时注入
-  // 支持多种环境变量命名方式，确保 Coze 环境和独立服务器环境都能正常工作
   env: {
-    // Supabase URL - 支持多种命名方式
     NEXT_PUBLIC_SUPABASE_URL: 
       process.env.NEXT_PUBLIC_SUPABASE_URL || 
       process.env.COZE_SUPABASE_URL || 
       process.env.SUPABASE_URL || 
       '',
     
-    // Supabase Anon Key - 支持多种命名方式
     NEXT_PUBLIC_SUPABASE_ANON_KEY: 
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
       process.env.COZE_SUPABASE_ANON_KEY || 
