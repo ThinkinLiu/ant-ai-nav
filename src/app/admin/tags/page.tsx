@@ -56,7 +56,7 @@ interface TagNews {
   view_count: number
   status: string
   created_at: string
-  category: { id: number; name: string; color: string } | null
+  category: string | null
 }
 
 export default function TagsAdminPage() {
@@ -704,9 +704,8 @@ export default function TagsAdminPage() {
                           <Badge 
                             variant="outline" 
                             className="text-xs"
-                            style={{ borderColor: news.category.color, color: news.category.color }}
                           >
-                            {news.category.name}
+                            {news.category}
                           </Badge>
                         )}
                       </div>

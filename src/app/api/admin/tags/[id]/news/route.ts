@@ -44,10 +44,10 @@ export async function GET(request: NextRequest, { params }: Props) {
     
     const newsIds = newsTags.map(nt => nt.news_id)
     
-    // 获取资讯详情
+    // 获取资讯详情（category 是字符串字段，直接返回分类名称）
     const { data: news, error: newsError } = await supabase
       .from('ai_news')
-      .select('id, title, slug, summary, cover_image, source, view_count, status, created_at, category_id')
+      .select('id, title, slug, summary, cover_image, source, view_count, status, created_at, category')
       .in('id', newsIds)
       .order('created_at', { ascending: false })
     
@@ -58,21 +58,10 @@ export async function GET(request: NextRequest, { params }: Props) {
       )
     }
     
-    // 获取分类信息
-    const categoryIds = [...new Set((news || []).map(n => n.category_id).filter(Boolean))]
-    const { data: categories } = categoryIds.length > 0
-      ? await supabase
-          .from('news_categories')
-          .select('id, name, color')
-          .in('id', categoryIds)
-      : { data: [] }
-    
-    const categoryMap = new Map((categories || []).map(c => [c.id, c]))
-    
-    // 组装数据
+    // 组装数据，category 直接作为分类名称
     const newsWithCategory = (news || []).map(item => ({
       ...item,
-      category: categoryMap.get(item.category_id) || null,
+      categoryName: item.category || null,
     }))
     
     return NextResponse.json({
