@@ -336,6 +336,26 @@ COZE_WORKLOAD_IDENTITY_API_KEY=your-coze-api-key
 
 #### Docker 部署
 
+**推荐方式：使用 GitHub Actions 构建（适合低内存服务器）**
+
+如果服务器内存有限（如 1GB），建议使用 GitHub Actions 在云端构建：
+
+1. 配置 GitHub Secrets：
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+2. 在 Actions 页面触发 **Build and Export Docker Image** 工作流
+
+3. 下载构建产物 `ant-ai-nav.tar.gz`
+
+4. 在服务器上加载镜像：
+   ```bash
+   docker load < ant-ai-nav.tar.gz
+   docker-compose up -d
+   ```
+
+**传统方式：本地构建**
+
 ```bash
 # 构建镜像
 docker build -t ant-ai-nav .
@@ -346,6 +366,8 @@ docker run -p 3000:3000 \
   -e NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key \
   ant-ai-nav
 ```
+
+> 💡 详细部署说明请查看 [Docker 部署指南](./docs/deploy-docker.md)
 
 #### Docker Compose 部署
 

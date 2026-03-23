@@ -45,7 +45,62 @@ docker compose version
 
 ## 三、项目部署
 
-### 第一步：上传项目代码
+### 🚀 推荐：使用 GitHub Actions 构建（适合低内存服务器）
+
+如果您的服务器内存较小（如 1GB），建议使用 GitHub Actions 在云端构建 Docker 镜像，然后在服务器上下载并加载。
+
+#### 步骤 1：配置 GitHub Secrets
+
+在 GitHub 仓库中配置以下 Secrets：
+
+1. 进入仓库 → **Settings** → **Secrets and variables** → **Actions**
+2. 添加以下 Secrets：
+
+| Secret 名称 | 说明 | 示例值 |
+|------------|------|--------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 项目 URL | `https://xxx.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 匿名密钥 | `eyJhbGciOiJ...` |
+
+#### 步骤 2：触发构建
+
+1. 进入 GitHub 仓库 → **Actions** 标签页
+2. 选择 **Build and Export Docker Image** 工作流
+3. 点击 **Run workflow**，选择要构建的分支（默认 `main`）
+4. 等待构建完成（约 5-10 分钟）
+
+#### 步骤 3：下载并加载镜像
+
+```bash
+# 在服务器上执行
+
+# 1. 下载构建产物
+# 在 GitHub Actions 页面，构建完成后下载 docker-image artifact
+# 解压得到 ant-ai-nav.tar.gz
+
+# 2. 上传到服务器
+scp ant-ai-nav.tar.gz root@your-server:/www/wwwroot/ant-ai-nav/
+
+# 3. 加载镜像
+cd /www/wwwroot/ant-ai-nav
+docker load < ant-ai-nav.tar.gz
+
+# 4. 标记镜像（如果需要）
+docker tag ant-ai-nav:latest ant-ai-nav:latest
+```
+
+#### 步骤 4：启动服务
+
+```bash
+# 配置环境变量（如前面的"第二步"所示）
+# 创建 docker-compose.yml 文件
+
+# 启动服务
+docker-compose up -d
+```
+
+### 方式A：本地构建（适合内存充足的服务器）
+
+#### 第一步：上传项目代码
 
 ```bash
 # 创建项目目录

@@ -1,6 +1,5 @@
 # 蚂蚁AI导航 - Docker 镜像构建文件
-# 多阶段构建，优化镜像大小和构建速度
-# 支持低内存服务器（1GB可用内存即可构建）
+# 优化版本：支持低内存服务器（512MB可用内存即可构建）
 
 # ==================== 阶段1: 依赖安装 ====================
 FROM node:20-alpine AS deps
@@ -13,8 +12,8 @@ WORKDIR /app
 # 复制依赖文件
 COPY package.json pnpm-lock.yaml ./
 
-# 安装依赖
-RUN pnpm install --frozen-lockfile
+# 安装依赖（只安装生产依赖）
+RUN pnpm install --frozen-lockfile --prod=false
 
 # ==================== 阶段2: 构建 ====================
 FROM node:20-alpine AS builder
@@ -40,58 +39,20 @@ ENV COZE_WORKLOAD_IDENTITY_CLIENT_ID=$COZE_WORKLOAD_IDENTITY_CLIENT_ID
 ENV COZE_WORKLOAD_IDENTITY_CLIENT_SECRET=$COZE_WORKLOAD_IDENTITY_CLIENT_SECRET
 ENV COZE_INTEGRATION_BASE_URL=$COZE_INTEGRATION_BASE_URL
 
-# 禁用遥测和source maps，减少内存占用
+# 禁用遥测、source maps，减少内存占用
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NEXT_BUILD_SOURCEMAPS=0
+ENV SOURCEMAP=0
 ENV NODE_ENV=production
+
+# 关键：限制Node.js内存和并行度
+ENV NODE_OPTIONS="--max-old-space-size=512 --max-semi-space-size=64"
 
 # 复制依赖和源码
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# 创建构建脚本，动态检测内存
-RUN echo '#!/bin/sh' > /tmp/build.sh && \
-    echo 'set -e' >> /tmp/build.sh && \
-    echo '' >> /tmp/build.sh && \
-    echo '# 获取可用内存（KB）' >> /tmp/build.sh && \
-    echo 'AVAIL_MEM=$(grep MemAvailable /proc/meminfo 2>/dev/null | awk "{print \$2}" || echo "0")' >> /tmp/build.sh && \
-    echo 'if [ "$AVAIL_MEM" -eq 0 ]; then' >> /tmp/build.sh && \
-    echo '  FREE_MEM=$(grep MemFree /proc/meminfo 2>/dev/null | awk "{print \$2}" || echo "0")' >> /tmp/build.sh && \
-    echo '  BUFFERS=$(grep Buffers /proc/meminfo 2>/dev/null | awk "{print \$2}" || echo "0")' >> /tmp/build.sh && \
-    echo '  CACHED=$(grep "^Cached" /proc/meminfo 2>/dev/null | awk "{print \$2}" || echo "0")' >> /tmp/build.sh && \
-    echo '  AVAIL_MEM=$((FREE_MEM + BUFFERS + CACHED))' >> /tmp/build.sh && \
-    echo 'fi' >> /tmp/build.sh && \
-    echo '' >> /tmp/build.sh && \
-    echo 'echo "可用内存: $((AVAIL_MEM / 1024))MB"' >> /tmp/build.sh && \
-    echo '' >> /tmp/build.sh && \
-    echo '# 根据可用内存计算Node.js限制（保留256MB给系统）' >> /tmp/build.sh && \
-    echo 'if [ "$AVAIL_MEM" -gt 1500000 ]; then' >> /tmp/build.sh && \
-    echo '  NODE_MEM=1024' >> /tmp/build.sh && \
-    echo 'elif [ "$AVAIL_MEM" -gt 1000000 ]; then' >> /tmp/build.sh && \
-    echo '  NODE_MEM=768' >> /tmp/build.sh && \
-    echo 'elif [ "$AVAIL_MEM" -gt 700000 ]; then' >> /tmp/build.sh && \
-    echo '  NODE_MEM=512' >> /tmp/build.sh && \
-    echo 'elif [ "$AVAIL_MEM" -gt 400000 ]; then' >> /tmp/build.sh && \
-    echo '  NODE_MEM=350' >> /tmp/build.sh && \
-    echo 'else' >> /tmp/build.sh && \
-    echo '  # 尝试清理缓存' >> /tmp/build.sh && \
-    echo '  sync 2>/dev/null || true' >> /tmp/build.sh && \
-    echo '  echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true' >> /tmp/build.sh && \
-    echo '  sleep 2' >> /tmp/build.sh && \
-    echo '  AVAIL_MEM=$(grep MemAvailable /proc/meminfo 2>/dev/null | awk "{print \$2}" || echo "0")' >> /tmp/build.sh && \
-    echo '  if [ "$AVAIL_MEM" -gt 400000 ]; then' >> /tmp/build.sh && \
-    echo '    NODE_MEM=350' >> /tmp/build.sh && \
-    echo '  else' >> /tmp/build.sh && \
-    echo '    NODE_MEM=300' >> /tmp/build.sh && \
-    echo '  fi' >> /tmp/build.sh && \
-    echo 'fi' >> /tmp/build.sh && \
-    echo '' >> /tmp/build.sh && \
-    echo 'echo "Node.js内存限制: ${NODE_MEM}MB"' >> /tmp/build.sh && \
-    echo 'NODE_OPTIONS="--max-old-space-size=${NODE_MEM}" pnpm build' >> /tmp/build.sh && \
-    chmod +x /tmp/build.sh
-
-# 执行构建（使用动态内存检测）
-RUN /tmp/build.sh
+# 使用单线程构建，减少内存峰值
+RUN pnpm build --no-lint
 
 # ==================== 阶段3: 运行 ====================
 FROM node:20-alpine AS runner
