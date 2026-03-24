@@ -60,7 +60,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # 使用单线程构建，减少内存峰值
-RUN pnpm build --no-lint
+RUN pnpm build
 
 # ==================== 阶段3: 运行 ====================
 FROM node:20-alpine AS runner
