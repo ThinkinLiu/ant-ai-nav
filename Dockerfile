@@ -4,19 +4,26 @@
 # ==================== 阶段1: 依赖安装 ====================
 FROM node:20-alpine AS deps
 
+# 配置国内镜像源（解决 npmjs.org 访问超时问题）
+ENV npm_config_registry=https://registry.npmmirror.com
+
 # 安装 pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# 复制依赖文件
-COPY package.json pnpm-lock.yaml ./
+# 复制依赖文件和 npm 配置
+COPY package.json pnpm-lock.yaml .npmrc ./
 
-# 安装依赖（只安装生产依赖）
-RUN pnpm install --frozen-lockfile --prod=false
+# 安装依赖（只安装生产依赖），增加超时时间
+RUN pnpm config set registry https://registry.npmmirror.com && \
+    pnpm install --frozen-lockfile --prod=false
 
 # ==================== 阶段2: 构建 ====================
 FROM node:20-alpine AS builder
+
+# 配置国内镜像源
+ENV npm_config_registry=https://registry.npmmirror.com
 
 # 安装 pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
