@@ -52,7 +52,8 @@ ENV SOURCEMAP=0
 ENV NODE_ENV=production
 
 # 关键：限制Node.js内存和并行度
-ENV NODE_OPTIONS="--max-old-space-size=512 --max-semi-space-size=64"
+# 2GB服务器可用1.5GB时，建议使用768MB
+ENV NODE_OPTIONS="--max-old-space-size=768 --max-semi-space-size=96"
 
 # 复制依赖和源码
 COPY --from=deps /app/node_modules ./node_modules
