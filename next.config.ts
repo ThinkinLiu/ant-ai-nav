@@ -42,6 +42,15 @@ const nextConfig: NextConfig = {
     ],
   },
   
+  // Standalone 模式：确保包含所有必要的文件
+  outputFileTracingIncludes: {
+    '*': [
+      './node_modules/@aws-sdk/**',
+      './node_modules/@tiptap/**',
+      './public/**',
+    ],
+  },
+  
   // 环境变量配置 - 在构建时注入
   env: {
     NEXT_PUBLIC_SUPABASE_URL: 

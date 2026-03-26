@@ -77,8 +77,11 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # 复制构建产物
+# Next.js 16 standalone 模式：需要正确的复制路径
 COPY --from=builder /app/public ./public
+# 复制 standalone 输出（包含 server.js 和最小化 node_modules）
 COPY --from=builder /app/.next/standalone ./
+# 复制静态文件（关键：CSS、JS 等资源）
 COPY --from=builder /app/.next/static ./.next/static
 
 # 设置权限
