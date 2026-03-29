@@ -64,11 +64,6 @@ const nextConfig: NextConfig = {
       process.env.SUPABASE_SERVICE_ROLE_KEY || 
       '',
   },
-  
-  // ESLint 配置（通过环境变量控制）
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
 };
 
 export default nextConfig;

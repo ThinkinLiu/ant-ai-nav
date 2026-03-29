@@ -6,14 +6,20 @@ interface ImageUploaderProps {
   onChange: (value: string) => void
   className?: string
   maxSize?: number // in MB
+  folder?: string
+  aspectRatio?: string
+  placeholder?: string
 }
 
-export const ImageUploader: React.FC<ImageUploaderProps> = ({
+function ImageUploader({
   value,
   onChange,
   className,
   maxSize = 5,
-}) => {
+  folder,
+  aspectRatio,
+  placeholder,
+}: ImageUploaderProps) {
   const [isUploading, setIsUploading] = React.useState(false)
   const [error, setError] = React.useState<string>("")
 
@@ -119,3 +125,5 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     </div>
   )
 }
+
+export default ImageUploader
