@@ -4,9 +4,9 @@
   "description": "蚂蚁AI导航 - 现代化的 AI 工具导航平台",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 5000",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --port 5000",
     "lint": "eslint",
     "ts-check": "tsc --noEmit"
   },

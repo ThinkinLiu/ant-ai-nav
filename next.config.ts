@@ -22,10 +22,7 @@ const nextConfig: NextConfig = {
   // 禁用严格模式减少内存
   reactStrictMode: false,
   
-  // SWC 压缩优化
-  swcMinify: true,
-  
-  // 构建优化 - 跳过类型检查和ESLint检查加快构建
+  // 构建优化 - 跳过类型检查加快构建
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -68,8 +65,7 @@ const nextConfig: NextConfig = {
       '',
   },
   
-  // eslint配置 - 使用类型断言绕过类型检查
-  // @ts-ignore
+  // ESLint 配置（通过环境变量控制）
   eslint: {
     ignoreDuringBuilds: true,
   },
