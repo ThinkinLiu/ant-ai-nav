@@ -367,7 +367,10 @@ docker run -p 3000:3000 \
   ant-ai-nav
 ```
 
-> 💡 详细部署说明请查看 [Docker 部署指南](./docs/deploy-docker.md)
+> 💡 详细部署说明：
+> - 📘 [1GB 服务器部署指南](./docs/deploy-1gb-server.md)（推荐）
+> - 📗 [Docker 部署指南](./docs/deploy-docker.md)
+> - 📙 [完整部署指南](./docs/deployment-guide.md)
 
 #### Docker Compose 部署
 

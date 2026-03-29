@@ -12,10 +12,8 @@ const nextConfig: NextConfig = {
         hostname: '**',
       },
     ],
-    // 优化图片处理
-    formats: ['image/avif', 'image/webp'],
-    // 禁用图片优化以减少内存
-    unoptimized: process.env.NODE_ENV === 'production',
+    // 禁用图片优化以减少内存占用
+    unoptimized: true,
   },
   
   // 生产环境优化
@@ -23,6 +21,9 @@ const nextConfig: NextConfig = {
   
   // 禁用严格模式减少内存
   reactStrictMode: false,
+  
+  // SWC 压缩优化
+  swcMinify: true,
   
   // 构建优化 - 跳过类型检查和ESLint检查加快构建
   typescript: {
@@ -35,18 +36,18 @@ const nextConfig: NextConfig = {
     optimizePackageImports: [
       'lucide-react',
       '@radix-ui/react-icons',
-      'recharts',
-      'date-fs',
-      '@tiptap/react',
-      '@tiptap/starter-kit',
+      'date-fns',
+      'sonner',
     ],
+    // 启用缓存优化
+    optimizeCss: true,
   },
   
   // Standalone 模式：确保包含所有必要的文件
   outputFileTracingIncludes: {
     '*': [
-      './node_modules/@aws-sdk/**',
-      './node_modules/@tiptap/**',
+      './node_modules/@supabase/**',
+      './node_modules/coze-coding-dev-sdk/**',
       './public/**',
     ],
   },

@@ -1,5 +1,6 @@
 # 蚂蚁AI导航 - Docker 镜像构建文件
-# 优化版本：支持低内存服务器（512MB可用内存即可构建）
+# 优化版本：支持 1GB 低内存服务器运行（实际可用约 700-800MB）
+# 构建建议：使用 GitHub Actions 云端构建，避免本地构建内存不足
 
 # ==================== 阶段1: 依赖安装 ====================
 FROM node:20-alpine AS deps
@@ -52,7 +53,8 @@ ENV SOURCEMAP=0
 ENV NODE_ENV=production
 
 # 关键：限制Node.js内存和并行度
-# 2GB服务器可用1.5GB时，建议使用768MB
+# GitHub Actions 构建：使用 768MB（云端有足够资源）
+# 本地构建：建议使用 GitHub Actions，避免内存不足
 ENV NODE_OPTIONS="--max-old-space-size=768 --max-semi-space-size=96"
 
 # 复制依赖和源码
@@ -71,6 +73,10 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=5000
 ENV HOSTNAME="0.0.0.0"
+
+# 运行时内存限制 - 1GB 服务器优化（实际可用约 700-800MB）
+# 限制 Node.js 使用 400MB，为系统和其他进程预留空间
+ENV NODE_OPTIONS="--max-old-space-size=400 --max-semi-space-size=50"
 
 # 创建非 root 用户
 RUN addgroup --system --gid 1001 nodejs
