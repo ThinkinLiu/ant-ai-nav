@@ -36,8 +36,8 @@ const nextConfig: NextConfig = {
       'date-fns',
       'sonner',
     ],
-    // 启用缓存优化
-    optimizeCss: true,
+    // 禁用 CSS 优化（避免 critters 依赖问题）
+    optimizeCss: false,
   },
   
   // Standalone 模式：确保包含所有必要的文件

@@ -381,6 +381,8 @@ function HomePageContent() {
 
           if (data.success) {
             // 一次性设置所有数据
+            const latestTools = data.data.latestTools || []
+            console.log('📦 加载最新工具数据:', latestTools.length, '个工具')
             setCategories(data.data.categories || [])
             setTotalToolCount(data.data.totalToolCount || 0)
             setTabs(data.data.tabs || [])
@@ -390,8 +392,9 @@ function HomePageContent() {
             setTabFame(data.data.tabFame || [])
             setTabTimeline(data.data.tabTimeline || [])
             setHotTools(data.data.hotTools || [])
-            setTools(data.data.latestTools || [])
+            setTools(latestTools)
             setError(null)
+            setLoading(false) // 确保在成功时设置 loading 为 false
             return // 成功，退出重试循环
           } else {
             console.error('API 返回错误:', data.error)
@@ -413,7 +416,7 @@ function HomePageContent() {
         }
       }
 
-      // 不设置空数据，保留现有数据
+      // 确保在所有情况下都设置 loading 为 false
       setLoading(false)
     }
 
@@ -927,19 +930,23 @@ function HomePageContent() {
               </Button>
             </div>
           ) : tools.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {tools.map((tool) => (
-                <Link key={tool.id} href={`/tools/${tool.id}`}>
-                  <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-3">
-                        <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
-                          <ToolLogoNext 
-                            logo={tool.logo} 
-                            name={tool.name} 
-                            website={tool.website}
-                            className="h-full w-full rounded-lg"
-                            size={48}
+            <>
+              <div className="text-sm text-muted-foreground mb-4">
+                共 {tools.length} 个工具
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {tools.map((tool) => (
+                  <Link key={tool.id} href={`/tools/${tool.id}`}>
+                    <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-3">
+                          <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
+                            <ToolLogoNext
+                              logo={tool.logo}
+                              name={tool.name}
+                              website={tool.website}
+                              className="h-full w-full rounded-lg"
+                              size={48}
                             fallbackBgColor={tool.category?.color || '#6366F1'}
                           />
                         </div>
@@ -996,6 +1003,7 @@ function HomePageContent() {
                 </Link>
               ))}
             </div>
+            </>
           ) : (
             <div className="text-center py-12">
               <div className="text-4xl mb-4">🔍</div>
