@@ -292,6 +292,7 @@ function HomePageContent() {
   const [hotTools, setHotTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
   const [tabLoading, setTabLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const { user } = useAuth()
 
@@ -301,7 +302,20 @@ function HomePageContent() {
       const response = await fetch(`/api/home?t=${Date.now()}`, {
         cache: 'no-store'
       })
+
+      // 检查响应状态
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      // 检查 Content-Type
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Invalid content type: ${contentType}`)
+      }
+
       const data = await response.json()
+
       if (data.success) {
         setCategories(data.data.categories || [])
         setTotalToolCount(data.data.totalToolCount || 0)
@@ -312,9 +326,15 @@ function HomePageContent() {
         setTabFame(data.data.tabFame || [])
         setTabTimeline(data.data.tabTimeline || [])
         setHotTools(data.data.hotTools || [])
+        setError(null)
+      } else {
+        console.error('API 返回错误:', data.error)
+        setError(data.error || '未知错误')
       }
     } catch (error) {
       console.error('获取分类数据失败:', error)
+      setError(error instanceof Error ? error.message : '网络错误')
+      // 不设置空数据，保留现有数据
     }
   }, [])
 
@@ -330,28 +350,76 @@ function HomePageContent() {
     }
   }, [isFeatured, searchQuery, categoryId, activeCategory, fetchCategoriesData])
 
-  // 加载工具数据
+  // 合并加载逻辑：一次性获取所有数据
   useEffect(() => {
-    const fetchHomeData = async () => {
+    const fetchAllData = async () => {
       setLoading(true)
-      try {
-        const response = await fetch(`/api/home?t=${Date.now()}`, {
-          cache: 'no-store'
-        })
-        const data = await response.json()
-        if (data.success) {
-          setTools(data.data?.latestTools || [])
+      setError(null)
+
+      // 添加重试机制
+      const maxRetries = 3
+      const retryDelay = 1000 // 1秒
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await fetch(`/api/home?t=${Date.now()}`, {
+            cache: 'no-store'
+          })
+
+          // 检查响应状态
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          }
+
+          // 检查 Content-Type
+          const contentType = response.headers.get('content-type')
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`Invalid content type: ${contentType}`)
+          }
+
+          const data = await response.json()
+
+          if (data.success) {
+            // 一次性设置所有数据
+            setCategories(data.data.categories || [])
+            setTotalToolCount(data.data.totalToolCount || 0)
+            setTabs(data.data.tabs || [])
+            setCurrentTab(data.data.currentTab || null)
+            setTabTools(data.data.tabTools || [])
+            setTabNews(data.data.tabNews || [])
+            setTabFame(data.data.tabFame || [])
+            setTabTimeline(data.data.tabTimeline || [])
+            setHotTools(data.data.hotTools || [])
+            setTools(data.data.latestTools || [])
+            setError(null)
+            return // 成功，退出重试循环
+          } else {
+            console.error('API 返回错误:', data.error)
+            if (attempt === maxRetries - 1) {
+              setError(data.error || '未知错误')
+            }
+          }
+        } catch (error) {
+          console.error(`获取首页数据失败 (尝试 ${attempt + 1}/${maxRetries}):`, error)
+
+          // 如果不是最后一次尝试，等待后重试
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, retryDelay))
+            continue
+          }
+
+          // 最后一次尝试失败，设置错误
+          setError(error instanceof Error ? error.message : '网络错误')
         }
-      } catch (error) {
-        console.error('获取首页数据失败:', error)
-      } finally {
-        setLoading(false)
       }
+
+      // 不设置空数据，保留现有数据
+      setLoading(false)
     }
-    
+
     // 只有在没有筛选条件时才加载首页默认数据
     if (!searchQuery && !categoryId && !isFeatured && activeCategory === 'all') {
-      fetchHomeData()
+      fetchAllData()
     }
   }, [searchQuery, categoryId, isFeatured, activeCategory])
 
@@ -397,23 +465,40 @@ function HomePageContent() {
   const handleTabChange = async (slug: string) => {
     const tab = tabs.find(t => t.slug === slug)
     if (!tab) return
-    
+
     setTabLoading(true)
     setCurrentTab(tab)
-    
+
     try {
       const response = await fetch(`/api/home?tab=${slug}&t=${Date.now()}`, {
         cache: 'no-store'
       })
+
+      // 检查响应状态
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      // 检查 Content-Type
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Invalid content type: ${contentType}`)
+      }
+
       const data = await response.json()
+
       if (data.success) {
         setTabTools(data.data.tabTools || [])
         setTabNews(data.data.tabNews || [])
         setTabFame(data.data.tabFame || [])
         setTabTimeline(data.data.tabTimeline || [])
+      } else {
+        console.error('API 返回错误:', data.error)
+        setError(data.error || '未知错误')
       }
     } catch (error) {
       console.error('获取Tab数据失败:', error)
+      setError(error instanceof Error ? error.message : '网络错误')
     } finally {
       setTabLoading(false)
     }
@@ -827,6 +912,19 @@ function HomePageContent() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-4">⚠️</div>
+              <h3 className="text-lg font-semibold mb-2">数据加载失败</h3>
+              <p className="text-muted-foreground mb-4">{error}</p>
+              <Button onClick={() => {
+                setError(null)
+                setLoading(true)
+                fetchCategoriesData()
+              }}>
+                重新加载
+              </Button>
             </div>
           ) : tools.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
