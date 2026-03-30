@@ -14,7 +14,7 @@ async function checkTools() {
 
   const results = [];
 
-  for (const tool of tools) {
+  for (const tool: any of tools) {
     try {
       const slug = tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 

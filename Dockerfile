@@ -84,11 +84,16 @@ RUN adduser --system --uid 1001 nextjs
 
 # 复制构建产物
 # Next.js 16 standalone 模式：需要正确的复制路径
-COPY --from=builder /app/public ./public
-# 复制 standalone 输出（包含 server.js 和最小化 node_modules）
+# 关键：必须按此顺序复制，否则静态资源可能丢失
+
+# 1. 先复制 standalone 输出（包含 server.js 和最小化 node_modules）
 COPY --from=builder /app/.next/standalone ./
-# 复制静态文件（关键：CSS、JS 等资源）
+
+# 2. 再复制静态文件（CSS、JS 等资源）到正确位置
 COPY --from=builder /app/.next/static ./.next/static
+
+# 3. 最后复制 public 目录
+COPY --from=builder /app/public ./public
 
 # 设置权限
 RUN chown -R nextjs:nodejs /app
