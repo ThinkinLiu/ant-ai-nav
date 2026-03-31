@@ -66,6 +66,9 @@ export default function TagPage({ params }: Props) {
   const tabParam = searchParams.get('tab')
   const pageParam = searchParams.get('page')
 
+  // 判断是否是龙虾标签
+  const isLobsterTag = decodedSlug === 'lobster' || tagName === '龙虾' || tagName === 'lobster'
+
   // 获取工具数据
   const fetchTools = useCallback(async (tagId: number | null, page: number) => {
     const supabase = getSupabaseClient()
@@ -395,7 +398,7 @@ export default function TagPage({ params }: Props) {
           </p>
           <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
             <span>{toolsTotal} 个工具</span>
-            <span>{newsTotal} 篇资讯</span>
+            <span>{newsTotal} 篇{isLobsterTag ? '教程' : '资讯'}</span>
           </div>
         </div>
 
@@ -426,7 +429,7 @@ export default function TagPage({ params }: Props) {
             )}
           >
             <Newspaper className="h-4 w-4" />
-            相关资讯
+            相关{isLobsterTag ? '教程' : '资讯'}
             <Badge variant="secondary" className="ml-1">
               {newsTotal}
             </Badge>
@@ -491,7 +494,7 @@ export default function TagPage({ params }: Props) {
               <span className="text-6xl mb-4 block">🛠️</span>
               <h2 className="text-xl font-semibold mb-2">暂无相关工具</h2>
               <p className="text-muted-foreground">
-                该标签下暂无工具，切换查看相关资讯
+                该标签下暂无工具，切换查看相关{isLobsterTag ? '教程' : '资讯'}
               </p>
             </div>
           )
@@ -543,9 +546,9 @@ export default function TagPage({ params }: Props) {
           ) : (
             <div className="text-center py-12">
               <span className="text-6xl mb-4 block">📰</span>
-              <h2 className="text-xl font-semibold mb-2">暂无相关资讯</h2>
+              <h2 className="text-xl font-semibold mb-2">暂无相关{isLobsterTag ? '教程' : '资讯'}</h2>
               <p className="text-muted-foreground">
-                该标签下暂无资讯，切换查看相关工具
+                该标签下暂无{isLobsterTag ? '教程' : '资讯'}，切换查看相关工具
               </p>
             </div>
           )

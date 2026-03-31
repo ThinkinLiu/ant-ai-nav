@@ -788,7 +788,7 @@ function HomePageContent() {
                       <div className="flex justify-end mb-4">
                         <Button variant="outline" size="sm" asChild className="gap-1">
                           <Link href="/tags/lobster">
-                            查看更多
+                            更多工具与龙虾教程
                             <ChevronRight className="h-4 w-4" />
                           </Link>
                         </Button>
