@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Loader2, AlertCircle, Upload, Link2 } from 'lucide-react'
 import ImageUploader from '@/components/ui/image-uploader'
 import RichTextEditor from '@/components/ui/rich-text-editor'
+import { MarkdownEditorSimple } from '@/components/ui/markdown-editor'
 import { ToolLogo } from '@/components/tools/ToolLogo'
 import { TagInput } from '@/components/ui/tag-input'
 
@@ -381,14 +382,17 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
 
             <div className="space-y-2">
               <Label htmlFor="pricingInfo">定价信息</Label>
-              <Textarea
-                id="pricingInfo"
-                placeholder={formData.isFree 
-                  ? "描述免费情况，如：完全免费、部分功能免费等" 
-                  : "描述定价方案，如：免费版、专业版$20/月"}
-                rows={2}
+              <p className="text-xs text-muted-foreground">
+                支持富文本编辑，可从微信、百度等网站直接复制图文粘贴
+              </p>
+              <MarkdownEditorSimple
                 value={formData.pricingInfo}
-                onChange={(e) => setFormData({ ...formData, pricingInfo: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, pricingInfo: value || '' })}
+                placeholder={
+                  formData.isFree
+                    ? "描述免费情况，如：完全免费、部分功能免费等"
+                    : "描述定价方案，如：免费版、专业版$20/月"
+                }
               />
             </div>
 
