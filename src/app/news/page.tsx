@@ -1,6 +1,8 @@
 import { Metadata } from 'next'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { NewsList } from './NewsList'
+import { TutorialList } from './TutorialList'
+import React from 'react'
 
 // 强制动态渲染，避免构建时访问数据库
 export const dynamic = 'force-dynamic'
@@ -16,13 +18,101 @@ function formatDateTime(dateStr: string): string {
   })
 }
 
-export const metadata: Metadata = {
-  title: 'AI资讯 - 蚂蚁AI导航',
-  description: '最新AI行业资讯，涵盖产品发布、行业动态、学术研究、政策法规等领域，每日更新。',
+interface PageProps {
+  searchParams: Promise<{
+    category?: string
+  }>
 }
 
-export default async function NewsPage() {
+export default async function NewsPage({ searchParams }: PageProps) {
+  const params = await searchParams
+  const isTutorialPage = params.category === 'tutorial'
   const supabase = getSupabaseClient()
+  
+  // 教程页面逻辑
+  if (isTutorialPage) {
+    // 获取教程总数
+    const { count: tutorialCount } = await supabase
+      .from('ai_news')
+      .select('*', { count: 'exact', head: true })
+      .eq('category', 'tutorial')
+    
+    // 获取热门教程（浏览量最高的5个）
+    const { data: hotTutorials } = await supabase
+      .from('ai_news')
+      .select('id, title, summary, cover_image, category, published_at, view_count, tags')
+      .eq('status', 'approved')
+      .eq('category', 'tutorial')
+      .order('view_count', { ascending: false })
+      .limit(5)
+    
+    return (
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+                <span className="text-4xl">📚</span>
+                AI教程
+              </h1>
+              <p className="text-muted-foreground">
+                AI学习教程和使用指南，帮助你快速上手各种AI工具
+              </p>
+            </div>
+            <div className="text-sm text-muted-foreground bg-muted px-4 py-2 rounded-lg">
+              共 <span className="text-primary font-medium">{tutorialCount || 0}</span> 个教程
+            </div>
+          </div>
+        </div>
+
+        {/* Hot Tutorials Sidebar + Main List */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main List */}
+          <div className="lg:col-span-3">
+            <TutorialList hotTutorials={hotTutorials || []} />
+          </div>
+
+          {/* Hot Tutorials Sidebar */}
+          {hotTutorials && hotTutorials.length > 0 && (
+            <div className="lg:col-span-1">
+              <div className="sticky top-24">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <span>🔥</span>
+                  <span>热门教程</span>
+                </h3>
+                <div className="space-y-4">
+                  {hotTutorials.map((tutorial, index) => (
+                    <a
+                      key={tutorial.id}
+                      href={`/news/${tutorial.id}`}
+                      className="group flex gap-3"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-sm font-bold text-amber-500 flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                          {tutorial.title}
+                        </h4>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                          <span>{formatDateTime(tutorial.published_at)}</span>
+                          <span>·</span>
+                          <span>{tutorial.view_count || 0} 阅读</span>
+                        </div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+  
+  // 普通资讯页面逻辑
   
   // 获取统计信息
   const { count: totalCount } = await supabase
