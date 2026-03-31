@@ -597,6 +597,60 @@ function HomePageContent() {
     return iconMap[iconName] || Star
   }
 
+  // 收藏本站功能
+  const handleBookmark = () => {
+    const title = document.title
+    const url = window.location.href
+
+    // 尝试使用 IE/Edge 方法
+    try {
+      if (typeof window !== 'undefined' && 'external' in window && (window as any).external && 'addFavorite' in (window as any).external) {
+        (window as any).external.addFavorite(url, title)
+        return
+      }
+    } catch (e) {
+      // IE/Edge 方法失败，继续尝试其他方法
+    }
+
+    // 尝试使用 Firefox 方法
+    try {
+      if (typeof window !== 'undefined' && 'sidebar' in window && (window as any).sidebar && 'addPanel' in (window as any).sidebar) {
+        (window as any).sidebar.addPanel(title, url, '')
+        return
+      }
+    } catch (e) {
+      // Firefox 方法失败，继续尝试其他方法
+    }
+
+    // Opera Hotlist
+    try {
+      if (typeof window !== 'undefined' && 'opera' in window && (window as any).opera) {
+        const bookmarkLink = document.createElement('a')
+        bookmarkLink.setAttribute('rel', 'sidebar')
+        bookmarkLink.setAttribute('href', url)
+        bookmarkLink.setAttribute('title', title)
+        bookmarkLink.click()
+        return
+      }
+    } catch (e) {
+      // Opera 方法失败，继续尝试其他方法
+    }
+
+    // 现代浏览器提示用户使用快捷键
+    const userAgent = navigator.userAgent.toLowerCase()
+    let message = ''
+    
+    if (userAgent.indexOf('mac') !== -1) {
+      message = '请按 Cmd + D 将本站加入书签'
+    } else if (userAgent.indexOf('win') !== -1) {
+      message = '请按 Ctrl + D 将本站加入书签'
+    } else {
+      message = '请使用浏览器菜单将本站加入书签'
+    }
+
+    alert(message)
+  }
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -618,11 +672,15 @@ function HomePageContent() {
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </Button>
-              {!user && (
-                <Button size="lg" variant="outline" asChild>
-                  <Link href="/register">免费注册</Link>
-                </Button>
-              )}
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="gap-2 cursor-pointer"
+                onClick={handleBookmark}
+              >
+                <Bookmark className="h-4 w-4" />
+                收藏本站
+              </Button>
             </div>
           </div>
         </div>
