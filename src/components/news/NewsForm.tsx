@@ -18,7 +18,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { ArrowLeft, Save, Send } from 'lucide-react'
+import { ArrowLeft, Save, Send, Eye } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 
 const categoryOptions = [
   { value: 'industry', label: '行业动态' },
@@ -185,6 +194,27 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  // 简单的Markdown渲染
+  const renderMarkdown = (text: string) => {
+    // 处理标题
+    let html = text
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-4 mb-2">$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>')
+      // 处理粗体
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // 处理斜体
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      // 处理链接
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>')
+      // 处理代码
+      .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>')
+      // 处理换行
+      .replace(/\n/g, '<br />')
+    
+    return html
   }
 
   if (!user || (user.role !== 'admin' && user.role !== 'publisher')) {
@@ -414,6 +444,92 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
 
               {/* 操作按钮 */}
               <div className="space-y-3 pt-4 border-t">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      disabled={!formData.title && !formData.summary && !formData.content}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      预览
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh]">
+                    <DialogHeader>
+                      <DialogTitle className="text-xl">资讯预览</DialogTitle>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[60vh] pr-4">
+                      <div className="prose prose-sm max-w-none dark:prose-invert">
+                        {/* 标题 */}
+                        {formData.title && (
+                          <h1 className="text-3xl font-bold mb-4">{formData.title}</h1>
+                        )}
+                        
+                        {/* 元信息 */}
+                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-6">
+                          {formData.category && (
+                            <span>分类: {categoryOptions.find(c => c.value === formData.category)?.label}</span>
+                          )}
+                          {formData.source && (
+                            <span>来源: {formData.source}</span>
+                          )}
+                          {formData.tags && (
+                            <span>标签: {formData.tags}</span>
+                          )}
+                        </div>
+
+                        {/* 封面图 */}
+                        {formData.coverImage && (
+                          <div className="mb-6">
+                            <img
+                              src={formData.coverImage}
+                              alt="封面预览"
+                              className="w-full max-h-64 object-cover rounded-lg"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        {/* 摘要 */}
+                        {formData.summary && (
+                          <div className="mb-6 p-4 bg-muted rounded-lg">
+                            <h3 className="font-semibold mb-2">摘要</h3>
+                            <p className="text-sm">{formData.summary}</p>
+                          </div>
+                        )}
+
+                        {/* 正文 */}
+                        {formData.content && (
+                          <div className="mb-6">
+                            <h3 className="font-semibold mb-2">正文</h3>
+                            <div 
+                              className="prose prose-sm dark:prose-invert"
+                              dangerouslySetInnerHTML={{ __html: renderMarkdown(formData.content) }}
+                            />
+                          </div>
+                        )}
+
+                        {/* 来源链接 */}
+                        {formData.sourceUrl && (
+                          <div className="pt-4 border-t">
+                            <a 
+                              href={formData.sourceUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              查看原文链接 →
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </DialogContent>
+                </Dialog>
+
                 <Button
                   className="w-full"
                   onClick={() => handleSubmit(false)}
