@@ -175,13 +175,13 @@ export default function NewsManagementPage() {
 
   const handleTogglePinned = async (id: number, currentStatus: boolean) => {
     try {
-      const response = await fetch(`/api/news/${id}/toggle-pinned`, {
+      const response = await fetch(`/api/news/${id}/toggle-featured`, {
         method: 'POST',
       })
       const result = await response.json()
 
       if (result.success) {
-        toast.success(currentStatus ? '已取消置顶' : '已设为置顶')
+        toast.success(currentStatus ? '已取消推荐' : '已设为推荐')
         fetchNews()
       } else {
         toast.error(result.error || '操作失败')
@@ -542,7 +542,7 @@ export default function NewsManagementPage() {
                 <TableHead>分类</TableHead>
                 <TableHead>状态</TableHead>
                 <TableHead>热门</TableHead>
-                <TableHead>置顶</TableHead>
+                <TableHead>推荐</TableHead>
                 <TableHead>浏览</TableHead>
                 <TableHead>发布时间</TableHead>
                 <TableHead className="text-right">操作</TableHead>
@@ -605,10 +605,10 @@ export default function NewsManagementPage() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className={`p-1 ${item.is_pinned ? 'text-blue-500' : 'text-muted-foreground'}`}
-                        onClick={() => handleTogglePinned(item.id, item.is_pinned)}
+                        className={`p-1 ${item.is_featured ? 'text-purple-500' : 'text-muted-foreground'}`}
+                        onClick={() => handleTogglePinned(item.id, item.is_featured)}
                       >
-                        <Pin className={`h-4 w-4 ${item.is_pinned ? 'fill-current' : ''}`} />
+                        <Sparkles className={`h-4 w-4 ${item.is_featured ? 'fill-current' : ''}`} />
                       </Button>
                     </TableCell>
                     <TableCell>{item.view_count || 0}</TableCell>
