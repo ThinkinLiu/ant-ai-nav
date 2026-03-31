@@ -35,7 +35,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Plus, Search, Edit, Trash2, Eye, Check, X, Sparkles, Loader2, AlertTriangle } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Eye, Check, X, Sparkles, Loader2, AlertTriangle, Flame, Pin } from 'lucide-react'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { useConfirm } from '@/hooks/use-confirm'
@@ -151,6 +151,44 @@ export default function NewsManagementPage() {
       console.error('获取资讯列表失败:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleToggleHot = async (id: number, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/news/${id}/toggle-hot`, {
+        method: 'POST',
+      })
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success(currentStatus ? '已取消热门' : '已设为热门')
+        fetchNews()
+      } else {
+        toast.error(result.error || '操作失败')
+      }
+    } catch (error) {
+      console.error('操作失败:', error)
+      toast.error('操作失败')
+    }
+  }
+
+  const handleTogglePinned = async (id: number, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/news/${id}/toggle-pinned`, {
+        method: 'POST',
+      })
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success(currentStatus ? '已取消置顶' : '已设为置顶')
+        fetchNews()
+      } else {
+        toast.error(result.error || '操作失败')
+      }
+    } catch (error) {
+      console.error('操作失败:', error)
+      toast.error('操作失败')
     }
   }
 
@@ -503,6 +541,8 @@ export default function NewsManagementPage() {
                 <TableHead>标题</TableHead>
                 <TableHead>分类</TableHead>
                 <TableHead>状态</TableHead>
+                <TableHead>热门</TableHead>
+                <TableHead>置顶</TableHead>
                 <TableHead>浏览</TableHead>
                 <TableHead>发布时间</TableHead>
                 <TableHead className="text-right">操作</TableHead>
@@ -511,13 +551,13 @@ export default function NewsManagementPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={9} className="text-center py-8">
                     加载中...
                   </TableCell>
                 </TableRow>
               ) : news.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={9} className="text-center py-8">
                     暂无数据
                   </TableCell>
                 </TableRow>
@@ -551,6 +591,26 @@ export default function NewsManagementPage() {
                         {statusConfig[item.status as keyof typeof statusConfig]?.label}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className={`p-1 ${item.is_hot ? 'text-orange-500' : 'text-muted-foreground'}`}
+                        onClick={() => handleToggleHot(item.id, item.is_hot)}
+                      >
+                        <Flame className={`h-4 w-4 ${item.is_hot ? 'fill-current' : ''}`} />
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className={`p-1 ${item.is_pinned ? 'text-blue-500' : 'text-muted-foreground'}`}
+                        onClick={() => handleTogglePinned(item.id, item.is_pinned)}
+                      >
+                        <Pin className={`h-4 w-4 ${item.is_pinned ? 'fill-current' : ''}`} />
+                      </Button>
+                    </TableCell>
                     <TableCell>{item.view_count || 0}</TableCell>
                     <TableCell>
                       {item.published_at
@@ -559,6 +619,11 @@ export default function NewsManagementPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/news/${item.id}`} target="_blank" rel="noopener noreferrer">
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </Button>
                         {user.role === 'admin' && item.status === 'pending' && (
                           <>
                             <Button
