@@ -294,6 +294,9 @@ function HomePageContent() {
   const [tabLoading, setTabLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string>('all')
+  const [page, setPage] = useState<number>(1)
+  const [loadingMore, setLoadingMore] = useState<boolean>(false)
+  const [hasMore, setHasMore] = useState<boolean>(true)
   const { user } = useAuth()
 
   // 获取原始分类数据（所有工具统计）
@@ -343,17 +346,20 @@ function HomePageContent() {
     fetchCategoriesData()
   }, [fetchCategoriesData])
 
-  // 当退出精选推荐模式时，重新获取原始分类数据
+  // 退出筛选模式时重置页码
   useEffect(() => {
     if (isFeatured !== 'true' && !searchQuery && !categoryId && activeCategory === 'all') {
+      setPage(1)
+      setHasMore(true)
       fetchCategoriesData()
     }
   }, [isFeatured, searchQuery, categoryId, activeCategory, fetchCategoriesData])
 
-  // 合并加载逻辑：一次性获取所有数据
+  // 合并加载逻辑：一次性获取所有数据（首页第一页）
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true)
+      setPage(1)
       setError(null)
 
       // 添加重试机制
@@ -362,7 +368,8 @@ function HomePageContent() {
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-          const response = await fetch(`/api/home?t=${Date.now()}`, {
+          // 使用 /api/tools 端点，支持分页
+          const response = await fetch(`/api/tools?page=1&limit=16&sortBy=created_at&sortOrder=desc&t=${Date.now()}`, {
             cache: 'no-store'
           })
 
@@ -380,19 +387,31 @@ function HomePageContent() {
           const data = await response.json()
 
           if (data.success) {
-            // 一次性设置所有数据
-            const latestTools = data.data.latestTools || []
+            // 获取首页所需的分类和Tab数据
+            const homeResponse = await fetch(`/api/home?t=${Date.now()}`, {
+              cache: 'no-store'
+            })
+
+            if (homeResponse.ok) {
+              const homeData = await homeResponse.json()
+              if (homeData.success) {
+                setCategories(homeData.data.categories || [])
+                setTotalToolCount(homeData.data.totalToolCount || 0)
+                setTabs(homeData.data.tabs || [])
+                setCurrentTab(homeData.data.currentTab || null)
+                setTabTools(homeData.data.tabTools || [])
+                setTabNews(homeData.data.tabNews || [])
+                setTabFame(homeData.data.tabFame || [])
+                setTabTimeline(homeData.data.tabTimeline || [])
+                setHotTools(homeData.data.hotTools || [])
+              }
+            }
+
+            // 设置工具列表数据
+            const latestTools = data.data?.data || []
             console.log('📦 加载最新工具数据:', latestTools.length, '个工具')
-            setCategories(data.data.categories || [])
-            setTotalToolCount(data.data.totalToolCount || 0)
-            setTabs(data.data.tabs || [])
-            setCurrentTab(data.data.currentTab || null)
-            setTabTools(data.data.tabTools || [])
-            setTabNews(data.data.tabNews || [])
-            setTabFame(data.data.tabFame || [])
-            setTabTimeline(data.data.tabTimeline || [])
-            setHotTools(data.data.hotTools || [])
             setTools(latestTools)
+            setHasMore(data.data.total > latestTools.length)
             setError(null)
             setLoading(false) // 确保在成功时设置 loading 为 false
             return // 成功，退出重试循环
@@ -426,8 +445,51 @@ function HomePageContent() {
     }
   }, [searchQuery, categoryId, isFeatured, activeCategory])
 
+  // 加载更多工具
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return
+
+    setLoadingMore(true)
+    const nextPage = page + 1
+
+    try {
+      const response = await fetch(`/api/tools?page=${nextPage}&limit=16&sortBy=created_at&sortOrder=desc&t=${Date.now()}`, {
+        cache: 'no-store'
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Invalid content type: ${contentType}`)
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        const newTools = data.data?.data || []
+        console.log('📦 加载更多工具数据:', newTools.length, '个工具')
+        setTools(prev => [...prev, ...newTools])
+        setPage(nextPage)
+        setHasMore(data.data.total > (page * 16) + newTools.length)
+      } else {
+        console.error('API 返回错误:', data.error)
+        setError(data.error || '加载失败')
+      }
+    } catch (error) {
+      console.error('加载更多工具失败:', error)
+      setError(error instanceof Error ? error.message : '网络错误')
+    } finally {
+      setLoadingMore(false)
+    }
+  }
+
   const fetchFilteredTools = useCallback(async () => {
     setLoading(true)
+    setPage(1)
+    setHasMore(true)
     try {
       const params = new URLSearchParams()
       if (searchQuery) params.append('search', searchQuery)
@@ -449,13 +511,15 @@ function HomePageContent() {
           setCategories(data.data.categories)
           setTotalToolCount(data.data.totalToolCount || data.data.total || 0)
         }
+        // 设置是否有更多数据
+        setHasMore(data.data.total > (data.data?.data?.length || 0))
       }
     } catch (error) {
       console.error('获取工具失败:', error)
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, categoryId, isFeatured, activeCategory]) // 移除 categories 依赖
+  }, [searchQuery, categoryId, isFeatured, activeCategory, categories]) // 添加 categories 依赖
 
   // 搜索/筛选时单独请求
   useEffect(() => {
@@ -932,7 +996,7 @@ function HomePageContent() {
           ) : tools.length > 0 ? (
             <>
               <div className="text-sm text-muted-foreground mb-4">
-                共 {tools.length} 个工具
+                已加载 {tools.length} 个工具
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {tools.map((tool) => (
@@ -1003,6 +1067,31 @@ function HomePageContent() {
                 </Link>
               ))}
             </div>
+
+            {/* 查看更多按钮 */}
+            {hasMore && (
+              <div className="text-center mt-8">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="gap-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                >
+                  {loadingMore ? (
+                    <>
+                      <span className="animate-spin">⟳</span>
+                      加载中...
+                    </>
+                  ) : (
+                    <>
+                      查看更多
+                      <ChevronRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
             </>
           ) : (
             <div className="text-center py-12">
