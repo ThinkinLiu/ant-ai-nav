@@ -609,7 +609,7 @@ function HomePageContent() {
               </span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground">
-              蚂蚁AI导航收录了最优秀的AI工具，帮助你提升工作效率，释放创造力
+              蚂蚁AI导航收录全网优秀AI工具，助你提升工作效率，释放创造力
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="lg" className="gap-2" asChild>
