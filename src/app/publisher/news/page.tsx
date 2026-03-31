@@ -48,10 +48,7 @@ interface News {
   is_hot: boolean
   reject_reason: string | null
   category: string
-  author: {
-    id: number
-    name: string
-  }
+  author_id: string | null
 }
 
 interface Stats {
@@ -128,12 +125,11 @@ export default function PublisherNews() {
   const fetchStats = async () => {
     if (!user?.id) return
     try {
-      const response = await fetch(`/api/publisher/stats?publisherId=${user.id}`, {
+      const response = await fetch(`/api/publisher/news-stats?publisherId=${user.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await response.json()
       if (data.success) {
-        // 统计数据可能需要包含资讯统计，这里先用工具的统计
         setStats(data.data)
       }
     } catch (error) {
@@ -549,7 +545,6 @@ export default function PublisherNews() {
                         </span>
                         <span className="text-muted-foreground/60">|</span>
                         <span>{formatRelativeTime(item.created_at)}</span>
-                        {item.author && <span>作者: {item.author.name}</span>}
                       </div>
                       
                       {item.reject_reason && (
