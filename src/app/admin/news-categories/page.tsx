@@ -51,8 +51,8 @@ const defaultCategories = [
   { name: '行业动态', slug: 'industry', icon: '📰', color: '#3B82F6' },
   { name: '学术研究', slug: 'research', icon: '🔬', color: '#8B5CF6' },
   { name: '产品发布', slug: 'product', icon: '🚀', color: '#10B981' },
+  { name: '政策法规', slug: 'policy', icon: '📜', color: '#EC4899' },
   { name: '教程指南', slug: 'tutorial', icon: '📚', color: '#F59E0B' },
-  { name: '其他', slug: 'other', icon: '📌', color: '#6B7280' },
 ]
 
 export default function NewsCategoriesManagementPage() {
@@ -235,8 +235,8 @@ export default function NewsCategoriesManagementPage() {
       '行业动态': 'industry',
       '学术研究': 'research',
       '产品发布': 'product',
+      '政策法规': 'policy',
       '教程指南': 'tutorial',
-      '其他': 'other',
     }
     
     if (slugMap[name]) return slugMap[name]
@@ -275,7 +275,7 @@ export default function NewsCategoriesManagementPage() {
             <div className="text-sm text-amber-800 dark:text-amber-200">
               <p className="font-medium">注意事项</p>
               <ul className="mt-1 list-disc list-inside space-y-1 text-amber-700 dark:text-amber-300">
-                <li>默认分类（行业动态、学术研究、产品发布、教程指南、其他）不支持删除</li>
+                <li>默认分类（行业动态、学术研究、产品发布、政策法规、教程指南）不支持删除</li>
                 <li>如果分类下还有资讯，无法删除</li>
                 <li>修改分类标识(slug)会同步更新所有使用该分类的资讯</li>
               </ul>
