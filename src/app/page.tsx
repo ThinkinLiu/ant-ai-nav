@@ -770,7 +770,7 @@ function HomePageContent() {
             ) : (
               <>
                 {/* 工具类型Tab */}
-                {['hot_tools', 'domestic_tools', 'foreign_tools', 'lobster_tools', 'category', 'tag', 'ranking'].includes(currentTab?.type || '') && tabTools.length > 0 && (
+                {['hot_tools', 'domestic_tools', 'foreign_tools', 'lobster_tools', 'tutorial_tools', 'category', 'tag', 'ranking'].includes(currentTab?.type || '') && tabTools.length > 0 && (
                   <div>
                     {/* 国内火爆/国外火爆/龙虾专区显示更多按钮 */}
                     {['domestic_tools', 'foreign_tools'].includes(currentTab?.type || '') && (
@@ -789,6 +789,17 @@ function HomePageContent() {
                         <Button variant="outline" size="sm" asChild className="gap-1">
                           <Link href="/tags/lobster">
                             更多工具与龙虾教程
+                            <ChevronRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
+                    {/* 热门教程显示更多按钮 */}
+                    {currentTab?.type === 'tutorial_tools' && (
+                      <div className="flex justify-end mb-4">
+                        <Button variant="outline" size="sm" asChild className="gap-1">
+                          <Link href="/tools">
+                            更多教程
                             <ChevronRight className="h-4 w-4" />
                           </Link>
                         </Button>
