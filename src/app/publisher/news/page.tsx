@@ -165,9 +165,12 @@ export default function PublisherNews() {
       }
 
       // 管理员可以看到所有资讯，普通发布者只能看到自己的
-      const endpoint = isAdmin ? '/api/news' : `/api/news?authorId=${user.id}`
+      const paramsString = params.toString()
+      const endpoint = isAdmin 
+        ? `/api/news?${paramsString}` 
+        : `/api/news?authorId=${user.id}&${paramsString}`
 
-      const response = await fetch(`${endpoint}&${params.toString()}`, {
+      const response = await fetch(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await response.json()
