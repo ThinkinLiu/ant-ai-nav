@@ -289,8 +289,10 @@ export default function TagPage({ params }: Props) {
   }, [decodedSlug, tabParam, pageParam, fetchTools, fetchNews, fetchTutorials])
 
   // Tab 切换时加载数据（不更新URL，只刷新下方内容）
-  const handleTabChange = async (tab: 'tools' | 'news' | 'tutorials') => {
-    if (tab === activeTab) return
+  const handleTabChange = async (tab: string) => {
+    if (tab === activeTab || (tab !== 'tools' && tab !== 'news' && tab !== 'tutorials')) return
+
+    setActiveTab(tab as 'tools' | 'news' | 'tutorials')
 
     setActiveTab(tab)
     setTabLoading(true)
@@ -468,10 +470,10 @@ export default function TagPage({ params }: Props) {
 
         {/* Tab Bar */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-6">
-          <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0 border-b">
+          <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0 mb-6">
             <TabsTrigger
               value="tools"
-              className="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 border-transparent rounded-none data-[state=active]:border-primary data-[state=active]:text-primary"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               <Wrench className="h-4 w-4" />
               相关工具
@@ -481,7 +483,7 @@ export default function TagPage({ params }: Props) {
             </TabsTrigger>
             <TabsTrigger
               value="news"
-              className="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 border-transparent rounded-none data-[state=active]:border-primary data-[state=active]:text-primary"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               <Newspaper className="h-4 w-4" />
               相关资讯
@@ -491,7 +493,7 @@ export default function TagPage({ params }: Props) {
             </TabsTrigger>
             <TabsTrigger
               value="tutorials"
-              className="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 border-transparent rounded-none data-[state=active]:border-primary data-[state=active]:text-primary"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               <BookOpen className="h-4 w-4" />
               相关教程
