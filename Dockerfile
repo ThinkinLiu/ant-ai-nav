@@ -87,16 +87,36 @@ RUN adduser --system --uid 1001 nextjs
 # 关键：必须按此顺序复制，否则静态资源可能丢失
 
 # 1. 先复制 standalone 输出（包含 server.js 和最小化 node_modules）
-COPY --from=builder /app/.next/standalone ./
+# 这会将 .next/standalone/* 复制到 /app/*
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 
-# 2. 再复制静态文件（CSS、JS 等资源）到正确位置
-COPY --from=builder /app/.next/static ./.next/static
+# 2. 复制静态文件（CSS、JS 等资源）到正确位置
+# standalone 输出中 .next 目录不完整，需要单独复制静态资源
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# 3. 最后复制 public 目录
-COPY --from=builder /app/public ./public
+# 3. 复制 public 目录
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# 设置权限
-RUN chown -R nextjs:nodejs /app
+# 验证文件结构
+RUN echo "=== 验证文件结构 ===" && \
+    echo "根目录:" && \
+    ls -la /app && \
+    echo "" && \
+    echo "=== .next 目录 ===" && \
+    ls -la /app/.next && \
+    echo "" && \
+    echo "=== .next/static 目录（检查前10个） ===" && \
+    ls -la /app/.next/static | head -15 && \
+    echo "" && \
+    echo "=== public 目录（检查前10个） ===" && \
+    ls -la /app/public | head -15 && \
+    echo "" && \
+    echo "=== server.js 检查 ===" && \
+    ls -la /app/server.js && \
+    echo "" && \
+    echo "=== 检查静态资源是否存在 ===" && \
+    [ -d "/app/.next/static" ] && echo "✅ .next/static 存在" || echo "❌ .next/static 不存在" && \
+    [ -d "/app/public" ] && echo "✅ public 存在" || echo "❌ public 不存在"
 
 USER nextjs
 

@@ -19,17 +19,29 @@ if [ -f "server.js" ]; then
   # 检查静态文件是否存在
   if [ ! -d ".next/static" ]; then
     echo "❌ 错误：静态文件目录不存在 (.next/static)"
-    echo "   请检查 Dockerfile 中的复制命令"
+    echo "   目录结构："
+    ls -la
+    echo ""
+    echo "   .next 目录："
+    ls -la .next/ 2>&1 || echo "   .next 目录不存在"
     exit 1
   fi
 
   if [ ! -d "public" ]; then
     echo "❌ 错误：public 目录不存在"
-    echo "   请检查 Dockerfile 中的复制命令"
+    echo "   目录结构："
+    ls -la
     exit 1
   fi
 
   echo "✅ 静态资源检查通过"
+  echo ""
+  echo "📁 目录结构："
+  echo "  .next/static:"
+  ls -la .next/static | head -10
+  echo ""
+  echo "  public:"
+  ls -la public | head -10
   echo ""
 
   # 直接运行 server.js（standalone 模式）
