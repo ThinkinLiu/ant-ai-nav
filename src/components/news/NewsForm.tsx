@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { MarkdownEditor, MarkdownEditorSimple } from '@/components/ui/markdown-editor'
 import { TagInput } from '@/components/ui/tag-input'
 import {
   Select,
@@ -343,14 +343,11 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
 
                 {/* 摘要 */}
                 <div className="space-y-2">
-                  <Label htmlFor="summary">摘要 *</Label>
-                  <Textarea
-                    id="summary"
+                  <MarkdownEditorSimple
                     value={formData.summary}
-                    onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                    placeholder="请输入资讯摘要（建议200字以内）"
-                    rows={3}
-                    maxLength={500}
+                    onChange={(value) => setFormData({ ...formData, summary: value || '' })}
+                    placeholder="请输入资讯摘要（建议200字以内），支持Markdown格式"
+                    minHeight={120}
                   />
                   <p className="text-xs text-muted-foreground">
                     {formData.summary.length}/500 字符
@@ -359,18 +356,12 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
 
                 {/* 正文内容 */}
                 <div className="space-y-2">
-                  <Label htmlFor="content">正文内容 *</Label>
-                  <Textarea
-                    id="content"
+                  <MarkdownEditor
                     value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    placeholder="请输入正文内容&#10;&#10;支持Markdown格式：&#10;- # 标题&#10;- **粗体**&#10;- *斜体*&#10;- [链接](url)&#10;- `代码`"
-                    rows={20}
-                    className="font-mono"
+                    onChange={(value) => setFormData({ ...formData, content: value || '' })}
+                    height={500}
+                    label="正文内容 *"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    支持Markdown格式
-                  </p>
                 </div>
 
                 {/* 封面图片 */}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { MarkdownEditorSimple } from '@/components/ui/markdown-editor'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -241,16 +241,12 @@ export default function TimelineForm({ mode, initialData, id }: TimelineFormProp
           </div>
 
           <div>
-            <Label htmlFor="description">
-              描述 <span className="text-red-500">*</span>
-            </Label>
-            <Textarea
-              id="description"
+            <MarkdownEditorSimple
               value={formData.description}
-              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="详细描述这个事件..."
-              rows={4}
-              required
+              onChange={(value) => setFormData(prev => ({ ...prev, description: value || '' }))}
+              placeholder="详细描述这个事件...支持Markdown格式"
+              minHeight={150}
+              label={`描述 <span class="text-red-500">*</span>`}
             />
           </div>
 

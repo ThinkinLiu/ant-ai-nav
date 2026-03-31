@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { MarkdownEditorSimple } from '@/components/ui/markdown-editor'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -432,24 +432,22 @@ export default function HallOfFameForm({ mode, initialData, id }: HallOfFameForm
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="summary">摘要</Label>
-            <Textarea
-              id="summary"
+            <MarkdownEditorSimple
               value={formData.summary}
-              onChange={e => setFormData(prev => ({ ...prev, summary: e.target.value }))}
-              placeholder="简短介绍（建议50-100字）"
-              rows={3}
+              onChange={(value) => setFormData(prev => ({ ...prev, summary: value || '' }))}
+              placeholder="简短介绍（建议50-100字），支持Markdown格式"
+              minHeight={100}
+              label="摘要"
             />
           </div>
 
           <div>
-            <Label htmlFor="bio">详细简介</Label>
-            <Textarea
-              id="bio"
+            <MarkdownEditorSimple
               value={formData.bio}
-              onChange={e => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-              placeholder="详细介绍（可选）"
-              rows={6}
+              onChange={(value) => setFormData(prev => ({ ...prev, bio: value || '' }))}
+              placeholder="详细介绍（可选），支持Markdown格式"
+              minHeight={200}
+              label="详细简介"
             />
           </div>
 
