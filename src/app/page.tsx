@@ -770,7 +770,7 @@ function HomePageContent() {
             ) : (
               <>
                 {/* 工具类型Tab */}
-                {['hot_tools', 'domestic_tools', 'foreign_tools', 'lobster_tools', 'tutorial_tools', 'category', 'tag', 'ranking'].includes(currentTab?.type || '') && tabTools.length > 0 && (
+                {['hot_tools', 'domestic_tools', 'foreign_tools', 'lobster_tools', 'category', 'tag', 'ranking'].includes(currentTab?.type || '') && tabTools.length > 0 && (
                   <div>
                     {/* 国内火爆/国外火爆/龙虾专区显示更多按钮 */}
                     {['domestic_tools', 'foreign_tools'].includes(currentTab?.type || '') && (
@@ -794,17 +794,46 @@ function HomePageContent() {
                         </Button>
                       </div>
                     )}
-                    {/* 热门教程显示更多按钮 */}
-                    {currentTab?.type === 'tutorial_tools' && (
-                      <div className="flex justify-end mb-4">
-                        <Button variant="outline" size="sm" asChild className="gap-1">
-                          <Link href="/news?category=教程指南">
-                            更多教程
-                            <ChevronRight className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </div>
-                    )}
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                      {tabTools.map((tool) => (
+                        <Link key={`tab-${tool.id}`} href={`/tools/${tool.id}`}>
+                          <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+                            <CardContent className="p-4 text-center">
+                              <div className="h-12 w-12 mx-auto rounded-lg overflow-hidden mb-3">
+                                <ToolLogoNext 
+                                  logo={tool.logo} 
+                                  name={tool.name} 
+                                  website={tool.website}
+                                  className="h-full w-full rounded-lg"
+                                  size={48}
+                                  fallbackBgColor={tool.category?.color || currentTab?.color || '#EF4444'}
+                                />
+                              </div>
+                              <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                                {tool.name}
+                              </h3>
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                                {tool.category?.name || 'AI工具'}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 热门教程Tab */}
+                {currentTab?.type === 'tutorial_tools' && tabNews.length > 0 && (
+                  <div>
+                    <div className="flex justify-end mb-4">
+                      <Button variant="outline" size="sm" asChild className="gap-1">
+                        <Link href="/news?category=教程指南">
+                          更多教程
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
                     <Card className="overflow-hidden">
                       <CardContent className="py-1.5 px-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
