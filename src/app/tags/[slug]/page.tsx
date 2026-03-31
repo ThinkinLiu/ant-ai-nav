@@ -479,7 +479,6 @@ export default function TagPage({ params }: Props) {
           >
             <Wrench className="h-4 w-4" />
             相关工具
-            相关工具
             <Badge variant="secondary" className="ml-1">
               {toolsTotal}
             </Badge>
