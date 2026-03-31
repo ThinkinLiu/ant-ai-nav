@@ -8,6 +8,7 @@ import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { ToolLogoNext } from '@/components/tools/ToolLogo'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatRelativeTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { 
@@ -72,6 +73,7 @@ export default function TagPage({ params }: Props) {
   const [newsTotal, setNewsTotal] = useState(0)
   const [tutorialsTotal, setTutorialsTotal] = useState(0)
   const [activeTab, setActiveTab] = useState<'tools' | 'news' | 'tutorials'>('tools')
+  const [tabLoading, setTabLoading] = useState(false)
   const [toolsPage, setToolsPage] = useState(1)
   const [newsPage, setNewsPage] = useState(1)
   
@@ -284,84 +286,82 @@ export default function TagPage({ params }: Props) {
     }
     
     init()
-  }, [decodedSlug, tabParam, pageParam, fetchTools, fetchNews])
+  }, [decodedSlug, tabParam, pageParam, fetchTools, fetchNews, fetchTutorials])
 
-  // Tab 切换时更新 URL 和加载数据
-  const handleTabChange = (tab: 'tools' | 'news' | 'tutorials') => {
+  // Tab 切换时加载数据（不更新URL，只刷新下方内容）
+  const handleTabChange = async (tab: 'tools' | 'news' | 'tutorials') => {
+    if (tab === activeTab) return
+
     setActiveTab(tab)
-    const newPage = tab === 'tools' || tab === 'tutorials' ? toolsPage : newsPage
-    router.push(`/tags/${encodeURIComponent(decodedSlug)}?tab=${tab}&page=${newPage}`)
-    
+    setTabLoading(true)
+
     // 加载对应数据
-    if (tab === 'tools' && tools.length === 0) {
+    if (tab === 'tools') {
       // 重新获取工具数据
-      const fetchTagTools = async () => {
-        const supabase = getSupabaseClient()
-        let { data: tag } = await supabase
+      const supabase = getSupabaseClient()
+      let { data: tag } = await supabase
+        .from('tags')
+        .select('id')
+        .eq('slug', decodedSlug)
+        .single()
+
+      if (!tag) {
+        const { data: tagByName } = await supabase
           .from('tags')
           .select('id')
-          .eq('slug', decodedSlug)
+          .eq('name', decodedSlug)
           .single()
-        
-        if (!tag) {
-          const { data: tagByName } = await supabase
-            .from('tags')
-            .select('id')
-            .eq('name', decodedSlug)
-            .single()
-          tag = tagByName
-        }
-        
-        if (tag) {
-          fetchTools(tag.id, 1)
-        }
+        tag = tagByName
       }
-      fetchTagTools()
-    } else if (tab === 'news' && news.length === 0) {
-      fetchNews(tagName, 1)
-    } else if (tab === 'tutorials' && tutorials.length === 0) {
-      // 重新获取教程数据
-      fetchTutorials(tagName || decodedSlug, 1)
+
+      if (tag) {
+        await fetchTools(tag.id, 1)
+      }
+    } else if (tab === 'news') {
+      await fetchNews(tagName, 1)
+    } else if (tab === 'tutorials') {
+      await fetchTutorials(tagName || decodedSlug, 1)
     }
+
+    setTabLoading(false)
   }
 
-  // 分页处理
-  const handlePageChange = (page: number) => {
+  // 分页处理（不更新URL）
+  const handlePageChange = async (page: number) => {
+    setTabLoading(true)
+
+    const supabase = getSupabaseClient()
+
     if (activeTab === 'tools') {
       setToolsPage(page)
-      // 重新获取数据
-      const fetchTagTools = async () => {
-        const supabase = getSupabaseClient()
-        let { data: tag } = await supabase
+      let { data: tag } = await supabase
+        .from('tags')
+        .select('id')
+        .eq('slug', decodedSlug)
+        .single()
+
+      if (!tag) {
+        const { data: tagByName } = await supabase
           .from('tags')
           .select('id')
-          .eq('slug', decodedSlug)
+          .eq('name', decodedSlug)
           .single()
-        
-        if (!tag) {
-          const { data: tagByName } = await supabase
-            .from('tags')
-            .select('id')
-            .eq('name', decodedSlug)
-            .single()
-          tag = tagByName
-        }
-        
-        if (tag) {
-          fetchTools(tag.id, page)
-        }
+        tag = tagByName
       }
-      fetchTagTools()
+
+      if (tag) {
+        await fetchTools(tag.id, page)
+      }
     } else if (activeTab === 'tutorials') {
       setToolsPage(page)
-      // 重新获取教程数据
-      fetchTutorials(tagName || decodedSlug, page)
+      await fetchTutorials(tagName || decodedSlug, page)
     } else {
       setNewsPage(page)
-      fetchNews(tagName || decodedSlug, page)
+      await fetchNews(tagName || decodedSlug, page)
     }
-    router.push(`/tags/${encodeURIComponent(decodedSlug)}?tab=${activeTab}&page=${page}`)
+
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    setTabLoading(false)
   }
 
   // 分页组件
@@ -467,57 +467,59 @@ export default function TagPage({ params }: Props) {
         </div>
 
         {/* Tab Bar */}
-        <div className="flex border-b mb-6">
-          <button
-            onClick={() => handleTabChange('tools')}
-            className={cn(
-              'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
-              activeTab === 'tools'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Wrench className="h-4 w-4" />
-            相关工具
-            <Badge variant="secondary" className="ml-1">
-              {toolsTotal}
-            </Badge>
-          </button>
-          <button
-            onClick={() => handleTabChange('news')}
-            className={cn(
-              'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
-              activeTab === 'news'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Newspaper className="h-4 w-4" />
-            相关资讯
-            <Badge variant="secondary" className="ml-1">
-              {newsTotal}
-            </Badge>
-          </button>
-          <button
-            onClick={() => handleTabChange('tutorials')}
-            className={cn(
-              'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
-              activeTab === 'tutorials'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <BookOpen className="h-4 w-4" />
-            相关教程
-            <Badge variant="secondary" className="ml-1">
-              {tutorialsTotal}
-            </Badge>
-          </button>
-        </div>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-6">
+          <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0 border-b">
+            <TabsTrigger
+              value="tools"
+              className="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 border-transparent rounded-none data-[state=active]:border-primary data-[state=active]:text-primary"
+            >
+              <Wrench className="h-4 w-4" />
+              相关工具
+              <Badge variant="secondary" className="ml-1">
+                {toolsTotal}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger
+              value="news"
+              className="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 border-transparent rounded-none data-[state=active]:border-primary data-[state=active]:text-primary"
+            >
+              <Newspaper className="h-4 w-4" />
+              相关资讯
+              <Badge variant="secondary" className="ml-1">
+                {newsTotal}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger
+              value="tutorials"
+              className="flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 border-transparent rounded-none data-[state=active]:border-primary data-[state=active]:text-primary"
+            >
+              <BookOpen className="h-4 w-4" />
+              相关教程
+              <Badge variant="secondary" className="ml-1">
+                {tutorialsTotal}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Tools Section */}
         {activeTab === 'tools' && (
-          tools.length > 0 ? (
+          tabLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-card border rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="h-12 w-12 rounded-lg bg-muted animate-pulse" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+                      <div className="h-3 bg-muted animate-pulse rounded w-full" />
+                      <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : tools.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {tools.map((tool) => (
@@ -581,7 +583,24 @@ export default function TagPage({ params }: Props) {
 
         {/* News Section */}
         {activeTab === 'news' && (
-          news.length > 0 ? (
+          tabLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-card border rounded-xl overflow-hidden">
+                  <div className="aspect-video bg-muted animate-pulse" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-5 bg-muted animate-pulse rounded w-full" />
+                    <div className="h-4 bg-muted animate-pulse rounded w-full" />
+                    <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
+                    <div className="flex items-center gap-2 mt-3">
+                      <div className="h-3 bg-muted animate-pulse rounded w-16" />
+                      <div className="h-3 bg-muted animate-pulse rounded w-12" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : news.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {news.map((item) => (
@@ -635,7 +654,28 @@ export default function TagPage({ params }: Props) {
 
         {/* Tutorials Section */}
         {activeTab === 'tutorials' && (
-          tutorials.length > 0 ? (
+          tabLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-card border rounded-xl overflow-hidden">
+                  <div className="aspect-video bg-muted animate-pulse" />
+                  <div className="p-4 space-y-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-5 bg-muted animate-pulse rounded w-12" />
+                      <div className="h-5 bg-muted animate-pulse rounded w-16" />
+                    </div>
+                    <div className="h-5 bg-muted animate-pulse rounded w-full" />
+                    <div className="h-4 bg-muted animate-pulse rounded w-full" />
+                    <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
+                    <div className="flex items-center gap-2 mt-3">
+                      <div className="h-3 bg-muted animate-pulse rounded w-16" />
+                      <div className="h-3 bg-muted animate-pulse rounded w-12" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : tutorials.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {tutorials.map((item) => (
