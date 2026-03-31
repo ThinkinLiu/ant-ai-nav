@@ -136,6 +136,8 @@ export async function POST(request: NextRequest) {
         source_url: sourceUrl,
         author_id: authorId,
         status: 'draft',
+        // 设置发布时间为当前时间（草稿状态）
+        published_at: new Date().toISOString(),
       })
       .select()
       .single()
