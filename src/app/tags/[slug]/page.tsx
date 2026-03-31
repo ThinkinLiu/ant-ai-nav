@@ -45,6 +45,17 @@ interface NewsItem {
   tags: string[] | null
 }
 
+interface TutorialItem {
+  id: number
+  title: string
+  summary: string
+  cover_image: string | null
+  category: string | null
+  published_at: string
+  view_count: number
+  tags: string[] | null
+}
+
 const PAGE_SIZE = 12
 
 export default function TagPage({ params }: Props) {
@@ -56,7 +67,7 @@ export default function TagPage({ params }: Props) {
   const [tagName, setTagName] = useState('')
   const [tools, setTools] = useState<Tool[]>([])
   const [news, setNews] = useState<NewsItem[]>([])
-  const [tutorials, setTutorials] = useState<Tool[]>([])
+  const [tutorials, setTutorials] = useState<TutorialItem[]>([])
   const [toolsTotal, setToolsTotal] = useState(0)
   const [newsTotal, setNewsTotal] = useState(0)
   const [tutorialsTotal, setTutorialsTotal] = useState(0)
@@ -68,82 +79,33 @@ export default function TagPage({ params }: Props) {
   const tabParam = searchParams.get('tab')
   const pageParam = searchParams.get('page')
 
-  // 获取教程数据（"教程指南"分类）
-  const fetchTutorials = useCallback(async (tagId: number | null, page: number) => {
+  // 获取教程数据（"教程指南"分类的资讯）
+  const fetchTutorials = useCallback(async (name: string, page: number) => {
     const supabase = getSupabaseClient()
     const start = (page - 1) * PAGE_SIZE
     const end = start + PAGE_SIZE - 1
     
-    if (!tagId) {
-      setTutorials([])
-      setTutorialsTotal(0)
-      return
-    }
-
-    // 获取工具ID列表
-    const { data: toolTags } = await supabase
-      .from('tool_tags')
-      .select('tool_id')
-      .eq('tag_id', tagId)
-    
-    if (!toolTags || toolTags.length === 0) {
-      setTutorials([])
-      setTutorialsTotal(0)
-      return
-    }
-
-    const toolIds = toolTags.map(tt => tt.tool_id)
-    
-    // 查找"教程指南"分类
-    const { data: tutorialCategories } = await supabase
-      .from('categories')
-      .select('id, name, slug')
-      .ilike('name', '%教程%')
-    
-    const tutorialCategoryIds = tutorialCategories?.map(c => c.id) || []
-    
-    if (tutorialCategoryIds.length === 0) {
-      setTutorials([])
-      setTutorialsTotal(0)
-      return
-    }
-    
-    // 获取总数（工具ID在标签中 且 分类在教程分类中）
+    // 获取总数（教程指南分类）
     const { count } = await supabase
-      .from('ai_tools')
+      .from('ai_news')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'approved')
-      .in('id', toolIds)
-      .in('category_id', tutorialCategoryIds)
+      .eq('category', '教程指南')
+      .filter('tags', 'cs', JSON.stringify([name]))
     
     setTutorialsTotal(count || 0)
 
     // 获取分页数据
-    const { data: tutorialsResult } = await supabase
-      .from('ai_tools')
-      .select('id, name, slug, description, website, logo, view_count, favorite_count, is_featured, is_free, created_at, category_id')
+    const { data: tutorialsData } = await supabase
+      .from('ai_news')
+      .select('id, title, summary, cover_image, category, published_at, view_count, tags')
       .eq('status', 'approved')
-      .in('id', toolIds)
-      .in('category_id', tutorialCategoryIds)
+      .eq('category', '教程指南')
+      .filter('tags', 'cs', JSON.stringify([name]))
+      .order('published_at', { ascending: false })
       .range(start, end)
     
-    if (tutorialsResult && tutorialsResult.length > 0) {
-      const categoryIds = [...new Set(tutorialsResult.map(t => t.category_id).filter(Boolean))]
-      const { data: categoriesData } = await supabase
-        .from('categories')
-        .select('id, name, color')
-        .in('id', categoryIds)
-      
-      const categoryMap = new Map((categoriesData || []).map(c => [c.id, c]))
-      
-      const tutorialsData = tutorialsResult.map(tool => ({
-        ...tool,
-        category: categoryMap.get(tool.category_id) || null
-      }))
-      setTutorials(tutorialsData)
-    } else {
-      setTutorials([])
-    }
+    setTutorials(tutorialsData || [])
   }, [])
 
   // 获取工具数据
@@ -208,17 +170,18 @@ export default function TagPage({ params }: Props) {
     }
   }, [])
 
-  // 获取资讯数据
+  // 获取资讯数据（排除"教程指南"分类）
   const fetchNews = useCallback(async (name: string, page: number) => {
     const supabase = getSupabaseClient()
     const start = (page - 1) * PAGE_SIZE
     const end = start + PAGE_SIZE - 1
     
-    // 获取总数
+    // 获取总数（排除教程指南分类）
     const { count } = await supabase
       .from('ai_news')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'approved')
+      .neq('category', '教程指南')
       .filter('tags', 'cs', JSON.stringify([name]))
     
     setNewsTotal(count || 0)
@@ -228,6 +191,7 @@ export default function TagPage({ params }: Props) {
       .from('ai_news')
       .select('id, title, summary, cover_image, category, published_at, view_count, tags')
       .eq('status', 'approved')
+      .neq('category', '教程指南')
       .filter('tags', 'cs', JSON.stringify([name]))
       .order('published_at', { ascending: false })
       .range(start, end)
@@ -282,7 +246,7 @@ export default function TagPage({ params }: Props) {
         await Promise.all([
           fetchTools(tagId, 1),
           fetchNews(name, 1),
-          fetchTutorials(tagId, 1)
+          fetchTutorials(name, 1)
         ])
 
         // 如果既没有标签记录，也没有相关资讯和工具，显示 404
@@ -294,38 +258,15 @@ export default function TagPage({ params }: Props) {
           .eq('status', 'approved')
           .filter('tags', 'cs', JSON.stringify([name]))
         
-        // 检查是否有教程
-        let hasTutorials = false
-        if (tagId) {
-          // 查找"教程指南"分类
-          const { data: tutorialCategories } = await supabase
-            .from('categories')
-            .select('id, name, slug')
-            .ilike('name', '%教程%')
-          
-          const tutorialCategoryIds = tutorialCategories?.map(c => c.id) || []
-          
-          if (tutorialCategoryIds.length > 0) {
-            // 获取工具ID列表
-            const { data: toolTags } = await supabase
-              .from('tool_tags')
-              .select('tool_id')
-              .eq('tag_id', tagId)
-            
-            const toolIds = toolTags?.map(tt => tt.tool_id) || []
-            
-            if (toolIds.length > 0) {
-              const { count: tutorialCount } = await supabase
-                .from('ai_tools')
-                .select('id', { count: 'exact', head: true })
-                .eq('status', 'approved')
-                .in('id', toolIds)
-                .in('category_id', tutorialCategoryIds)
-              
-              hasTutorials = (tutorialCount || 0) > 0
-            }
-          }
-        }
+        // 检查是否有教程（教程指南分类的资讯）
+        const { count: tutorialCount } = await supabase
+          .from('ai_news')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'approved')
+          .eq('category', '教程指南')
+          .filter('tags', 'cs', JSON.stringify([name]))
+        
+        const hasTutorials = (tutorialCount || 0) > 0
         
         if (!tagExists && !hasTools && (!newsCount || newsCount === 0) && !hasTutorials) {
           notFound()
@@ -380,28 +321,7 @@ export default function TagPage({ params }: Props) {
       fetchNews(tagName, 1)
     } else if (tab === 'tutorials' && tutorials.length === 0) {
       // 重新获取教程数据
-      const fetchTagTutorials = async () => {
-        const supabase = getSupabaseClient()
-        let { data: tag } = await supabase
-          .from('tags')
-          .select('id')
-          .eq('slug', decodedSlug)
-          .single()
-        
-        if (!tag) {
-          const { data: tagByName } = await supabase
-            .from('tags')
-            .select('id')
-            .eq('name', decodedSlug)
-            .single()
-          tag = tagByName
-        }
-        
-        if (tag) {
-          fetchTutorials(tag.id, 1)
-        }
-      }
-      fetchTagTutorials()
+      fetchTutorials(tagName || decodedSlug, 1)
     }
   }
 
@@ -435,28 +355,7 @@ export default function TagPage({ params }: Props) {
     } else if (activeTab === 'tutorials') {
       setToolsPage(page)
       // 重新获取教程数据
-      const fetchTagTutorials = async () => {
-        const supabase = getSupabaseClient()
-        let { data: tag } = await supabase
-          .from('tags')
-          .select('id')
-          .eq('slug', decodedSlug)
-          .single()
-        
-        if (!tag) {
-          const { data: tagByName } = await supabase
-            .from('tags')
-            .select('id')
-            .eq('name', decodedSlug)
-            .single()
-          tag = tagByName
-        }
-        
-        if (tag) {
-          fetchTutorials(tag.id, page)
-        }
-      }
-      fetchTagTutorials()
+      fetchTutorials(tagName || decodedSlug, page)
     } else {
       setNewsPage(page)
       fetchNews(tagName || decodedSlug, page)
@@ -740,48 +639,48 @@ export default function TagPage({ params }: Props) {
           tutorials.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {tutorials.map((tool) => (
+                {tutorials.map((item) => (
                   <Link
-                    key={tool.id}
-                    href={`/tools/${tool.slug}`}
-                    className="group bg-card border rounded-xl p-4 hover:shadow-lg transition-all"
+                    key={item.id}
+                    href={`/news/${item.id}`}
+                    className="group bg-card border rounded-xl overflow-hidden hover:shadow-lg transition-all"
                   >
-                    <div className="flex items-start gap-3">
-                      <ToolLogoNext
-                        logo={tool.logo}
-                        name={tool.name}
-                        website={tool.website}
-                        size={48}
-                        className="h-12 w-12 rounded-lg shrink-0"
-                        fallbackBgColor={tool.category?.color || '#F59E0B'}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-1">
-                          {tool.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                          {tool.description}
-                        </p>
+                    {item.cover_image && (
+                      <div className="aspect-video overflow-hidden">
+                        <img
+                          src={item.cover_image}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-                      {tool.category && (
-                        <Badge 
-                          variant="outline" 
-                          className="text-xs"
-                          style={{ borderColor: tool.category.color, color: tool.category.color }}
-                        >
-                          {tool.category.name}
+                    )}
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="default" className="text-xs bg-amber-500 hover:bg-amber-600">
+                          教程
                         </Badge>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
-                        {tool.view_count}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Heart className="h-3 w-3" />
-                        {tool.favorite_count}
-                      </span>
+                        {item.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {item.category}
+                          </Badge>
+                        )}
+                      </div>
+                      <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-2">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
+                        {item.summary}
+                      </p>
+                      <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatRelativeTime(item.published_at)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Eye className="h-3 w-3" />
+                          {item.view_count}
+                        </span>
+                      </div>
                     </div>
                   </Link>
                 ))}
