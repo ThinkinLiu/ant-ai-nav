@@ -273,14 +273,14 @@ export default function PublisherNews() {
     setSubmitting(true)
     try {
       const response = await fetch(`/api/news/${selectedNews.id}/review`, {
-        method: 'PUT',
+        method: 'POST', // 修改为 POST 方法
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           status: newStatus,
-          rejectReason: newStatus === 'rejected' ? rejectReason : null,
+          rejectReason: newStatus === 'rejected' ? rejectReason : undefined,
         }),
       })
       const data = await response.json()
