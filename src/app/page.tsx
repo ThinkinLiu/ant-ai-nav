@@ -453,7 +453,23 @@ function HomePageContent() {
     const nextPage = page + 1
 
     try {
-      const response = await fetch(`/api/tools?page=${nextPage}&limit=16&sortBy=created_at&sortOrder=desc&t=${Date.now()}`, {
+      // 构建请求参数，包含当前的筛选条件
+      const params = new URLSearchParams()
+      params.append('page', nextPage.toString())
+      params.append('limit', '16')
+      params.append('sortBy', 'created_at')
+      params.append('sortOrder', 'desc')
+
+      // 添加筛选条件
+      if (searchQuery) params.append('search', searchQuery)
+      if (categoryId) params.append('categoryId', categoryId)
+      if (isFeatured === 'true') params.append('isFeatured', 'true')
+      if (activeCategory !== 'all') {
+        const cat = categories.find(c => c.slug === activeCategory)
+        if (cat) params.append('categoryId', cat.id.toString())
+      }
+
+      const response = await fetch(`/api/tools?${params}&t=${Date.now()}`, {
         cache: 'no-store'
       })
 
