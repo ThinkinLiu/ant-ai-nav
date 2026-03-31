@@ -238,12 +238,12 @@ export async function GET(request: NextRequest) {
           break
           
         case 'tutorial_tools':
-          // 热门教程：获取分类为"教程指南"的AI资讯，按发布时间排序，随机选取8个
+          // 热门教程：获取分类为"教程指南"（tutorial）的AI资讯，按发布时间排序，随机选取8个
           const tutorialNewsResult = await client
             .from('ai_news')
             .select('id, title, summary, cover_image, category, published_at, view_count')
             .eq('status', 'approved')
-            .eq('category', '教程指南')
+            .eq('category', 'tutorial')
             .order('published_at', { ascending: false })
             .limit(30)
           tabNews = getRandomItems(tutorialNewsResult.data || [], 8)
