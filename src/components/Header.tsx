@@ -79,6 +79,9 @@ export function Header() {
           <Link href="/categories" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             分类浏览
           </Link>
+          <Link href="/news?category=tutorial" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            AI教程
+          </Link>
           {siteSettings.ranking_enabled && (
             <Link href="/ranking" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               排行榜
@@ -226,6 +229,9 @@ export function Header() {
               </Link>
               <Link href="/categories" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
                 分类浏览
+              </Link>
+              <Link href="/news?category=tutorial" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                AI教程
               </Link>
               {siteSettings.ranking_enabled && (
                 <Link href="/ranking" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
