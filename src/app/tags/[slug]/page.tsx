@@ -12,7 +12,7 @@ import { formatRelativeTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { 
   Eye, Heart, ArrowLeft,
-  Calendar, Wrench, Newspaper, Loader2,
+  Calendar, Wrench, Newspaper, BookOpen, Loader2,
   ChevronLeft, ChevronRight
 } from 'lucide-react'
 
@@ -56,9 +56,11 @@ export default function TagPage({ params }: Props) {
   const [tagName, setTagName] = useState('')
   const [tools, setTools] = useState<Tool[]>([])
   const [news, setNews] = useState<NewsItem[]>([])
+  const [tutorials, setTutorials] = useState<Tool[]>([])
   const [toolsTotal, setToolsTotal] = useState(0)
   const [newsTotal, setNewsTotal] = useState(0)
-  const [activeTab, setActiveTab] = useState<'tools' | 'news'>('tools')
+  const [tutorialsTotal, setTutorialsTotal] = useState(0)
+  const [activeTab, setActiveTab] = useState<'tools' | 'news' | 'tutorials'>('tools')
   const [toolsPage, setToolsPage] = useState(1)
   const [newsPage, setNewsPage] = useState(1)
   
@@ -66,8 +68,83 @@ export default function TagPage({ params }: Props) {
   const tabParam = searchParams.get('tab')
   const pageParam = searchParams.get('page')
 
-  // 判断是否是龙虾标签
-  const isLobsterTag = decodedSlug === 'lobster' || tagName === '龙虾' || tagName === 'lobster'
+  // 获取教程数据（"教程指南"分类）
+  const fetchTutorials = useCallback(async (tagId: number | null, page: number) => {
+    const supabase = getSupabaseClient()
+    const start = (page - 1) * PAGE_SIZE
+    const end = start + PAGE_SIZE - 1
+    
+    if (!tagId) {
+      setTutorials([])
+      setTutorialsTotal(0)
+      return
+    }
+
+    // 获取工具ID列表
+    const { data: toolTags } = await supabase
+      .from('tool_tags')
+      .select('tool_id')
+      .eq('tag_id', tagId)
+    
+    if (!toolTags || toolTags.length === 0) {
+      setTutorials([])
+      setTutorialsTotal(0)
+      return
+    }
+
+    const toolIds = toolTags.map(tt => tt.tool_id)
+    
+    // 查找"教程指南"分类
+    const { data: tutorialCategories } = await supabase
+      .from('categories')
+      .select('id, name, slug')
+      .ilike('name', '%教程%')
+    
+    const tutorialCategoryIds = tutorialCategories?.map(c => c.id) || []
+    
+    if (tutorialCategoryIds.length === 0) {
+      setTutorials([])
+      setTutorialsTotal(0)
+      return
+    }
+    
+    // 获取总数（工具ID在标签中 且 分类在教程分类中）
+    const { count } = await supabase
+      .from('ai_tools')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'approved')
+      .in('id', toolIds)
+      .in('category_id', tutorialCategoryIds)
+    
+    setTutorialsTotal(count || 0)
+
+    // 获取分页数据
+    const { data: tutorialsResult } = await supabase
+      .from('ai_tools')
+      .select('id, name, slug, description, website, logo, view_count, favorite_count, is_featured, is_free, created_at, category_id')
+      .eq('status', 'approved')
+      .in('id', toolIds)
+      .in('category_id', tutorialCategoryIds)
+      .range(start, end)
+    
+    if (tutorialsResult && tutorialsResult.length > 0) {
+      const categoryIds = [...new Set(tutorialsResult.map(t => t.category_id).filter(Boolean))]
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('id, name, color')
+        .in('id', categoryIds)
+      
+      const categoryMap = new Map((categoriesData || []).map(c => [c.id, c]))
+      
+      const tutorialsData = tutorialsResult.map(tool => ({
+        ...tool,
+        category: categoryMap.get(tool.category_id) || null
+      }))
+      setTutorials(tutorialsData)
+    } else {
+      setTutorials([])
+    }
+  }, [])
 
   // 获取工具数据
   const fetchTools = useCallback(async (tagId: number | null, page: number) => {
@@ -187,20 +264,25 @@ export default function TagPage({ params }: Props) {
         const tagExists = !!tag
 
         // 根据 URL 参数设置默认 tab 和页码
-        const initialTab = tabParam === 'news' ? 'news' : 'tools'
+        const tabValue = tabParam || 'tools'
+        const initialTab = tabValue === 'news' || tabValue === 'tutorials' ? tabValue : 'tools'
         const initialPage = parseInt(pageParam || '1') || 1
         setActiveTab(initialTab)
         
         if (initialTab === 'tools') {
           setToolsPage(initialPage)
-        } else {
+        } else if (initialTab === 'news') {
           setNewsPage(initialPage)
+        } else if (initialTab === 'tutorials') {
+          // 教程页码使用toolsPage，因为教程和工具类似
+          setToolsPage(initialPage)
         }
 
-        // 同时获取工具和资讯的统计数据
+        // 同时获取工具、资讯和教程的统计数据
         await Promise.all([
-          fetchTools(tagId, initialTab === 'tools' ? initialPage : 1),
-          fetchNews(name, initialTab === 'news' ? initialPage : 1)
+          fetchTools(tagId, 1),
+          fetchNews(name, 1),
+          fetchTutorials(tagId, 1)
         ])
 
         // 如果既没有标签记录，也没有相关资讯和工具，显示 404
@@ -212,7 +294,40 @@ export default function TagPage({ params }: Props) {
           .eq('status', 'approved')
           .filter('tags', 'cs', JSON.stringify([name]))
         
-        if (!tagExists && !hasTools && (!newsCount || newsCount === 0)) {
+        // 检查是否有教程
+        let hasTutorials = false
+        if (tagId) {
+          // 查找"教程指南"分类
+          const { data: tutorialCategories } = await supabase
+            .from('categories')
+            .select('id, name, slug')
+            .ilike('name', '%教程%')
+          
+          const tutorialCategoryIds = tutorialCategories?.map(c => c.id) || []
+          
+          if (tutorialCategoryIds.length > 0) {
+            // 获取工具ID列表
+            const { data: toolTags } = await supabase
+              .from('tool_tags')
+              .select('tool_id')
+              .eq('tag_id', tagId)
+            
+            const toolIds = toolTags?.map(tt => tt.tool_id) || []
+            
+            if (toolIds.length > 0) {
+              const { count: tutorialCount } = await supabase
+                .from('ai_tools')
+                .select('id', { count: 'exact', head: true })
+                .eq('status', 'approved')
+                .in('id', toolIds)
+                .in('category_id', tutorialCategoryIds)
+              
+              hasTutorials = (tutorialCount || 0) > 0
+            }
+          }
+        }
+        
+        if (!tagExists && !hasTools && (!newsCount || newsCount === 0) && !hasTutorials) {
           notFound()
         }
 
@@ -231,9 +346,9 @@ export default function TagPage({ params }: Props) {
   }, [decodedSlug, tabParam, pageParam, fetchTools, fetchNews])
 
   // Tab 切换时更新 URL 和加载数据
-  const handleTabChange = (tab: 'tools' | 'news') => {
+  const handleTabChange = (tab: 'tools' | 'news' | 'tutorials') => {
     setActiveTab(tab)
-    const newPage = tab === 'tools' ? toolsPage : newsPage
+    const newPage = tab === 'tools' || tab === 'tutorials' ? toolsPage : newsPage
     router.push(`/tags/${encodeURIComponent(decodedSlug)}?tab=${tab}&page=${newPage}`)
     
     // 加载对应数据
@@ -263,6 +378,30 @@ export default function TagPage({ params }: Props) {
       fetchTagTools()
     } else if (tab === 'news' && news.length === 0) {
       fetchNews(tagName, 1)
+    } else if (tab === 'tutorials' && tutorials.length === 0) {
+      // 重新获取教程数据
+      const fetchTagTutorials = async () => {
+        const supabase = getSupabaseClient()
+        let { data: tag } = await supabase
+          .from('tags')
+          .select('id')
+          .eq('slug', decodedSlug)
+          .single()
+        
+        if (!tag) {
+          const { data: tagByName } = await supabase
+            .from('tags')
+            .select('id')
+            .eq('name', decodedSlug)
+            .single()
+          tag = tagByName
+        }
+        
+        if (tag) {
+          fetchTutorials(tag.id, 1)
+        }
+      }
+      fetchTagTutorials()
     }
   }
 
@@ -293,6 +432,31 @@ export default function TagPage({ params }: Props) {
         }
       }
       fetchTagTools()
+    } else if (activeTab === 'tutorials') {
+      setToolsPage(page)
+      // 重新获取教程数据
+      const fetchTagTutorials = async () => {
+        const supabase = getSupabaseClient()
+        let { data: tag } = await supabase
+          .from('tags')
+          .select('id')
+          .eq('slug', decodedSlug)
+          .single()
+        
+        if (!tag) {
+          const { data: tagByName } = await supabase
+            .from('tags')
+            .select('id')
+            .eq('name', decodedSlug)
+            .single()
+          tag = tagByName
+        }
+        
+        if (tag) {
+          fetchTutorials(tag.id, page)
+        }
+      }
+      fetchTagTutorials()
     } else {
       setNewsPage(page)
       fetchNews(tagName || decodedSlug, page)
@@ -394,11 +558,12 @@ export default function TagPage({ params }: Props) {
             <h1 className="text-3xl font-bold">{tagName}</h1>
           </div>
           <p className="text-muted-foreground">
-            探索与「{tagName}」相关的AI工具和资讯
+            探索与「{tagName}」相关的AI工具、资讯与教程
           </p>
           <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
             <span>{toolsTotal} 个工具</span>
-            <span>{newsTotal} 篇{isLobsterTag ? '教程' : '资讯'}</span>
+            <span>{newsTotal} 篇资讯</span>
+            <span>{tutorialsTotal} 篇教程</span>
           </div>
         </div>
 
@@ -415,6 +580,7 @@ export default function TagPage({ params }: Props) {
           >
             <Wrench className="h-4 w-4" />
             相关工具
+            相关工具
             <Badge variant="secondary" className="ml-1">
               {toolsTotal}
             </Badge>
@@ -429,9 +595,24 @@ export default function TagPage({ params }: Props) {
             )}
           >
             <Newspaper className="h-4 w-4" />
-            相关{isLobsterTag ? '教程' : '资讯'}
+            相关资讯
             <Badge variant="secondary" className="ml-1">
               {newsTotal}
+            </Badge>
+          </button>
+          <button
+            onClick={() => handleTabChange('tutorials')}
+            className={cn(
+              'flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors',
+              activeTab === 'tutorials'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <BookOpen className="h-4 w-4" />
+            相关教程
+            <Badge variant="secondary" className="ml-1">
+              {tutorialsTotal}
             </Badge>
           </button>
         </div>
@@ -494,7 +675,7 @@ export default function TagPage({ params }: Props) {
               <span className="text-6xl mb-4 block">🛠️</span>
               <h2 className="text-xl font-semibold mb-2">暂无相关工具</h2>
               <p className="text-muted-foreground">
-                该标签下暂无工具，切换查看相关{isLobsterTag ? '教程' : '资讯'}
+                该标签下暂无工具，切换查看相关资讯或教程
               </p>
             </div>
           )
@@ -546,9 +727,73 @@ export default function TagPage({ params }: Props) {
           ) : (
             <div className="text-center py-12">
               <span className="text-6xl mb-4 block">📰</span>
-              <h2 className="text-xl font-semibold mb-2">暂无相关{isLobsterTag ? '教程' : '资讯'}</h2>
+              <h2 className="text-xl font-semibold mb-2">暂无相关资讯</h2>
               <p className="text-muted-foreground">
-                该标签下暂无{isLobsterTag ? '教程' : '资讯'}，切换查看相关工具
+                该标签下暂无资讯，切换查看相关工具或教程
+              </p>
+            </div>
+          )
+        )}
+
+        {/* Tutorials Section */}
+        {activeTab === 'tutorials' && (
+          tutorials.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {tutorials.map((tool) => (
+                  <Link
+                    key={tool.id}
+                    href={`/tools/${tool.slug}`}
+                    className="group bg-card border rounded-xl p-4 hover:shadow-lg transition-all"
+                  >
+                    <div className="flex items-start gap-3">
+                      <ToolLogoNext
+                        logo={tool.logo}
+                        name={tool.name}
+                        website={tool.website}
+                        size={48}
+                        className="h-12 w-12 rounded-lg shrink-0"
+                        fallbackBgColor={tool.category?.color || '#F59E0B'}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-1">
+                          {tool.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                          {tool.description}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                      {tool.category && (
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs"
+                          style={{ borderColor: tool.category.color, color: tool.category.color }}
+                        >
+                          {tool.category.name}
+                        </Badge>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {tool.view_count}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Heart className="h-3 w-3" />
+                        {tool.favorite_count}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <Pagination total={tutorialsTotal} currentPage={toolsPage} onPageChange={handlePageChange} />
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <span className="text-6xl mb-4 block">📚</span>
+              <h2 className="text-xl font-semibold mb-2">暂无相关教程</h2>
+              <p className="text-muted-foreground">
+                该标签下暂无教程，切换查看相关工具或资讯
               </p>
             </div>
           )
