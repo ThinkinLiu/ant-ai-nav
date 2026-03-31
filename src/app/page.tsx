@@ -785,7 +785,7 @@ function HomePageContent() {
                     )}
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
                       {tabTools.map((tool) => (
-                        <Link key={tool.id} href={`/tools/${tool.id}`}>
+                        <Link key={`tab-${tool.id}`} href={`/tools/${tool.id}`}>
                           <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
                             <CardContent className="p-4 text-center">
                               <div className="h-12 w-12 mx-auto rounded-lg overflow-hidden mb-3">
@@ -930,7 +930,7 @@ function HomePageContent() {
                 
                 {hotTools.length > 0 ? (
                   hotTools.map((tool, index) => (
-                    <DropdownMenuItem key={tool.id} asChild className="cursor-pointer p-0">
+                    <DropdownMenuItem key={`hot-${tool.id}`} asChild className="cursor-pointer p-0">
                       <Link href={`/tools/${tool.id}`} className="flex items-start gap-3 p-3 w-full hover:bg-muted/50 rounded-md">
                         <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                           index === 0 ? 'bg-yellow-400 text-yellow-900' :
@@ -1074,7 +1074,7 @@ function HomePageContent() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {tools.map((tool) => (
-                  <Link key={tool.id} href={`/tools/${tool.id}`}>
+                  <Link key={`main-${tool.id}`} href={`/tools/${tool.id}`}>
                     <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
                       <CardContent className="p-6">
                         <div className="flex items-start gap-3">
