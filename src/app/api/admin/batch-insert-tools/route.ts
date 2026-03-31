@@ -4,11 +4,17 @@ import { createClient } from '@supabase/supabase-js';
 // 禁用静态生成，强制动态渲染
 export const dynamic = 'force-dynamic';
 
-// 创建Supabase服务端客户端（使用service role权限）
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// 延迟初始化 Supabase 客户端，避免构建时环境变量缺失问题
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing required Supabase environment variables');
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
 
 // 分类映射
 const categoryMap: Record<string, number> = {
@@ -233,6 +239,7 @@ const newTools = [
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseClient();
     console.log("🚀 开始批量插入AI工具...\n");
 
     const now = new Date().toISOString();
