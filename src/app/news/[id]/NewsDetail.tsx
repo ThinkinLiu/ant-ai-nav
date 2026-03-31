@@ -1,7 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/button'
 import { categoryConfig, getCategoryConfig } from '../config'
+import { Edit } from 'lucide-react'
 
 interface NewsItem {
   id: number
@@ -12,6 +15,7 @@ interface NewsItem {
   source: string | null
   source_url: string | null
   author: string | null
+  author_id: number | null
   category: string | null
   tags: string[] | null
   cover_image: string | null
@@ -45,7 +49,11 @@ interface Props {
 }
 
 export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
+  const { user } = useAuth()
   const categoryInfo = getCategoryConfig(news.category)
+  
+  // 检查是否是管理员或发布者本人
+  const canEdit = user?.role === 'admin' || user?.id === news.author_id?.toString()
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('zh-CN', {
@@ -137,6 +145,15 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
                   <span>👁️</span>
                   {news.view_count} 阅读
                 </span>
+                {/* 修改入口 - 仅管理员或发布者本人可见 */}
+                {canEdit && (
+                  <Button variant="ghost" size="sm" asChild className="gap-1 h-auto px-2 py-1 text-xs">
+                    <Link href={`/publisher/news/${news.id}/edit`}>
+                      <Edit className="h-3 w-3" />
+                      修改
+                    </Link>
+                  </Button>
+                )}
               </div>
 
               {/* Summary */}
