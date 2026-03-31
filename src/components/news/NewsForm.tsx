@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { TagInput } from '@/components/ui/tag-input'
 import {
   Select,
   SelectContent,
@@ -60,7 +61,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
     content: '',
     coverImage: '',
     category: '',
-    tags: '',
+    tags: [] as string[],
     source: '',
     sourceUrl: '',
     isFeatured: false,
@@ -113,7 +114,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
           content: news.content || '',
           coverImage: news.cover_image || '',
           category: news.category || '',
-          tags: Array.isArray(news.tags) ? news.tags.join(', ') : '',
+          tags: Array.isArray(news.tags) ? news.tags : [],
           source: news.source || '',
           sourceUrl: news.source_url || '',
           isFeatured: news.is_featured || false,
@@ -167,9 +168,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
     setLoading(true)
     try {
       const slug = formData.slug || generateSlug(formData.title)
-      const tags = formData.tags
-        ? formData.tags.split(',').map((t) => t.trim()).filter(Boolean)
-        : []
+      const tags = formData.tags.filter(Boolean)
 
       const submitData = {
         title: formData.title.trim(),
@@ -400,12 +399,15 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                 {/* 标签 */}
                 <div className="space-y-2">
                   <Label htmlFor="tags">标签</Label>
-                  <Input
-                    id="tags"
+                  <TagInput
                     value={formData.tags}
-                    onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                    placeholder="多个标签用逗号分隔，如: AI, GPT, 大模型"
+                    onChange={(tags: string[]) => setFormData({ ...formData, tags })}
+                    placeholder="输入标签，按回车或逗号分隔"
+                    maxTags={10}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    输入标签后按回车或输入逗号（中英文皆可）自动分隔，最多添加 10 个标签
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -509,8 +511,8 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                           {formData.source && (
                             <span>来源: {formData.source}</span>
                           )}
-                          {formData.tags && (
-                            <span>标签: {formData.tags}</span>
+                          {formData.tags.length > 0 && (
+                            <span>标签: {formData.tags.join(', ')}</span>
                           )}
                         </div>
 

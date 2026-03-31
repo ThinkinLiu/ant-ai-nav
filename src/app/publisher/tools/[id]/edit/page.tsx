@@ -17,6 +17,7 @@ import { ArrowLeft, Loader2, AlertCircle, Upload, Link2 } from 'lucide-react'
 import ImageUploader from '@/components/ui/image-uploader'
 import RichTextEditor from '@/components/ui/rich-text-editor'
 import { ToolLogo } from '@/components/tools/ToolLogo'
+import { TagInput } from '@/components/ui/tag-input'
 
 interface Category {
   id: number
@@ -60,7 +61,7 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
     categoryId: '',
     isFree: true,
     pricingInfo: '',
-    tags: '',
+    tags: [] as string[],
   })
 
   useEffect(() => {
@@ -88,7 +89,7 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
           categoryId: toolData.category_id?.toString() || '',
           isFree: toolData.is_free ?? true,
           pricingInfo: toolData.pricing_info || '',
-          tags: toolData.tags?.map((t: any) => t.name).join(', ') || '',
+          tags: toolData.tags?.map((t: any) => t.name) || [],
         })
         // 如果已有logo，根据是否为URL判断模式
         if (toolData.logo) {
@@ -136,7 +137,7 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
         },
         body: JSON.stringify({
           ...formData,
-          tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+          tags: formData.tags.filter(Boolean),
         }),
       })
       const data = await response.json()
@@ -358,12 +359,15 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
 
             <div className="space-y-2">
               <Label htmlFor="tags">标签</Label>
-              <Input
-                id="tags"
-                placeholder="多个标签用逗号分隔，如：AI对话,聊天机器人"
+              <TagInput
                 value={formData.tags}
-                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                onChange={(tags: string[]) => setFormData({ ...formData, tags })}
+                placeholder="输入标签，按回车或逗号分隔"
+                maxTags={10}
               />
+              <p className="text-xs text-muted-foreground">
+                输入标签后按回车或输入逗号（中英文皆可）自动分隔，最多添加 10 个标签
+              </p>
             </div>
 
             <div className="flex items-center justify-between">
