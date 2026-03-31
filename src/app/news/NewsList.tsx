@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { categoryConfig, getCategoryConfig } from './config'
 
 // 格式化时间，精确到分钟
 function formatDateTime(dateStr: string): string {
@@ -26,6 +25,14 @@ function formatDate(dateStr: string): string {
   })
 }
 
+interface CategoryConfig {
+  [slug: string]: {
+    label: string
+    icon: string
+    color: string
+  }
+}
+
 interface NewsItem {
   id: number
   title: string
@@ -45,9 +52,10 @@ interface NewsItem {
 
 interface Props {
   totalCount: number
+  categoryConfig: CategoryConfig
 }
 
-export function NewsList({ totalCount }: Props) {
+export function NewsList({ totalCount, categoryConfig }: Props) {
   const [news, setNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -218,7 +226,7 @@ export function NewsList({ totalCount }: Props) {
             {/* News Items */}
             <div className="space-y-4">
               {items.map((item) => {
-                const categoryInfo = getCategoryConfig(item.category)
+                const categoryInfo = item.category ? categoryConfig[item.category] : undefined
                 
                 return (
                   <Link

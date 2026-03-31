@@ -1,7 +1,6 @@
 import { Metadata } from 'next'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { NewsList } from './NewsList'
-import { categoryConfig, getCategoryConfig } from './config'
 
 // 强制动态渲染，避免构建时访问数据库
 export const dynamic = 'force-dynamic'
@@ -39,6 +38,23 @@ export default async function NewsPage() {
   categoryStats?.forEach(item => {
     if (item.category) {
       categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1
+    }
+  })
+  
+  // 获取默认分类（is_default=true）
+  const { data: defaultCategories } = await supabase
+    .from('news_categories')
+    .select('*')
+    .eq('is_default', true)
+    .order('sort_order', { ascending: true })
+  
+  // 转换为配置格式
+  const categoryConfigFromDB: Record<string, { label: string; icon: string; color: string }> = {}
+  defaultCategories?.forEach(cat => {
+    categoryConfigFromDB[cat.slug] = {
+      label: cat.name,
+      icon: cat.icon || '📰',
+      color: cat.color ? `from-${cat.color.replace('#', '')}500/20 to-${cat.color.replace('#', '')}500/20` : 'from-blue-500/20 to-cyan-500/20'
     }
   })
   
@@ -80,7 +96,7 @@ export default async function NewsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-        {Object.entries(categoryConfig).map(([key, config]) => (
+        {Object.entries(categoryConfigFromDB).map(([key, config]) => (
           <div 
             key={key}
             className={`bg-gradient-to-br ${config.color} border rounded-xl p-4 text-center`}
@@ -118,14 +134,14 @@ export default async function NewsPage() {
                 ) : (
                   <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
                     <span className="text-4xl">
-                      {getCategoryConfig(news.category)?.icon || '📰'}
+                      {categoryConfigFromDB[news.category]?.icon || '📰'}
                     </span>
                   </div>
                 )}
                 <div className="p-4">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                     <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">
-                      {getCategoryConfig(news.category)?.label || '资讯'}
+                      {categoryConfigFromDB[news.category]?.label || '资讯'}
                     </span>
                     <span>{formatDateTime(news.published_at)}</span>
                   </div>
@@ -146,7 +162,7 @@ export default async function NewsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Main List */}
         <div className="lg:col-span-3">
-          <NewsList totalCount={totalCount || 0} />
+          <NewsList totalCount={totalCount || 0} categoryConfig={categoryConfigFromDB} />
         </div>
 
         {/* Hot News Sidebar */}
