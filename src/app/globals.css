@@ -136,6 +136,25 @@ body {
   @apply font-sans;
 }
 
+/* 响应式容器样式 - 为不同屏幕尺寸设置合适的边距 */
+@media (min-width: 768px) {
+  .container {
+    @apply px-6;  /* 平板和笔记本：24px边距 */
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    @apply px-8;  /* 大桌面：32px边距 */
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    @apply px-4;  /* 超大屏幕：回到16px边距 */
+  }
+}
+
 /* Rich Text Editor Content Styles */
 .long-description-content h1 {
   @apply text-2xl font-bold mb-4;
