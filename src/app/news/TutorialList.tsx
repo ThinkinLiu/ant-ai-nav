@@ -162,7 +162,7 @@ export function TutorialList({ hotTutorials }: Props) {
           {Object.entries(groupedTutorials).map(([date, items]) => (
             <div key={date} className="mb-8">
               <h3 className="text-lg font-semibold mb-4 text-muted-foreground">{date}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {items.map((tutorial) => (
                   <Link
                     key={tutorial.id}
