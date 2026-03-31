@@ -798,39 +798,36 @@ function HomePageContent() {
                     {currentTab?.type === 'tutorial_tools' && (
                       <div className="flex justify-end mb-4">
                         <Button variant="outline" size="sm" asChild className="gap-1">
-                          <Link href="/tools">
+                          <Link href="/news?category=教程指南">
                             更多教程
                             <ChevronRight className="h-4 w-4" />
                           </Link>
                         </Button>
                       </div>
                     )}
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-                      {tabTools.map((tool) => (
-                        <Link key={`tab-${tool.id}`} href={`/tools/${tool.id}`}>
-                          <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
-                            <CardContent className="p-4 text-center">
-                              <div className="h-12 w-12 mx-auto rounded-lg overflow-hidden mb-3">
-                                <ToolLogoNext 
-                                  logo={tool.logo} 
-                                  name={tool.name} 
-                                  website={tool.website}
-                                  className="h-full w-full rounded-lg"
-                                  size={48}
-                                  fallbackBgColor={tool.category?.color || currentTab?.color || '#EF4444'}
-                                />
-                              </div>
-                              <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-                                {tool.name}
+                    <Card className="overflow-hidden">
+                      <CardContent className="py-1.5 px-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
+                          {tabNews.map((news, index) => (
+                            <Link 
+                              key={news.id} 
+                              href={`/news/${news.id}`}
+                              className="flex items-start gap-2 py-1 group hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
+                            >
+                              <span className="text-xs text-muted-foreground w-5 shrink-0 pt-0.5">
+                                {index + 1}.
+                              </span>
+                              <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors flex-1 min-w-0" style={{ minHeight: '2.5rem' }}>
+                                {news.title}
                               </h3>
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                                {tool.category?.name || 'AI工具'}
-                              </p>
-                            </CardContent>
-                          </Card>
-                        </Link>
-                      ))}
-                    </div>
+                              <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0 pt-0.5">
+                                {formatRelativeTime(news.published_at)}
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 )}
 

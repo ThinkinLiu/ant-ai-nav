@@ -238,24 +238,15 @@ export async function GET(request: NextRequest) {
           break
           
         case 'tutorial_tools':
-          // 热门教程：获取分类为"AI学习"的工具，按浏览量排序，随机选取8个
-          // 因为"AI学习"是最接近教程的分类
-          const tutorialCategory = categories?.find(c => c.slug === 'ai-learning' || c.name.includes('学习'))
-          
-          if (tutorialCategory) {
-            const tutorialResult = await client
-              .from('ai_tools')
-              .select('id, name, slug, description, website, logo, is_featured, is_pinned, is_free, view_count, favorite_count, created_at, category_id')
-              .eq('status', 'approved')
-              .eq('category_id', tutorialCategory.id)
-              .order('view_count', { ascending: false })
-              .limit(50)
-            const tutorialToolsData = (tutorialResult.data || []).map(tool => ({
-              ...tool,
-              category: categoryMap.get(tool.category_id) || null,
-            }))
-            tabTools = getRandomItems(tutorialToolsData, 8)
-          }
+          // 热门教程：获取分类为"教程指南"的AI资讯，按发布时间排序，随机选取8个
+          const tutorialNewsResult = await client
+            .from('ai_news')
+            .select('id, title, summary, cover_image, category, published_at, view_count')
+            .eq('status', 'approved')
+            .eq('category', '教程指南')
+            .order('published_at', { ascending: false })
+            .limit(30)
+          tabNews = getRandomItems(tutorialNewsResult.data || [], 8)
           break
           
         case 'category':
