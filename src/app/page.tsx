@@ -828,7 +828,7 @@ function HomePageContent() {
                   <div>
                     <div className="flex justify-end mb-4">
                       <Button variant="outline" size="sm" asChild className="gap-1">
-                        <Link href="/news?category=教程指南">
+                        <Link href="/news?category=tutorial">
                           更多教程
                           <ChevronRight className="h-4 w-4" />
                         </Link>

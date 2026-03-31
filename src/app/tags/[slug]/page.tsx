@@ -79,18 +79,18 @@ export default function TagPage({ params }: Props) {
   const tabParam = searchParams.get('tab')
   const pageParam = searchParams.get('page')
 
-  // 获取教程数据（"教程指南"分类的资讯）
+  // 获取教程数据（"tutorial"分类的资讯）
   const fetchTutorials = useCallback(async (name: string, page: number) => {
     const supabase = getSupabaseClient()
     const start = (page - 1) * PAGE_SIZE
     const end = start + PAGE_SIZE - 1
     
-    // 获取总数（教程指南分类）
+    // 获取总数（tutorial分类）
     const { count } = await supabase
       .from('ai_news')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'approved')
-      .eq('category', '教程指南')
+      .eq('category', 'tutorial')
       .filter('tags', 'cs', JSON.stringify([name]))
     
     setTutorialsTotal(count || 0)
@@ -100,7 +100,7 @@ export default function TagPage({ params }: Props) {
       .from('ai_news')
       .select('id, title, summary, cover_image, category, published_at, view_count, tags')
       .eq('status', 'approved')
-      .eq('category', '教程指南')
+      .eq('category', 'tutorial')
       .filter('tags', 'cs', JSON.stringify([name]))
       .order('published_at', { ascending: false })
       .range(start, end)
@@ -170,18 +170,18 @@ export default function TagPage({ params }: Props) {
     }
   }, [])
 
-  // 获取资讯数据（排除"教程指南"分类）
+  // 获取资讯数据（排除"tutorial"分类）
   const fetchNews = useCallback(async (name: string, page: number) => {
     const supabase = getSupabaseClient()
     const start = (page - 1) * PAGE_SIZE
     const end = start + PAGE_SIZE - 1
     
-    // 获取总数（排除教程指南分类）
+    // 获取总数（排除tutorial分类）
     const { count } = await supabase
       .from('ai_news')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'approved')
-      .neq('category', '教程指南')
+      .neq('category', 'tutorial')
       .filter('tags', 'cs', JSON.stringify([name]))
     
     setNewsTotal(count || 0)
@@ -191,7 +191,7 @@ export default function TagPage({ params }: Props) {
       .from('ai_news')
       .select('id, title, summary, cover_image, category, published_at, view_count, tags')
       .eq('status', 'approved')
-      .neq('category', '教程指南')
+      .neq('category', 'tutorial')
       .filter('tags', 'cs', JSON.stringify([name]))
       .order('published_at', { ascending: false })
       .range(start, end)
@@ -258,12 +258,12 @@ export default function TagPage({ params }: Props) {
           .eq('status', 'approved')
           .filter('tags', 'cs', JSON.stringify([name]))
         
-        // 检查是否有教程（教程指南分类的资讯）
+        // 检查是否有教程（tutorial分类的资讯）
         const { count: tutorialCount } = await supabase
           .from('ai_news')
           .select('id', { count: 'exact', head: true })
           .eq('status', 'approved')
-          .eq('category', '教程指南')
+          .eq('category', 'tutorial')
           .filter('tags', 'cs', JSON.stringify([name]))
         
         const hasTutorials = (tutorialCount || 0) > 0
