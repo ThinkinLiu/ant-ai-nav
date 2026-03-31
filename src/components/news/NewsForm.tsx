@@ -29,13 +29,16 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 
-const categoryOptions = [
-  { value: 'industry', label: '行业动态' },
-  { value: 'research', label: '学术研究' },
-  { value: 'product', label: '产品发布' },
-  { value: 'tutorial', label: '教程指南' },
-  { value: 'other', label: '其他' },
-]
+interface NewsCategory {
+  id: number
+  name: string
+  slug: string
+  description: string | null
+  icon: string | null
+  color: string | null
+  sort_order: number
+  is_active: boolean
+}
 
 interface NewsFormProps {
   mode: 'create' | 'edit'
@@ -48,6 +51,8 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [fetchingData, setFetchingData] = useState(false)
+  const [categories, setCategories] = useState<NewsCategory[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -62,12 +67,36 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
     isHot: false,
   })
 
+  // 加载分类列表
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
   // 编辑模式：加载现有数据
   useEffect(() => {
     if (mode === 'edit' && newsId) {
       fetchNews()
     }
   }, [mode, newsId])
+
+  const fetchCategories = async () => {
+    setLoadingCategories(true)
+    try {
+      const response = await fetch('/api/admin/news-categories')
+      const result = await response.json()
+
+      if (result.success) {
+        // 只显示启用的分类
+        const activeCategories = result.data.filter((cat: NewsCategory) => cat.is_active)
+        setCategories(activeCategories)
+      }
+    } catch (error) {
+      console.error('获取分类列表失败:', error)
+      toast.error('获取分类列表失败')
+    } finally {
+      setLoadingCategories(false)
+    }
+  }
 
   const fetchNews = async () => {
     setFetchingData(true)
@@ -290,21 +319,27 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                 {/* 分类 */}
                 <div className="space-y-2">
                   <Label htmlFor="category">分类</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData({ ...formData, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择分类" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {loadingCategories ? (
+                    <div className="flex items-center justify-center py-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    </div>
+                  ) : (
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择分类" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.slug}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 {/* 摘要 */}
@@ -469,7 +504,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                         {/* 元信息 */}
                         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-6">
                           {formData.category && (
-                            <span>分类: {categoryOptions.find(c => c.value === formData.category)?.label}</span>
+                            <span>分类: {categories.find(c => c.slug === formData.category)?.name}</span>
                           )}
                           {formData.source && (
                             <span>来源: {formData.source}</span>
