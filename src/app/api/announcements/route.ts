@@ -1,38 +1,54 @@
-import { NextResponse } from 'next/server'
-import { getSupabaseClient } from '@/storage/database/supabase-client'
+import { NextRequest, NextResponse } from 'next/server'
+import { getSupabaseClientAsync } from '@/storage/database/supabase-client'
 
 /**
- * 获取有效的公告列表（前端使用）
- * 只返回is_active=true且未过期的公告
+ * 获取公告列表
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabaseClient()
-    const now = new Date().toISOString()
+    const client = await getSupabaseClientAsync()
+    const { searchParams } = new URL(request.url)
+    const isActive = searchParams.get('isActive')
+    const limit = parseInt(searchParams.get('limit') || '10')
     
-    const { data: announcements, error } = await supabase
+    let query = client
       .from('announcements')
       .select('*')
-      .eq('is_active', true)
-      .or(`expire_at.is.null,expire_at.gt.${now}`)
-      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false })
+      .limit(limit)
+    
+    if (isActive === 'true') {
+      query = query.eq('is_active', true)
+    }
+    
+    const { data: announcements, error } = await query
     
     if (error) {
       return NextResponse.json(
         { success: false, error: error.message },
-        { status: 400 }
+        { status: 500 }
       )
     }
     
     return NextResponse.json({
       success: true,
-      data: announcements,
+      data: announcements || []
     })
-  } catch (error) {
-    console.error('获取公告失败:', error)
+    
+  } catch (error: any) {
+    console.error('获取公告错误:', error)
+    
+    // 如果是数据库未配置错误
+    if (error.message && error.message.includes('not configured')) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database not configured',
+        message: '请先配置数据库连接'
+      }, { status: 400 })
+    }
+
     return NextResponse.json(
-      { success: false, error: '服务器错误' },
+      { success: false, error: error.message || 'Internal server error' },
       { status: 500 }
     )
   }
