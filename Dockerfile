@@ -31,15 +31,15 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# 声明构建参数
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+# 声明构建参数（可选，支持运行时配置）
+ARG NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
 ARG COZE_WORKLOAD_IDENTITY_API_KEY
 ARG COZE_WORKLOAD_IDENTITY_CLIENT_ID
 ARG COZE_WORKLOAD_IDENTITY_CLIENT_SECRET
 ARG COZE_INTEGRATION_BASE_URL
 
-# 设置环境变量
+# 设置环境变量（占位符值，实际配置通过 /settings 页面设置）
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV COZE_WORKLOAD_IDENTITY_API_KEY=$COZE_WORKLOAD_IDENTITY_API_KEY
@@ -97,6 +97,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # 3. 复制 public 目录
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# 4. 创建配置目录并设置权限
+RUN mkdir -p /app/config && \
+    chown -R nextjs:nodejs /app/config && \
+    chmod -R 755 /app/config
 
 # 验证文件结构
 RUN echo "=== 验证文件结构 ===" && \
