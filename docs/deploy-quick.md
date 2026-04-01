@@ -37,7 +37,7 @@ mkdir -p /www/wwwroot/ant-ai-nav
 cd /www/wwwroot/ant-ai-nav
 
 # 2. 克隆代码
-git clone https://github.com/your-username/ant-ai-nav.git .
+git clone https://github.com/ThinkinLiu/ant-ai-nav.git .
 
 # 3. 配置环境变量（重要！构建时需要）
 cat > .env.local << 'EOF'
@@ -94,7 +94,7 @@ mkdir -p /www/wwwroot/ant-ai-nav
 cd /www/wwwroot/ant-ai-nav
 
 # 2. 克隆代码
-git clone https://github.com/your-username/ant-ai-nav.git .
+git clone https://github.com/ThinkinLiu/ant-ai-nav.git .
 
 # 3. 配置环境变量
 nano .env.local

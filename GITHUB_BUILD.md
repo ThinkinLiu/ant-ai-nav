@@ -92,4 +92,4 @@ pnpm run build
 
 ---
 
-**需要帮助？** 📧 提交 [Issue](https://github.com/your-username/ant-ai-nav/issues)
+**需要帮助？** 📧 提交 [Issue](https://github.com/ThinkinLiu/ant-ai-nav/issues)

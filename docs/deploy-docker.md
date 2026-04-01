@@ -108,7 +108,7 @@ mkdir -p /www/wwwroot/ant-ai-nav
 cd /www/wwwroot/ant-ai-nav
 
 # 方式A：Git 克隆（推荐）
-git clone https://github.com/your-username/ant-ai-nav.git .
+git clone https://github.com/ThinkinLiu/ant-ai-nav.git .
 
 # 方式B：上传压缩包
 # 将项目压缩包上传到服务器后解压

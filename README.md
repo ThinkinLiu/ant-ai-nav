@@ -148,7 +148,7 @@
 1. **克隆项目**
 
 ```bash
-git clone https://github.com/your-username/ant-ai-nav.git
+git clone https://github.com/ThinkinLiu/ant-ai-nav.git
 cd ant-ai-nav
 ```
 
@@ -404,8 +404,8 @@ DELETE /api/tools/[id]   # 删除
 
 如有问题或建议，请通过以下方式联系：
 
-- 提交 [Issue](https://github.com/your-username/ant-ai-nav/issues)
-- 发起 [Pull Request](https://github.com/your-username/ant-ai-nav/pulls)
+- 提交 [Issue](https://github.com/ThinkinLiu/ant-ai-nav/issues)
+- 发起 [Pull Request](https://github.com/ThinkinLiu/ant-ai-nav/pulls)
 
 ---
 

@@ -300,7 +300,7 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-username/ant-ai-nav.git
+git clone https://github.com/ThinkinLiu/ant-ai-nav.git
 
 # 安装依赖
 pnpm install
