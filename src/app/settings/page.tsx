@@ -65,8 +65,11 @@ export default function SettingsPage() {
       if (!value.startsWith('https://')) {
         return 'URL 必须以 https:// 开头';
       }
-      if (!value.includes('.supabase.co')) {
-        return '请输入正确的 Supabase URL';
+      // 放宽验证：只检查是否是有效的 URL 格式
+      try {
+        new URL(value);
+      } catch {
+        return '请输入有效的 URL';
       }
     }
 
