@@ -48,7 +48,10 @@ const nextConfig: NextConfig = {
       './public/**',
     ],
   },
-  
+
+  // 服务器端组件配置 - 确保服务器端模块不会被打包到客户端
+  serverExternalPackages: [],
+
   // 环境变量配置 - 在构建时注入
   env: {
     NEXT_PUBLIC_SUPABASE_URL: 

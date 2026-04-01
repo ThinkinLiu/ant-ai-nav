@@ -1,5 +1,4 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { getDatabaseConfig } from '@/lib/config/database-config';
 
 /**
  * Supabase 客户端配置
@@ -7,7 +6,7 @@ import { getDatabaseConfig } from '@/lib/config/database-config';
  * 支持多种配置方式：
  * 1. 环境变量（NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY）
  * 2. COZE 环境变量（COZE_SUPABASE_URL / COZE_SUPABASE_ANON_KEY）
- * 3. 运行时配置文件（/app/config/database.json）
+ * 3. 运行时配置文件（/app/config/database.json） - 仅服务器端
  */
 
 interface SupabaseCredentials {
@@ -38,6 +37,7 @@ function getSupabaseCredentialsFromEnv(): SupabaseCredentials | null {
 
 /**
  * 异步获取 Supabase 凭据（支持运行时配置）
+ * 仅在服务器端可用
  */
 async function getSupabaseCredentialsAsync(): Promise<SupabaseCredentials | null> {
   if (cachedCredentials) {
@@ -51,10 +51,12 @@ async function getSupabaseCredentialsAsync(): Promise<SupabaseCredentials | null
     return envCredentials;
   }
 
-  // 2. 如果环境变量不存在，尝试从运行时配置文件读取
+  // 2. 如果环境变量不存在，尝试从运行时配置文件读取（仅服务器端）
   if (!checkedRuntimeConfig) {
     checkedRuntimeConfig = true;
     try {
+      // 动态导入，避免客户端打包 fs 模块
+      const { getDatabaseConfig } = await import('@/lib/config/database-config');
       const config = await getDatabaseConfig();
       if (config && config.supabaseUrl && config.supabaseAnonKey) {
         cachedCredentials = {
