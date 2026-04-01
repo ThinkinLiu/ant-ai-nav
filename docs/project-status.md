@@ -262,6 +262,8 @@ docker-compose up -d --build
 - [README.md](../README.md) - 项目总览
 - [DEPLOYMENT.md](../DEPLOYMENT.md) - 部署总览
 - [deploy-docker.md](./deploy-docker.md) - Docker 部署
+- [docker-build-fix.md](./docker-build-fix.md) - Docker 构建问题解决方案 ⭐
+- [docker-build-fix-summary.md](./docker-build-fix-summary.md) - Docker 构建问题修复总结 ⭐
 - [github-actions-deploy.md](./github-actions-deploy.md) - GitHub Actions 部署
 - [github-actions-debug.md](./github-actions-debug.md) - GitHub Actions 调试
 - [github-actions-troubleshoot.md](./github-actions-troubleshoot.md) - GitHub Actions 问题排查
