@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Docker 部署静态资源诊断脚本
 
@@ -24,7 +24,7 @@ echo ""
 # 3. 检查静态资源目录
 echo "📁 检查静态资源目录:"
 
-echo -n "  .next/static: "
+printf "  .next/static: "
 if [ -d ".next/static" ]; then
   count=$(find .next/static -type f 2>/dev/null | wc -l)
   echo "✅ 存在（$count 个文件）"
@@ -32,7 +32,7 @@ else
   echo "❌ 不存在"
 fi
 
-echo -n "  public: "
+printf "  public: "
 if [ -d "public" ]; then
   count=$(find public -type f 2>/dev/null | wc -l)
   echo "✅ 存在（$count 个文件）"
@@ -40,7 +40,7 @@ else
   echo "❌ 不存在"
 fi
 
-echo -n "  node_modules: "
+printf "  node_modules: "
 if [ -d "node_modules" ]; then
   echo "✅ 存在"
 else
@@ -51,27 +51,29 @@ echo ""
 # 4. 检查关键静态文件
 echo "📄 检查关键静态文件:"
 
-files=(
-  ".next/static/chunks/_app.js"
-  ".next/static/chunks/_buildManifest.js"
-  ".next/static/chunks/_ssgManifest.js"
-)
-
-for file in "${files[@]}"; do
-  echo -n "  $file: "
-  if [ -f "$file" ]; then
-    size=$(du -h "$file" 2>/dev/null | cut -f1)
+check_file() {
+  echo -n "  $1: "
+  if [ -f "$1" ]; then
+    size=$(du -h "$1" 2>/dev/null | cut -f1)
     echo "✅ ($size)"
   else
     echo "❌"
   fi
-done
+}
+
+check_file ".next/static/chunks/_app.js"
+check_file ".next/static/chunks/_buildManifest.js"
+check_file ".next/static/chunks/_ssgManifest.js"
 echo ""
 
 # 5. 列出 .next/static 目录结构（如果存在）
 if [ -d ".next/static" ]; then
   echo "📊 .next/static 目录结构:"
-  tree -L 2 -h .next/static 2>/dev/null || find .next/static -maxdepth 2 -type d 2>/dev/null | head -20
+  if command -v tree > /dev/null 2>&1; then
+    tree -L 2 -h .next/static 2>/dev/null
+  else
+    find .next/static -maxdepth 2 -type d 2>/dev/null | head -20
+  fi
   echo ""
 fi
 
@@ -114,7 +116,7 @@ if [ ! -d "public" ]; then
   all_ok=false
 fi
 
-if [ "$all_ok" = true ]; then
+if [ "$all_ok" = "true" ]; then
   echo "✅ 所有检查通过，静态资源配置正确"
 fi
 
