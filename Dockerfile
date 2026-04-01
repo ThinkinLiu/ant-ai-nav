@@ -87,8 +87,9 @@ RUN adduser --system --uid 1001 nextjs
 # 关键：必须按此顺序复制，否则静态资源可能丢失
 
 # 1. 先复制 standalone 输出（包含 server.js 和最小化 node_modules）
-# 这会将 .next/standalone/* 复制到 /app/*
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+# 注意：Next.js standalone 输出在 .next/standalone/workspace/projects/
+# 需要复制 workspace/projects/* 到容器根目录
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/workspace/projects ./
 
 # 2. 复制静态文件（CSS、JS 等资源）到正确位置
 # standalone 输出中 .next 目录不完整，需要单独复制静态资源
