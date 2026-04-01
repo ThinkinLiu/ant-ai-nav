@@ -22,12 +22,18 @@
   - ✅ 静态资源正确打包
   - ✅ 脚本兼容性优化（bash → sh）
 
+- ✅ GitHub Actions 工作流
+  - ✅ Build Static Export - 打包静态文件
+  - ✅ Build Docker Image - 构建完整镜像
+  - ✅ 支持手动触发构建
+
 - ✅ 文档完善
   - ✅ 运行时配置指南
   - ✅ 管理后台使用指南
   - ✅ Docker 部署指南
   - ✅ GitHub Actions 部署指南
   - ✅ GitHub Actions 调试指南
+  - ✅ GitHub Actions 工作流对比
 
 ### 当前环境
 
@@ -42,128 +48,149 @@
 /workspace/projects/
 ├── src/
 │   ├── lib/config/
-│   │   └── database-config.ts          # 数据库配置模块
+│   │   └── database-config.ts              # 数据库配置模块
 │   ├── storage/database/
-│   │   ├── supabase-client.ts          # 服务端 Supabase 客户端
-│   │   └── supabase-client-client.ts   # 客户端 Supabase 客户端
+│   │   ├── supabase-client.ts              # 服务端 Supabase 客户端
+│   │   └── supabase-client-client.ts       # 客户端 Supabase 客户端
 │   ├── app/
 │   │   ├── api/config/
-│   │   │   ├── database/route.ts       # 获取配置 API
-│   │   │   ├── database/save/route.ts  # 保存配置 API
+│   │   │   ├── database/route.ts           # 获取配置 API
+│   │   │   ├── database/save/route.ts      # 保存配置 API
 │   │   │   └── database/validate/route.ts  # 验证配置 API
 │   │   ├── settings/
-│   │   │   └── page.tsx                # 配置页面
+│   │   │   └── page.tsx                    # 配置页面
 │   │   └── admin/settings/
-│   │       └── page.tsx                # 管理后台配置页面
+│   │       └── page.tsx                    # 管理后台配置页面
+├── .github/workflows/
+│   ├── build-static.yml                    # 静态文件导出工作流
+│   ├── build-docker-image.yml              # Docker 镜像构建工作流
+│   └── ci.yml                              # CI 持续集成
 ├── docs/
-│   ├── runtime-database-config.md      # 运行时配置指南
-│   ├── runtime-config-quickstart.md    # 快速配置指南
-│   ├── admin-settings-guide.md         # 管理后台指南
-│   ├── deploy-docker.md                # Docker 部署指南
-│   ├── github-actions-deploy.md        # GitHub Actions 部署指南
-│   ├── github-actions-debug.md         # GitHub Actions 调试指南
-│   └── github-actions-troubleshoot.md  # GitHub Actions 问题排查
+│   ├── runtime-database-config.md          # 运行时配置指南
+│   ├── runtime-config-quickstart.md        # 快速配置指南
+│   ├── admin-settings-guide.md             # 管理后台指南
+│   ├── deploy-docker.md                    # Docker 部署指南
+│   ├── github-actions-deploy.md            # GitHub Actions 部署指南
+│   ├── github-actions-debug.md             # GitHub Actions 调试指南
+│   ├── github-actions-troubleshoot.md      # GitHub Actions 问题排查
+│   ├── github-workflows-comparison.md      # 工作流对比
+│   └── project-status.md                   # 项目状态（本文件）
 ├── scripts/
-│   ├── check-github-config.sh          # Git 配置检查脚本
-│   └── quick-deploy.sh                 # 快速部署脚本
-├── Dockerfile                          # Docker 镜像构建文件
-├── docker-compose.yml                  # Docker Compose 配置
-└── .github/workflows/
-    └── build-static.yml                # GitHub Actions 构建工作流
+│   ├── check-github-config.sh              # Git 配置检查脚本
+│   ├── quick-deploy.sh                     # 快速部署脚本
+│   ├── update-docker.sh                    # Docker 更新脚本
+│   └── verify-docker-static.sh             # Docker 验证脚本
+├── Dockerfile                              # Docker 镜像构建文件
+├── docker-compose.yml                      # Docker Compose 配置
+└── README.md                               # 项目说明
 ```
 
-## GitHub Actions 问题
+## GitHub Actions 工作流
 
-### 问题描述
+### 1. Build Docker Image（推荐）
 
-GitHub Actions 无法从仓库拉取代码，错误信息：
-```
-Error: The process '/usr/bin/git' failed with exit code 1
-```
+**用途**：构建完整的 Docker 镜像
 
-### 问题原因
+**生成内容**：
+- `docker-image.tar.gz` - 完整的 Docker 镜像文件
 
-- GitHub Actions 配置期望从 `ThinkinLiu/ant-ai-nav` 仓库拉取 `main` 分支
-- 当前沙箱环境未配置 Git 远程仓库
-- 代码尚未推送到 GitHub
-
-### 解决方案
-
-我们已创建完整的解决方案：
-
-1. **GitHub Actions 完整部署指南**
-   - 文档: `docs/github-actions-deploy.md`
-   - 包含完整的部署步骤和示例
-
-2. **GitHub Actions 调试指南**
-   - 文档: `docs/github-actions-debug.md`
-   - 包含常见问题和解决方案
-
-3. **GitHub Actions 问题排查总结**
-   - 文档: `docs/github-actions-troubleshoot.md`
-   - 快速问题诊断和修复
-
-4. **辅助脚本**
-   - `scripts/check-github-config.sh` - 检查 Git 配置
-   - `scripts/quick-deploy.sh` - 快速部署
-
-### 快速修复步骤
+**使用方法**：
 
 ```bash
-# 1. 检查当前状态
-./scripts/check-github-config.sh
+# 下载 docker-image.tar.gz
+# 加载镜像
+docker load < docker-image.tar.gz
 
-# 2. 配置远程仓库（替换为你的用户名）
-git remote add origin https://github.com/YOUR_USERNAME/ant-ai-nav.git
-
-# 3. 配置认证（使用 Token 或 SSH）
-git remote set-url origin https://YOUR_TOKEN@github.com/YOUR_USERNAME/ant-ai-nav.git
-
-# 4. 或使用快速部署脚本
-./scripts/quick-deploy.sh
-
-# 5. 推送代码
-git push -u origin main
-
-# 6. 访问 GitHub Actions 运行构建
-# https://github.com/YOUR_USERNAME/ant-ai-nav/actions
+# 运行容器
+docker run -d -p 5000:5000 --name ant-ai-nav ant-ai-nav:latest
 ```
+
+**优点**：
+- ✅ 一步到位，直接加载运行
+- ✅ 无需在服务器上构建
+- ✅ 镜像已在云端构建完成
+
+**缺点**：
+- ❌ 构建时间较长（约 8-15 分钟）
+- ❌ 文件体积较大（约 200-400 MB）
+
+### 2. Build Static Export
+
+**用途**：打包 Next.js 静态文件
+
+**生成内容**：
+- `static-export.tar.gz` - Next.js 构建输出
+
+**使用方法**：
+
+```bash
+# 下载 static-export.tar.gz
+# 解压
+tar -xzf static-export.tar.gz
+
+# 构建镜像
+docker build -t ant-ai-nav:latest .
+
+# 运行容器
+docker run -d -p 5000:5000 --name ant-ai-nav ant-ai-nav:latest
+```
+
+**优点**：
+- ✅ 构建时间短（约 3-5 分钟）
+- ✅ 文件体积小（约 50-100 MB）
+- ✅ 灵活，可以在服务器上重新构建
+
+**缺点**：
+- ❌ 需要在服务器上构建镜像
+- ❌ 依赖 Dockerfile
+
+**详细对比**：[GitHub Actions 工作流对比](./github-workflows-comparison.md)
 
 ## 部署流程
 
-### 方法 1: GitHub Actions（推荐）
+### 方法 1: GitHub Actions + Docker Image（推荐）
 
 ```
 开发环境 (沙箱)
     ↓
 推送到 GitHub
     ↓
-GitHub Actions 构建
+GitHub Actions (Build Docker Image)
     ↓
-下载构建产物
+下载 docker-image.tar.gz
     ↓
-服务器部署 (Docker)
+docker load 加载镜像
+    ↓
+docker run 启动容器
     ↓
 访问 /settings 配置数据库
 ```
 
-### 方法 2: 本地构建
+### 方法 2: GitHub Actions + Static Export
+
+```
+开发环境 (沙箱)
+    ↓
+推送到 GitHub
+    ↓
+GitHub Actions (Build Static Export)
+    ↓
+下载 static-export.tar.gz
+    ↓
+解压 + docker build
+    ↓
+docker run 启动容器
+    ↓
+访问 /settings 配置数据库
+```
+
+### 方法 3: 本地构建
 
 ```bash
 # 在服务器上
 git clone https://github.com/YOUR_USERNAME/ant-ai-nav.git
 cd ant-ai-nav
 docker-compose up -d --build
-```
-
-### 方法 3: 开发模式
-
-```bash
-# 在沙箱环境
-cd /workspace/projects
-pnpm dev
-
-# 访问 http://localhost:5000
 ```
 
 ## 关键特性
@@ -187,6 +214,13 @@ pnpm dev
 - ✅ 实时验证连接
 - ✅ 友好的错误提示
 - ✅ 完善的文档
+
+### 4. 灵活部署
+
+- ✅ 两种 GitHub Actions 工作流
+- ✅ 支持本地构建
+- ✅ 支持多种部署环境
+- ✅ 自动化更新脚本
 
 ## 技术栈
 
@@ -231,6 +265,7 @@ pnpm dev
 - [github-actions-deploy.md](./github-actions-deploy.md) - GitHub Actions 部署
 - [github-actions-debug.md](./github-actions-debug.md) - GitHub Actions 调试
 - [github-actions-troubleshoot.md](./github-actions-troubleshoot.md) - GitHub Actions 问题排查
+- [github-workflows-comparison.md](./github-workflows-comparison.md) - 工作流对比
 
 ### 配置相关
 - [runtime-database-config.md](./runtime-database-config.md) - 运行时配置
@@ -251,3 +286,4 @@ pnpm dev
 
 **更新时间**: 2025-04-01
 **状态**: ✅ 开发完成，可部署
+**推荐**: 使用 Build Docker Image 工作流，最简单快捷

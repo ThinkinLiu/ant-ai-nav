@@ -6,81 +6,115 @@
 
 ### 方法 1：使用 GitHub Actions（推荐）
 
-最简单的方式是使用 GitHub Actions 在云端构建项目，无需本地构建环境。
+GitHub Actions 提供两种工作流，适用于不同的部署场景：
 
-#### 1. 在 GitHub 上创建仓库
+#### 方案 A：使用 Build Docker Image（推荐 - 最简单）
 
-访问 https://github.com/new 创建新仓库 `ant-ai-nav`（或者 fork 本项目）
+直接在云端构建完整的 Docker 镜像，下载后直接加载运行。
 
-#### 2. 配置 Secrets（可选）
+**优点**：一步到位，无需在服务器上构建
 
-在 GitHub 仓库中配置以下 Secrets（构建时可以使用占位符）：
+**步骤**：
 
-- 进入仓库 → **Settings** → **Secrets and variables** → **Actions**
-- 点击 **New repository secret**，添加以下配置：
+1. **在 GitHub 上创建仓库**
 
-| Secret 名称 | 说明 | 示例值 |
-|------------|------|--------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 项目 URL | `https://xxx.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 匿名密钥 | `eyJhbGciOiJ...` |
+   访问 https://github.com/new 创建新仓库 `ant-ai-nav`
 
-**注意**：这些配置是可选的。构建时可以使用占位符值（如 `demo-url`），部署后通过 `/settings` 页面配置真实的数据库连接。
+2. **配置 Secrets（可选）**
 
-#### 3. 推送代码到 GitHub
+   在 GitHub 仓库 Settings → Secrets and variables → Actions 中添加：
 
-在沙箱环境或本地：
+   | Secret 名称 | 说明 | 示例值 |
+   |------------|------|--------|
+   | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 项目 URL | `https://xxx.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 匿名密钥 | `eyJhbGciOiJ...` |
 
-```bash
-# 配置远程仓库（替换为你的 GitHub 用户名）
-git remote add origin https://github.com/YOUR_USERNAME/ant-ai-nav.git
+   **注意**：这些配置是可选的。构建时可以使用占位符值，部署后通过 `/settings` 页面配置真实的数据库连接。
 
-# 提交代码
-git add .
-git commit -m "Initial commit"
+3. **推送代码到 GitHub**
 
-# 推送到 GitHub（需要配置 Git 认证）
-git push -u origin main
-```
+   ```bash
+   # 配置远程仓库（替换为你的 GitHub 用户名）
+   git remote add origin https://github.com/YOUR_USERNAME/ant-ai-nav.git
 
-**Git 认证方法：**
+   # 提交代码
+   git add .
+   git commit -m "Initial commit"
 
-- **使用 Token**：在 GitHub Settings → Developer settings → Personal access tokens 生成 Token，然后：
-  ```bash
-  git remote set-url origin https://YOUR_TOKEN@github.com/YOUR_USERNAME/ant-ai-nav.git
-  ```
-- **使用 SSH**：配置 SSH 密钥并添加到 GitHub：
-  ```bash
-  git remote set-url origin git@github.com:YOUR_USERNAME/ant-ai-nav.git
-  ```
+   # 推送到 GitHub（需要配置 Git 认证）
+   git push -u origin main
+   ```
 
-#### 4. 触发构建
+4. **运行 Build Docker Image 工作流**
 
-1. 进入 GitHub 仓库 → **Actions** 标签页
-2. 选择 **Build Static Export** 工作流
-3. 点击 **Run workflow**，选择要构建的分支（默认 `main`）
-4. 点击绿色 **Run workflow** 按钮
-5. 等待构建完成（约 3-5 分钟）
+   1. 进入 GitHub 仓库 → **Actions** 标签页
+   2. 选择 **Build Docker Image** 工作流
+   3. 点击 **Run workflow**，选择分支（默认 `main`）
+   4. 点击绿色 **Run workflow** 按钮
+   5. 等待构建完成（约 8-15 分钟）
 
-#### 5. 下载并部署
+5. **下载并部署**
 
-构建完成后：
+   构建完成后：
 
-1. 在 Actions 页面点击进入该次运行记录
-2. 滚动到底部，在 **Artifacts** 部分下载 `static-export.tar.gz`
-3. 上传到目标服务器
-4. 解压并启动：
+   ```bash
+   # 1. 下载构建产物 docker-image.tar.gz
+   # 2. 上传到服务器
 
-```bash
-# 创建目录
-mkdir -p /opt/ant-ai-nav
-cd /opt/ant-ai-nav
+   # 3. 加载镜像
+   docker load < docker-image.tar.gz
 
-# 解压构建产物
-tar -xzf static-export.tar.gz
+   # 4. 运行容器
+   docker run -d -p 5000:5000 --name ant-ai-nav ant-ai-nav:latest
 
-# 启动服务（需要 docker-compose.yml）
-docker-compose up -d
-```
+   # 5. 访问配置页面
+   # http://your-server-ip:5000/settings
+   ```
+
+#### 方案 B：使用 Build Static Export（灵活）
+
+在云端构建 Next.js 静态文件，下载后在服务器上使用 Docker 构建。
+
+**优点**：文件体积小，构建时间短
+
+**步骤**：
+
+1-3 步同上（创建仓库、配置 Secrets、推送代码）
+
+4. **运行 Build Static Export 工作流**
+
+   1. 进入 GitHub 仓库 → **Actions** 标签页
+   2. 选择 **Build Static Export** 工作流
+   3. 点击 **Run workflow**，选择分支（默认 `main`）
+   4. 点击绿色 **Run workflow** 按钮
+   5. 等待构建完成（约 3-5 分钟）
+
+5. **下载并部署**
+
+   构建完成后：
+
+   ```bash
+   # 1. 下载构建产物 static-export.tar.gz
+   # 2. 上传到服务器
+
+   # 3. 创建目录
+   mkdir -p /opt/ant-ai-nav
+   cd /opt/ant-ai-nav
+
+   # 4. 解压构建产物
+   tar -xzf static-export.tar.gz
+
+   # 5. 构建镜像
+   docker build -t ant-ai-nav:latest .
+
+   # 6. 运行容器
+   docker run -d -p 5000:5000 --name ant-ai-nav ant-ai-nav:latest
+
+   # 7. 访问配置页面
+   # http://your-server-ip:5000/settings
+   ```
+
+**工作流对比**：详见 [GitHub Actions 工作流对比](./docs/github-workflows-comparison.md)
 
 #### 6. 配置数据库
 
@@ -235,6 +269,10 @@ docker-compose up -d --build
 
 ## 📚 文档
 
+### 快速参考
+- [部署快速参考](./docs/deployment-quick-reference.md) - 一分钟快速开始指南 ⭐
+- [GitHub Actions 工作流对比](./docs/github-workflows-comparison.md) - 两种工作流对比 ⭐
+
 ### 部署相关
 - [Docker 部署指南](./docs/deploy-docker.md) - 使用 Docker 部署
 - [宝塔部署指南](./docs/deploy-baota.md) - 使用宝塔面板部署
@@ -252,6 +290,7 @@ docker-compose up -d --build
 
 ### 其他
 - [DEPLOYMENT.md](./DEPLOYMENT.md) - 部署总览
+- [project-status.md](./docs/project-status.md) - 项目当前状态
 - [AGENTS.md](./AGENTS.md) - 项目开发规范
 
 ## 🤝 贡献
