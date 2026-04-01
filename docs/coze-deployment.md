@@ -229,15 +229,15 @@ https://your-app.coze.cn
 # ============================================
 # Supabase 数据库配置（必需）
 # ============================================
-COZE_SUPABASE_URL=https://br-giddy-crow-97a8b86c.supabase.co
+COZE_SUPABASE_URL=https://your-project.supabase.co
 COZE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # ============================================
 # Coze API 配置（可选 - AI 功能）
 # ============================================
-COZE_WORKLOAD_IDENTITY_API_KEY=UFpMZ3VGRGdYYnU3M2RWR3pQajNzdE9yek1iaTJFaXM...
-COZE_WORKLOAD_IDENTITY_CLIENT_ID=PZLguFDgXbu73dVGzPj3stOrzMbi2Eis
-COZE_WORKLOAD_IDENTITY_CLIENT_SECRET=ppbUXEU6Mhn77dZruiKqQ9Yzc6tdFfulSXEtuGvloxzD...
+COZE_WORKLOAD_IDENTITY_API_KEY=your-api-key-here
+COZE_WORKLOAD_IDENTITY_CLIENT_ID=your-client-id-here
+COZE_WORKLOAD_IDENTITY_CLIENT_SECRET=your-client-secret-here
 COZE_INTEGRATION_BASE_URL=https://integration.coze.cn
 
 # ============================================

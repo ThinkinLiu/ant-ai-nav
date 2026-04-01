@@ -1,8 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://br-giddy-crow-97a8b86c.supabase2.aidap-global.cn-beijing.volces.com';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjMzNTM3MTM5NDMsInJvbGUiOiJhbm9uIn0.n0YDj3Gjz3xKmcrcc8j_IxnO2VgSkkI4_6tU5q52sO0';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.COZE_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.COZE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error("❌ 错误: 缺少 Supabase 环境变量");
+  console.error("请设置以下环境变量之一:");
+  console.error("  - NEXT_PUBLIC_SUPABASE_URL 和 NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  console.error("  - COZE_SUPABASE_URL 和 COZE_SUPABASE_ANON_KEY");
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
