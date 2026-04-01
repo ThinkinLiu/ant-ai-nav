@@ -11,7 +11,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green?style=flat-square&logo=supabase)](https://supabase.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
-**[在线演示](#-快速开始)** · **[功能特性](#-功能特性)** · **[部署指南](#-部署指南)** · **[贡献指南](#-贡献指南)**
+**[在线演示](#-快速开始)** · **[功能特性](#-功能特性)** · **[部署指南](#-部署指南)** · **[GitHub构建](./GITHUB_BUILD.md)** · **[贡献指南](#-贡献指南)**
 
 </div>
 
@@ -261,6 +261,23 @@ pnpm dev
 ## 🚢 部署指南
 
 本项目支持多种部署方式：
+
+### 🤖 GitHub Actions 构建（推荐）
+
+使用 GitHub Actions 在云端构建项目，无需本地环境：
+
+**三种构建模式**：
+- 🐳 **Docker 镜像构建** - 构建并导出 Docker 镜像，适合服务器部署
+- 📄 **静态导出构建** - 构建静态文件，适合 CDN/Nginx 部署
+- ✅ **CI 自动构建** - 每次推送自动运行，用于代码检查
+
+**快速开始**：
+1. 配置 GitHub Secrets（Supabase URL 和 Key）
+2. 进入 Actions 标签，选择构建模式
+3. 点击运行，等待构建完成
+4. 下载构建产物并部署
+
+详细指南：📘 [GitHub 构建快速开始](./GITHUB_BUILD.md) | 📗 [完整文档](./docs/github-actions-guide.md)
 
 ### Coze 环境部署
 
