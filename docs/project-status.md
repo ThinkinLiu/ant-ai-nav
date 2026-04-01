@@ -264,6 +264,7 @@ docker-compose up -d --build
 - [deploy-docker.md](./deploy-docker.md) - Docker 部署
 - [docker-build-fix.md](./docker-build-fix.md) - Docker 构建问题解决方案 ⭐
 - [docker-build-fix-summary.md](./docker-build-fix-summary.md) - Docker 构建问题修复总结 ⭐
+- [docker-static-404-fix.md](./docker-static-404-fix.md) - 静态资源 404 修复指南 ⭐⭐⭐
 - [github-actions-deploy.md](./github-actions-deploy.md) - GitHub Actions 部署
 - [github-actions-debug.md](./github-actions-debug.md) - GitHub Actions 调试
 - [github-actions-troubleshoot.md](./github-actions-troubleshoot.md) - GitHub Actions 问题排查

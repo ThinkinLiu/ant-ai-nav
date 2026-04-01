@@ -52,7 +52,7 @@ async function getSupabaseCredentialsAsync(): Promise<SupabaseCredentials | null
   }
 
   // 2. 如果环境变量不存在，尝试从运行时配置文件读取（仅服务器端）
-  if (!checkedRuntimeConfig) {
+  if (!checkedRuntimeConfig && typeof window === 'undefined') {
     checkedRuntimeConfig = true;
     try {
       // 动态导入，避免客户端打包 fs 模块
@@ -111,6 +111,7 @@ export async function isSupabaseConfiguredAsync(): Promise<boolean> {
  * @param token - 可选的用户认证 token，用于需要用户权限的操作
  * @returns Supabase 客户端实例
  * @throws 如果环境变量未配置则抛出错误（运行时）
+ * @deprecated 建议使用 getSupabaseClientAsync 以支持运行时配置
  */
 function getSupabaseClient(token?: string): SupabaseClient {
   const credentials = getSupabaseCredentials();
@@ -150,17 +151,17 @@ function getSupabaseClient(token?: string): SupabaseClient {
 }
 
 /**
- * 异步获取 Supabase 客户端（支持运行时配置）
+ * 获取 Supabase 客户端（异步，支持运行时配置）
  * @param token - 可选的用户认证 token，用于需要用户权限的操作
  * @returns Supabase 客户端实例
- * @throws 如果配置未找到则抛出错误
+ * @throws 如果 Supabase 未配置则抛出错误
  */
 export async function getSupabaseClientAsync(token?: string): Promise<SupabaseClient> {
   const credentials = await getSupabaseCredentialsAsync();
 
   if (!credentials) {
     throw new Error(
-      'Supabase is not configured. Please configure it via /settings or set environment variables.'
+      'Supabase is not configured. Please configure the database connection by visiting /settings'
     );
   }
 
@@ -193,27 +194,16 @@ export async function getSupabaseClientAsync(token?: string): Promise<SupabaseCl
 }
 
 /**
- * 尝试获取 Supabase 客户端，不抛出错误
- * 用于构建时的静态生成
- */
-function tryGetSupabaseClient(): SupabaseClient | null {
-  try {
-    return getSupabaseClient();
-  } catch {
-    return null;
-  }
-}
-
-/**
- * 异步尝试获取 Supabase 客户端，不抛出错误
- * 用于运行时动态获取配置
+ * 尝试获取 Supabase 客户端（异步，支持运行时配置）
+ * 如果未配置则返回 null，不抛出错误
  */
 export async function tryGetSupabaseClientAsync(): Promise<SupabaseClient | null> {
   try {
     return await getSupabaseClientAsync();
-  } catch {
+  } catch (error) {
     return null;
   }
 }
 
-export { getSupabaseCredentials, getSupabaseClient, tryGetSupabaseClient };
+// 导出主函数（为了向后兼容，但建议使用异步版本）
+export { getSupabaseClient };
