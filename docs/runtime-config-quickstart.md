@@ -1,8 +1,8 @@
-# 运行时数据库配置 - 快速开始
+# 运行时配置快速开始
 
 ## 新功能 🎉
 
-现在支持在首次部署后通过网页界面配置数据库，无需在构建时预配置！
+现在支持在首次部署后通过网页界面配置数据库，无需在构建时预配置环境变量！
 
 ## 快速开始
 
@@ -14,9 +14,9 @@
 docker-compose up -d --build
 ```
 
-### 2. 访问网站
+### 2. 访问配置页面
 
-首次访问会自动跳转到配置页面：
+首次访问网站会自动跳转到 `/settings` 页面：
 
 ```
 http://your-domain.com
@@ -32,14 +32,18 @@ http://your-domain.com/settings
 
 填写 Supabase 信息：
 
-- **Supabase URL**: `https://your-project.supabase.co`
+- **Supabase URL**: 例如 `https://your-project.supabase.co`
 - **Supabase Anonymous Key**: 在 Supabase 控制台获取
 
 点击"验证连接" → 点击"保存配置" → 完成！
 
-## 详细文档
+## 管理后台
 
-查看完整文档：[运行时数据库配置指南](./runtime-database-config.md)
+配置完成后，可以在管理后台修改配置：
+
+```
+http://your-domain.com/admin/settings
+```
 
 ## 主要特性
 
@@ -53,3 +57,11 @@ http://your-domain.com/settings
 
 1. 环境变量（如果有设置）
 2. 运行时配置文件（`/app/config/database.json`）
+
+## 详细文档
+
+查看完整文档：[运行时数据库配置指南](./runtime-database-config.md)
+
+---
+
+**最后更新**: 2025-04-01

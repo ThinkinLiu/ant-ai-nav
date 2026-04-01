@@ -72,6 +72,13 @@ export function validateConfig(config: DatabaseConfig): { valid: boolean; errors
     errors.push('Supabase URL 不能为空');
   } else if (!config.supabaseUrl.startsWith('https://')) {
     errors.push('Supabase URL 必须以 https:// 开头');
+  } else {
+    // 验证 URL 格式
+    try {
+      new URL(config.supabaseUrl);
+    } catch {
+      errors.push('Supabase URL 格式无效');
+    }
   }
 
   if (!config.supabaseAnonKey) {
