@@ -11,7 +11,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green?style=flat-square&logo=supabase)](https://supabase.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
-**[在线演示](#-快速开始)** · **[功能特性](#-功能特性)** · **[部署指南](#-部署指南)** · **[贡献指南](#-贡献指南)**
+**[在线演示](#-快速开始)** · **[功能特性](#-功能特性)** · **[部署指南](#-部署指南)** · **[GitHub构建](./GITHUB_BUILD.md)** · **[贡献指南](#-贡献指南)**
 
 </div>
 
@@ -148,7 +148,7 @@
 1. **克隆项目**
 
 ```bash
-git clone https://github.com/your-username/ant-ai-nav.git
+git clone https://github.com/ThinkinLiu/ant-ai-nav.git
 cd ant-ai-nav
 ```
 
@@ -262,6 +262,23 @@ pnpm dev
 
 本项目支持多种部署方式：
 
+### 🤖 GitHub Actions 构建（推荐）
+
+使用 GitHub Actions 在云端构建项目，无需本地环境：
+
+**三种构建模式**：
+- 🐳 **Docker 镜像构建** - 构建并导出 Docker 镜像，适合服务器部署
+- 📄 **静态导出构建** - 构建静态文件，适合 CDN/Nginx 部署
+- ✅ **CI 自动构建** - 每次推送自动运行，用于代码检查
+
+**快速开始**：
+1. 配置 GitHub Secrets（Supabase URL 和 Key）
+2. 进入 Actions 标签，选择构建模式
+3. 点击运行，等待构建完成
+4. 下载构建产物并部署
+
+详细指南：📘 [GitHub 构建快速开始](./GITHUB_BUILD.md) | 📗 [完整文档](./docs/github-actions-guide.md)
+
 ### Coze 环境部署
 
 在 Coze 平台设置环境变量后直接部署。
@@ -277,17 +294,221 @@ pnpm dev
 
 ### Docker 部署
 
-**推荐方式：使用 GitHub Actions 构建**
+#### 方式一：使用 GitHub Actions 构建（推荐）
+
+适用于低内存服务器，在云端构建后下载到本地部署。
+
+**首次部署**：
+
+1. **配置 GitHub Secrets**
+   - 进入仓库 Settings → Secrets and variables → Actions
+   - 添加 Secrets：
+     - `NEXT_PUBLIC_SUPABASE_URL`
+     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+2. **触发构建**
+   - 进入 Actions 标签
+   - 点击 **Build and Export Docker Image**
+   - 选择分支（如 main）
+   - 点击 **Run workflow**
+
+3. **下载构建产物**
+   - 等待构建完成（约 5-10 分钟）
+   - 在运行记录底部下载 `docker-image` 文件
+
+4. **上传到服务器**
+   ```bash
+   scp ant-ai-nav.tar.gz user@your-server:/tmp/
+   ```
+
+5. **在服务器上加载镜像**
+   ```bash
+   docker load < /tmp/ant-ai-nav.tar.gz
+   ```
+
+6. **配置环境变量**
+   ```bash
+   cp .env.example .env
+   # 编辑 .env 文件，填写 Supabase 配置
+   ```
+
+7. **启动服务**
+   ```bash
+   docker-compose up -d
+   ```
+
+8. **验证部署**
+   ```bash
+   curl http://localhost:5000
+   ```
+
+**更新步骤**：
 
 ```bash
-# 下载构建产物
-docker load < ant-ai-nav.tar.gz
+# 方法 1: 使用更新脚本（推荐）
 
-# 启动服务
+# 1. 重新触发 GitHub Actions 构建
+# 2. 下载新的构建产物
+
+# 3. 将文件上传到服务器
+scp ant-ai-nav.tar.gz user@your-server:/path/to/ant-ai-nav/
+
+# 4. 运行更新脚本
+cd /path/to/ant-ai-nav
+./scripts/update-docker.sh
+
+# 方法 2: 手动更新
+
+# 1. 停止并删除旧容器
+docker-compose down
+
+# 2. 删除旧镜像
+docker rmi ant-ai-nav:latest
+
+# 3. 加载新镜像
+docker load < ant-ai-nav-new.tar.gz
+
+# 4. 启动新容器
+docker-compose up -d
+
+# 5. 查看日志确认启动成功
+docker-compose logs -f
+```
+
+#### 验证更新
+
+更新完成后，执行以下命令验证：
+
+```bash
+# 1. 检查容器状态
+docker-compose ps
+# 应该显示 "Up" 状态
+
+# 2. 检查服务响应
+curl http://localhost:5000
+# 应该返回 HTML 内容
+
+# 3. 查看日志确认无错误
+docker-compose logs --tail=50
+
+# 4. 检查镜像版本
+docker images ant-ai-nav
+# 确认是最新版本
+
+# 5. 访问浏览器
+# 打开 http://your-domain.com 确认页面正常
+```
+
+---
+
+#### 方式二：本地构建
+
+适用于服务器资源充足的情况。
+
+**首次部署**：
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/ThinkinLiu/ant-ai-nav.git
+cd ant-ai-nav
+
+# 2. 配置环境变量
+cp .env.docker .env
+# 编辑 .env 文件
+
+# 3. 构建镜像
+docker build -t ant-ai-nav:latest .
+
+# 4. 启动服务
 docker-compose up -d
 ```
 
-详细指南：
+**更新步骤**：
+
+```bash
+# 1. 拉取最新代码
+git pull origin main
+
+# 2. 停止旧容器
+docker-compose down
+
+# 3. 重新构建镜像
+docker build -t ant-ai-nav:latest .
+
+# 4. 启动新容器
+docker-compose up -d
+```
+
+---
+
+#### 常用 Docker 命令
+
+```bash
+# 查看运行状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose stop
+
+# 重启服务
+docker-compose restart
+
+# 删除容器和卷（⚠️ 会删除数据）
+docker-compose down -v
+
+# 进入容器
+docker-compose exec app sh
+
+# 查看资源使用
+docker stats ant-ai-nav
+
+# 查看容器详情
+docker inspect ant-ai-nav
+
+# 备份数据
+docker exec ant-ai-nav sh -c "cd /app && tar -czf /tmp/backup.tar.gz ."
+docker cp ant-ai-nav:/tmp/backup.tar.gz ./backup.tar.gz
+```
+
+#### 故障排查
+
+```bash
+# 查看详细日志
+docker-compose logs --tail=100
+
+# 检查容器健康状态
+docker inspect ant-ai-nav | grep -A 10 Health
+
+# 查看端口占用
+docker-compose ps
+netstat -tulpn | grep 5000
+
+# 重启容器（如果卡死）
+docker-compose restart
+
+# 完全清理并重新部署
+docker-compose down -v
+docker rmi ant-ai-nav:latest
+docker-compose up -d
+```
+
+#### 环境变量配置
+
+在 `.env` 文件中配置（必需）：
+
+```env
+# Supabase 配置
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# 端口配置
+PORT=5000
+```
+
+**详细指南**：
 - 📘 [1GB 服务器部署](./docs/deploy-1gb-server.md)（推荐）
 - 📗 [Docker 部署](./docs/deploy-docker.md)
 - 📙 [完整部署指南](./docs/deployment-guide.md)
@@ -387,8 +608,8 @@ DELETE /api/tools/[id]   # 删除
 
 如有问题或建议，请通过以下方式联系：
 
-- 提交 [Issue](https://github.com/your-username/ant-ai-nav/issues)
-- 发起 [Pull Request](https://github.com/your-username/ant-ai-nav/pulls)
+- 提交 [Issue](https://github.com/ThinkinLiu/ant-ai-nav/issues)
+- 发起 [Pull Request](https://github.com/ThinkinLiu/ant-ai-nav/pulls)
 
 ---
 

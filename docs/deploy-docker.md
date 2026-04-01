@@ -108,7 +108,7 @@ mkdir -p /www/wwwroot/ant-ai-nav
 cd /www/wwwroot/ant-ai-nav
 
 # 方式A：Git 克隆（推荐）
-git clone https://github.com/your-username/ant-ai-nav.git .
+git clone https://github.com/ThinkinLiu/ant-ai-nav.git .
 
 # 方式B：上传压缩包
 # 将项目压缩包上传到服务器后解压
@@ -334,6 +334,79 @@ docker stats ant-ai-nav
 # 增加内存限制或清理资源
 docker system prune -a
 ```
+
+### 镜像构建失败
+
+```bash
+# 清理构建缓存重新构建
+docker-compose build --no-cache
+
+# 查看构建日志
+docker-compose build --progress=plain
+```
+
+### 静态资源 404
+
+如果页面能访问但样式和脚本全部 404，说明静态资源没有正确复制到容器中。
+
+#### 诊断步骤
+
+```bash
+# 1. 进入容器
+docker exec -it ant-ai-nav sh
+
+# 2. 检查文件结构
+ls -la /app
+ls -la /app/.next
+ls -la /app/.next/static
+
+# 3. 运行验证脚本
+sh /app/scripts/verify-docker-static.sh
+```
+
+#### 预期结构
+
+容器内应该有以下目录：
+
+```
+/app
+├── .next/
+│   ├── static/          # 静态资源（CSS、JS等）
+│   │   ├── chunks/
+│   │   ├── media/
+│   │   └── 7cDB8QgaZ1FCFqYndeaOk/
+│   ├── server/          # 服务器代码
+│   └── BUILD_ID
+├── public/              # 公共静态文件
+├── node_modules/        # 最小化依赖
+├── server.js            # 应用入口
+└── package.json
+```
+
+#### 解决方案
+
+如果 `.next/static` 不存在，说明 Dockerfile 的复制路径有问题。
+
+**检查 Dockerfile 中的复制路径：**
+
+```dockerfile
+# 应该是这样的路径（注意 workspace/projects 层级）
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/workspace/projects ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+```
+
+**重新构建镜像：**
+
+```bash
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+**原因说明：**
+
+Next.js standalone 模式会将构建产物放在 `.next/standalone/workspace/projects/` 目录（取决于构建时的工作目录），而不是直接放在 `.next/standalone/` 目录。因此 Dockerfile 中需要正确指定源路径。
 
 ### 镜像构建失败
 

@@ -54,7 +54,7 @@
 
 ```bash
 # 克隆你的 fork
-git clone https://github.com/your-username/ant-ai-nav.git
+git clone https://github.com/ThinkinLiu/ant-ai-nav.git
 cd ant-ai-nav
 
 # 安装依赖

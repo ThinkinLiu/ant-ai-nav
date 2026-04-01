@@ -87,7 +87,7 @@ cd /www/wwwroot/ant-ai-nav
 **方式A：从Git拉取（推荐）**
 ```bash
 cd /www/wwwroot/ant-ai-nav
-git clone https://github.com/your-username/ant-ai-nav.git .
+git clone https://github.com/ThinkinLiu/ant-ai-nav.git .
 ```
 
 **方式B：上传压缩包**
