@@ -14,7 +14,7 @@
 # 添加：NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 # 2. 触发构建
-# Actions → Build and Export Docker Image → Run workflow
+# Actions → Build Static Export → Run workflow
 
 # 3. 下载构建产物
 

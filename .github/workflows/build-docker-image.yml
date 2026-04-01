@@ -1,4 +1,4 @@
-name: Build Static Export
+name: Build Docker Image
 
 on:
   workflow_dispatch:
@@ -7,6 +7,10 @@ on:
         description: 'Branch to build'
         required: false
         default: 'main'
+      image_tag:
+        description: 'Image tag (e.g. latest, v1.0.0)'
+        required: false
+        default: 'latest'
 
 jobs:
   build:
@@ -21,8 +25,7 @@ jobs:
       - name: Display Git info
         run: |
           echo "Current branch: $(git branch --show-current)"
-          echo "All branches:"
-          git branch -a || echo "No branches found"
+          echo "Image tag: ${{ github.event.inputs.image_tag || 'latest' }}"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -38,26 +41,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build static export
+      - name: Build Next.js application
         run: pnpm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://demo.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'demo-key' }}
 
-      - name: Export static files
+      - name: Build Docker image
         run: |
-          set -e
-          pnpm run export || echo "Export skipped, using build output"
-          # 打包构建产物
-          if [ -d ".next/standalone" ]; then
-            tar -czf static-export.tar.gz .next/standalone/ .next/static/ public/
-          else
-            tar -czf static-export.tar.gz .next/ public/
-          fi
+          docker build -t ant-ai-nav:${{ github.event.inputs.image_tag || 'latest' }} .
+          docker tag ant-ai-nav:${{ github.event.inputs.image_tag || 'latest' }} ant-ai-nav:latest
+
+      - name: Save Docker image
+        run: |
+          docker save ant-ai-nav:latest | gzip > docker-image.tar.gz
+
+      - name: Display image info
+        run: |
+          echo "Image size:"
+          ls -lh docker-image.tar.gz
+          echo ""
+          echo "Image info:"
+          docker images ant-ai-nav
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: static-export
-          path: static-export.tar.gz
+          name: docker-image
+          path: docker-image.tar.gz
           retention-days: 7

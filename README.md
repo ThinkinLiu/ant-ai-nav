@@ -6,52 +6,123 @@
 
 ### 方法 1：使用 GitHub Actions（推荐）
 
-最简单的方式是使用 GitHub Actions 在云端构建镜像。
+GitHub Actions 提供两种工作流，适用于不同的部署场景：
 
-#### 1. Fork 项目
+#### 方案 A：使用 Build Docker Image（推荐 - 最简单）
 
-Fork 本项目到你的 GitHub 账号。
+直接在云端构建完整的 Docker 镜像，下载后直接加载运行。
 
-#### 2. 配置 Secrets
+**优点**：一步到位，无需在服务器上构建
 
-在 GitHub 仓库中配置以下 Secrets：
+**步骤**：
 
-- 进入仓库 → **Settings** → **Secrets and variables** → **Actions**
-- 点击 **New repository secret**，添加以下配置：
+1. **在 GitHub 上创建仓库**
 
-| Secret 名称 | 说明 | 示例值 |
-|------------|------|--------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 项目 URL | `https://xxx.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 匿名密钥 | `eyJhbGciOiJ...` |
+   访问 https://github.com/new 创建新仓库 `ant-ai-nav`
 
-**注意**：构建时可以使用占位符值，部署后通过 `/settings` 页面配置真实的数据库连接。
+2. **配置 Secrets（可选）**
 
-#### 3. 触发构建
+   在 GitHub 仓库 Settings → Secrets and variables → Actions 中添加：
 
-1. 进入 GitHub 仓库 → **Actions** 标签页
-2. 选择 **Build and Export Docker Image** 工作流
-3. 点击 **Run workflow**，选择要构建的分支（默认 `main`）
-4. 等待构建完成（约 5-10 分钟）
+   | Secret 名称 | 说明 | 示例值 |
+   |------------|------|--------|
+   | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 项目 URL | `https://xxx.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 匿名密钥 | `eyJhbGciOiJ...` |
 
-#### 4. 下载并部署镜像
+   **注意**：这些配置是可选的。构建时可以使用占位符值，部署后通过 `/settings` 页面配置真实的数据库连接。
 
-构建完成后：
+3. **推送代码到 GitHub**
 
-1. 在 Actions 页面下载构建产物（docker-image artifact）
-2. 解压得到 `ant-ai-nav.tar.gz`
-3. 上传到服务器
-4. 加载镜像：
    ```bash
-   docker load < ant-ai-nav.tar.gz
+   # 配置远程仓库（替换为你的 GitHub 用户名）
+   git remote add origin https://github.com/YOUR_USERNAME/ant-ai-nav.git
+
+   # 提交代码
+   git add .
+   git commit -m "Initial commit"
+
+   # 推送到 GitHub（需要配置 Git 认证）
+   git push -u origin main
    ```
-5. 启动服务：
+
+4. **运行 Build Docker Image 工作流**
+
+   1. 进入 GitHub 仓库 → **Actions** 标签页
+   2. 选择 **Build Docker Image** 工作流
+   3. 点击 **Run workflow**，选择分支（默认 `main`）
+   4. 点击绿色 **Run workflow** 按钮
+   5. 等待构建完成（约 8-15 分钟）
+
+5. **下载并部署**
+
+   构建完成后：
+
    ```bash
+   # 1. 下载构建产物 docker-image.tar.gz
+   # 2. 上传到服务器
+
+   # 3. 加载镜像
+   docker load < docker-image.tar.gz
+
+   # 4. 运行容器
    docker run -d -p 5000:5000 --name ant-ai-nav ant-ai-nav:latest
+
+   # 5. 访问配置页面
+   # http://your-server-ip:5000/settings
    ```
 
-#### 5. 配置数据库
+#### 方案 B：使用 Build Static Export（灵活）
+
+在云端构建 Next.js 静态文件，下载后在服务器上使用 Docker 构建。
+
+**优点**：文件体积小，构建时间短
+
+**步骤**：
+
+1-3 步同上（创建仓库、配置 Secrets、推送代码）
+
+4. **运行 Build Static Export 工作流**
+
+   1. 进入 GitHub 仓库 → **Actions** 标签页
+   2. 选择 **Build Static Export** 工作流
+   3. 点击 **Run workflow**，选择分支（默认 `main`）
+   4. 点击绿色 **Run workflow** 按钮
+   5. 等待构建完成（约 3-5 分钟）
+
+5. **下载并部署**
+
+   构建完成后：
+
+   ```bash
+   # 1. 下载构建产物 static-export.tar.gz
+   # 2. 上传到服务器
+
+   # 3. 创建目录
+   mkdir -p /opt/ant-ai-nav
+   cd /opt/ant-ai-nav
+
+   # 4. 解压构建产物
+   tar -xzf static-export.tar.gz
+
+   # 5. 构建镜像
+   docker build -t ant-ai-nav:latest .
+
+   # 6. 运行容器
+   docker run -d -p 5000:5000 --name ant-ai-nav ant-ai-nav:latest
+
+   # 7. 访问配置页面
+   # http://your-server-ip:5000/settings
+   ```
+
+**工作流对比**：详见 [GitHub Actions 工作流对比](./docs/github-workflows-comparison.md)
+
+#### 6. 配置数据库
 
 首次访问网站会自动跳转到 `/settings` 页面，填写 Supabase 连接信息即可。
+
+**完整部署指南**：[GitHub Actions 完整部署指南](./docs/github-actions-deploy.md)
+
+**调试问题**：[GitHub Actions 调试指南](./docs/github-actions-debug.md)
 
 ### 方法 2：本地构建 Docker 镜像
 
@@ -198,12 +269,29 @@ docker-compose up -d --build
 
 ## 📚 文档
 
-- [Docker 部署指南](./docs/deploy-docker.md)
-- [宝塔部署指南](./docs/deploy-baota.md)
-- [数据库部署指南](./docs/database-deployment.md)
-- [运行时配置指南](./docs/runtime-database-config.md)
-- [管理后台配置指南](./docs/admin-settings-guide.md)
-- [GitHub Actions 构建指南](./docs/github-actions-guide.md)
+### 快速参考
+- [部署快速参考](./docs/deployment-quick-reference.md) - 一分钟快速开始指南 ⭐
+- [GitHub Actions 工作流对比](./docs/github-workflows-comparison.md) - 两种工作流对比 ⭐
+
+### 部署相关
+- [Docker 部署指南](./docs/deploy-docker.md) - 使用 Docker 部署
+- [宝塔部署指南](./docs/deploy-baota.md) - 使用宝塔面板部署
+- [GitHub Actions 部署指南](./docs/github-actions-deploy.md) - 使用 GitHub Actions 云端构建并部署
+- [GitHub Actions 调试指南](./docs/github-actions-debug.md) - GitHub Actions 问题排查
+
+### 数据库相关
+- [数据库部署指南](./docs/database-deployment.md) - Supabase 数据库初始化
+- [运行时配置指南](./docs/runtime-database-config.md) - 运行时数据库配置
+- [运行时配置快速开始](./docs/runtime-config-quickstart.md) - 快速配置指南
+
+### 管理相关
+- [管理后台配置指南](./docs/admin-settings-guide.md) - 管理后台使用说明
+- [环境变量指南](./docs/environment-variables.md) - 环境变量说明
+
+### 其他
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - 部署总览
+- [project-status.md](./docs/project-status.md) - 项目当前状态
+- [AGENTS.md](./AGENTS.md) - 项目开发规范
 
 ## 🤝 贡献
 
