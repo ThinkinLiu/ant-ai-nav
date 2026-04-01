@@ -6,15 +6,15 @@
 
 ### 方法 1：使用 GitHub Actions（推荐）
 
-最简单的方式是使用 GitHub Actions 在云端构建镜像。
+最简单的方式是使用 GitHub Actions 在云端构建项目，无需本地构建环境。
 
-#### 1. Fork 项目
+#### 1. 在 GitHub 上创建仓库
 
-Fork 本项目到你的 GitHub 账号。
+访问 https://github.com/new 创建新仓库 `ant-ai-nav`（或者 fork 本项目）
 
-#### 2. 配置 Secrets
+#### 2. 配置 Secrets（可选）
 
-在 GitHub 仓库中配置以下 Secrets：
+在 GitHub 仓库中配置以下 Secrets（构建时可以使用占位符）：
 
 - 进入仓库 → **Settings** → **Secrets and variables** → **Actions**
 - 点击 **New repository secret**，添加以下配置：
@@ -24,34 +24,71 @@ Fork 本项目到你的 GitHub 账号。
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 项目 URL | `https://xxx.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 匿名密钥 | `eyJhbGciOiJ...` |
 
-**注意**：构建时可以使用占位符值，部署后通过 `/settings` 页面配置真实的数据库连接。
+**注意**：这些配置是可选的。构建时可以使用占位符值（如 `demo-url`），部署后通过 `/settings` 页面配置真实的数据库连接。
 
-#### 3. 触发构建
+#### 3. 推送代码到 GitHub
+
+在沙箱环境或本地：
+
+```bash
+# 配置远程仓库（替换为你的 GitHub 用户名）
+git remote add origin https://github.com/YOUR_USERNAME/ant-ai-nav.git
+
+# 提交代码
+git add .
+git commit -m "Initial commit"
+
+# 推送到 GitHub（需要配置 Git 认证）
+git push -u origin main
+```
+
+**Git 认证方法：**
+
+- **使用 Token**：在 GitHub Settings → Developer settings → Personal access tokens 生成 Token，然后：
+  ```bash
+  git remote set-url origin https://YOUR_TOKEN@github.com/YOUR_USERNAME/ant-ai-nav.git
+  ```
+- **使用 SSH**：配置 SSH 密钥并添加到 GitHub：
+  ```bash
+  git remote set-url origin git@github.com:YOUR_USERNAME/ant-ai-nav.git
+  ```
+
+#### 4. 触发构建
 
 1. 进入 GitHub 仓库 → **Actions** 标签页
-2. 选择 **Build and Export Docker Image** 工作流
+2. 选择 **Build Static Export** 工作流
 3. 点击 **Run workflow**，选择要构建的分支（默认 `main`）
-4. 等待构建完成（约 5-10 分钟）
+4. 点击绿色 **Run workflow** 按钮
+5. 等待构建完成（约 3-5 分钟）
 
-#### 4. 下载并部署镜像
+#### 5. 下载并部署
 
 构建完成后：
 
-1. 在 Actions 页面下载构建产物（docker-image artifact）
-2. 解压得到 `ant-ai-nav.tar.gz`
-3. 上传到服务器
-4. 加载镜像：
-   ```bash
-   docker load < ant-ai-nav.tar.gz
-   ```
-5. 启动服务：
-   ```bash
-   docker run -d -p 5000:5000 --name ant-ai-nav ant-ai-nav:latest
-   ```
+1. 在 Actions 页面点击进入该次运行记录
+2. 滚动到底部，在 **Artifacts** 部分下载 `static-export.tar.gz`
+3. 上传到目标服务器
+4. 解压并启动：
 
-#### 5. 配置数据库
+```bash
+# 创建目录
+mkdir -p /opt/ant-ai-nav
+cd /opt/ant-ai-nav
+
+# 解压构建产物
+tar -xzf static-export.tar.gz
+
+# 启动服务（需要 docker-compose.yml）
+docker-compose up -d
+```
+
+#### 6. 配置数据库
 
 首次访问网站会自动跳转到 `/settings` 页面，填写 Supabase 连接信息即可。
+
+**完整部署指南**：[GitHub Actions 完整部署指南](./docs/github-actions-deploy.md)
+
+**调试问题**：[GitHub Actions 调试指南](./docs/github-actions-debug.md)
 
 ### 方法 2：本地构建 Docker 镜像
 
@@ -198,12 +235,24 @@ docker-compose up -d --build
 
 ## 📚 文档
 
-- [Docker 部署指南](./docs/deploy-docker.md)
-- [宝塔部署指南](./docs/deploy-baota.md)
-- [数据库部署指南](./docs/database-deployment.md)
-- [运行时配置指南](./docs/runtime-database-config.md)
-- [管理后台配置指南](./docs/admin-settings-guide.md)
-- [GitHub Actions 构建指南](./docs/github-actions-guide.md)
+### 部署相关
+- [Docker 部署指南](./docs/deploy-docker.md) - 使用 Docker 部署
+- [宝塔部署指南](./docs/deploy-baota.md) - 使用宝塔面板部署
+- [GitHub Actions 部署指南](./docs/github-actions-deploy.md) - 使用 GitHub Actions 云端构建并部署
+- [GitHub Actions 调试指南](./docs/github-actions-debug.md) - GitHub Actions 问题排查
+
+### 数据库相关
+- [数据库部署指南](./docs/database-deployment.md) - Supabase 数据库初始化
+- [运行时配置指南](./docs/runtime-database-config.md) - 运行时数据库配置
+- [运行时配置快速开始](./docs/runtime-config-quickstart.md) - 快速配置指南
+
+### 管理相关
+- [管理后台配置指南](./docs/admin-settings-guide.md) - 管理后台使用说明
+- [环境变量指南](./docs/environment-variables.md) - 环境变量说明
+
+### 其他
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - 部署总览
+- [AGENTS.md](./AGENTS.md) - 项目开发规范
 
 ## 🤝 贡献
 

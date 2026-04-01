@@ -5,7 +5,7 @@ on:
     inputs:
       branch:
         description: 'Branch to build'
-        required: true
+        required: false
         default: 'main'
 
 jobs:
@@ -15,7 +15,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch }}
+          ref: ${{ github.event.inputs.branch || 'main' }}
+          fetch-depth: 1
+
+      - name: Display Git info
+        run: |
+          echo "Current branch: $(git branch --show-current)"
+          echo "All branches:"
+          git branch -a || echo "No branches found"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -34,13 +41,14 @@ jobs:
       - name: Build static export
         run: pnpm run build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://demo.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'demo-key' }}
 
       - name: Export static files
         run: |
-          pnpm run export || true
-          # 如果 export 失败，直接打包 .next/out 目录
+          set -e
+          pnpm run export || echo "Export skipped, using build output"
+          # 打包构建产物
           if [ -d ".next/standalone" ]; then
             tar -czf static-export.tar.gz .next/standalone/ .next/static/ public/
           else
