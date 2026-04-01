@@ -59,7 +59,7 @@ if [ ! -f "ant-ai-nav.tar.gz" ]; then
     echo ""
     echo "请先从 GitHub Actions 下载构建产物："
     echo "1. 访问 https://github.com/ThinkinLiu/ant-ai-nav/actions"
-    echo "2. 点击 'Build and Export Docker Image' 工作流"
+    echo "2. 点击 'Build Static Export' 工作流"
     echo "3. 点击 'Run workflow' 触发构建"
     echo "4. 等待构建完成后下载 'docker-image' 产物"
     echo "5. 将下载的文件重命名为 ant-ai-nav.tar.gz"

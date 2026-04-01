@@ -32,7 +32,7 @@
 #### 步骤 2：触发构建
 
 1. 进入 GitHub 仓库 → **Actions** 标签页
-2. 选择 **Build and Export Docker Image** 工作流
+2. 选择 **Build Static Export** 工作流
 3. 点击 **Run workflow**
 4. 等待构建完成
 

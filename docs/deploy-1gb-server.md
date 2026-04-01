@@ -45,7 +45,7 @@
 #### 步骤 2：触发构建
 
 1. 进入仓库 → **Actions** 标签页
-2. 选择 **Build and Export Docker Image** 工作流
+2. 选择 **Build Static Export** 工作流
 3. 点击 **Run workflow**
 4. 选择分支（默认 `main`）
 5. 点击绿色 **Run workflow** 按钮
