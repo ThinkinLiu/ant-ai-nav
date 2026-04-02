@@ -22,7 +22,16 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build --no-cache -t ant-ai-nav:latest .
+          docker build \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL}" \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
+            --build-arg COZE_WORKLOAD_IDENTITY_API_KEY="${COZE_WORKLOAD_IDENTITY_API_KEY}" \
+            --build-arg COZE_WORKLOAD_IDENTITY_CLIENT_ID="${COZE_WORKLOAD_IDENTITY_CLIENT_ID}" \
+            --build-arg COZE_WORKLOAD_IDENTITY_CLIENT_SECRET="${COZE_WORKLOAD_IDENTITY_CLIENT_SECRET}" \
+            --build-arg COZE_INTEGRATION_BASE_URL="${COZE_INTEGRATION_BASE_URL}" \
+            --no-cache \
+            -t ant-ai-nav:latest \
+            .
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}

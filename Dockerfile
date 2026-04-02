@@ -61,6 +61,20 @@ ENV NODE_OPTIONS="--max-old-space-size=768 --max-semi-space-size=96"
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# 强制标准化构建环境（确保文件名一致性）
+RUN echo "=== 标准化构建环境 ===" && \
+    echo "当前工作目录: $(pwd)" && \
+    echo "当前目录内容:" && \
+    ls -la && \
+    echo "" && \
+    echo "检查是否在 /app 目录..." && \
+    if [ "$(pwd)" != "/app" ]; then \
+      echo "❌ 警告：当前工作目录不是 /app，可能导致文件名不一致"; \
+      echo "当前工作目录: $(pwd)"; \
+    else \
+      echo "✅ 工作目录正确: /app"; \
+    fi
+
 # 使用单线程构建，减少内存峰值
 RUN pnpm build
 
@@ -121,8 +135,14 @@ RUN echo "=== 验证文件结构 ===" && \
     echo "=== .next 目录 ===" && \
     ls -la /app/.next && \
     echo "" && \
+    echo "=== BUILD_ID ===" && \
+    cat /app/.next/BUILD_ID && \
+    echo "" && \
     echo "=== .next/static 目录（检查前10个） ===" && \
     ls -la /app/.next/static | head -15 && \
+    echo "" && \
+    echo "=== .next/static/chunks 目录（检查文件名） ===" && \
+    ls /app/.next/static/chunks/ | head -10 && \
     echo "" && \
     echo "=== public 目录（检查前10个） ===" && \
     ls -la /app/public | head -15 && \
@@ -132,7 +152,19 @@ RUN echo "=== 验证文件结构 ===" && \
     echo "" && \
     echo "=== 检查静态资源是否存在 ===" && \
     [ -d "/app/.next/static" ] && echo "✅ .next/static 存在" || echo "❌ .next/static 不存在" && \
-    [ -d "/app/public" ] && echo "✅ public 存在" || echo "❌ public 不存在"
+    [ -d "/app/public" ] && echo "✅ public 存在" || echo "❌ public 不存在" && \
+    echo "" && \
+    echo "=== 静态资源统计 ===" && \
+    css_count=$(find /app/.next/static -name "*.css" 2>/dev/null | wc -l) && \
+    js_count=$(find /app/.next/static -name "*.js" 2>/dev/null | wc -l) && \
+    echo "CSS 文件数: $css_count" && \
+    echo "JS 文件数: $js_count" && \
+    echo "" && \
+    echo "=== 列出 5 个 CSS 文件示例 ===" && \
+    find /app/.next/static -name "*.css" 2>/dev/null | xargs basename 2>/dev/null | head -5
+
+# 修复所有文件的所有者（确保 nextjs 用户可以读写）
+RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 
