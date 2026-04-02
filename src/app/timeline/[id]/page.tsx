@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getSupabaseClient, tryGetSupabaseClient } from '@/storage/database/supabase-client'
+import { tryGetSupabaseClientAsync } from '@/storage/database/supabase-client'
 import { categoryConfig, importanceConfig } from '../config'
 import { EventDetail } from './EventDetail'
 
@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
 
 // 生成静态参数 - 在构建时如果环境变量不存在则返回空数组
 export async function generateStaticParams() {
-  const supabase = tryGetSupabaseClient()
+  const supabase = await tryGetSupabaseClientAsync()
   if (!supabase) {
     return []
   }
