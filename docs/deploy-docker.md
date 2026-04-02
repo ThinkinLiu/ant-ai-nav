@@ -385,15 +385,26 @@ sh /app/scripts/verify-docker-static.sh
 
 #### 解决方案
 
-如果 `.next/static` 不存在，说明 Dockerfile 的复制路径有问题。
+**最新版本的 Dockerfile 已修复此问题**，会自动检测并适配不同的构建环境。
 
-**检查 Dockerfile 中的复制路径：**
+**检查 Dockerfile 版本：**
 
 ```dockerfile
-# 应该是这样的路径（注意 workspace/projects 层级）
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/workspace/projects ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# 应该包含智能路径检测逻辑
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+RUN if [ -d "workspace/projects" ]; then \
+      echo "检测到嵌套路径，调整目录结构..." && \
+      mv workspace/projects/* . 2>/dev/null || true; \
+      mv workspace/projects/.next . 2>/dev/null || true; \
+      rm -rf workspace; \
+    elif [ -d "workspace" ]; then \
+      echo "检测到 workspace 目录，调整目录结构..." && \
+      mv workspace/* . 2>/dev/null || true; \
+      rm -rf workspace; \
+    else \
+      echo "使用标准路径，无需调整"; \
+    fi
 ```
 
 **重新构建镜像：**
@@ -406,7 +417,32 @@ docker-compose up -d
 
 **原因说明：**
 
-Next.js standalone 模式会将构建产物放在 `.next/standalone/workspace/projects/` 目录（取决于构建时的工作目录），而不是直接放在 `.next/standalone/` 目录。因此 Dockerfile 中需要正确指定源路径。
+Next.js standalone 模式会记住构建时的工作目录：
+- 如果构建时工作目录是 `/app`，输出路径是 `.next/standalone/`
+- 如果构建时工作目录是 `/workspace/projects`，输出路径是 `.next/standalone/workspace/projects/`
+
+新版 Dockerfile 会自动检测这两种情况，并相应调整目录结构。
+
+### 构建失败 - 路径不存在
+
+**错误信息：**
+
+```
+ERROR: failed to build: failed to solve: failed to compute cache key:
+"/app/.next/standalone/workspace/projects": not found
+```
+
+**原因：**
+
+这是旧版 Dockerfile 的问题，使用了硬编码的路径。
+
+**解决方案：**
+
+使用最新的 Dockerfile，已添加智能路径检测。如果仍然遇到此问题，请确认：
+
+1. Dockerfile 是否更新到最新版本
+2. 代码是否成功拉取：`git pull`
+3. 构建缓存已清理：`docker-compose build --no-cache`
 
 ### 镜像构建失败
 
