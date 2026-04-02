@@ -69,9 +69,9 @@ export async function GET(request: NextRequest) {
 
     // 3. 获取热门工具（按浏览量排序）
     const { data: hotTools, error: hotToolsError } = await client
-      .from('tools')
-      .select('id, name, slug, description, logo_url, category_id, tags, view_count, created_at, is_approved')
-      .eq('is_approved', true)
+      .from('ai_tools')
+      .select('id, name, slug, description, logo, category_id, view_count, created_at')
+      .eq('status', 'approved')
       .order('view_count', { ascending: false })
       .limit(8)
 
@@ -84,9 +84,9 @@ export async function GET(request: NextRequest) {
 
     // 4. 获取最新工具
     const { data: latestTools, error: latestToolsError } = await client
-      .from('tools')
-      .select('id, name, slug, description, logo_url, category_id, tags, view_count, created_at, is_approved')
-      .eq('is_approved', true)
+      .from('ai_tools')
+      .select('id, name, slug, description, logo, category_id, view_count, created_at')
+      .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .limit(12)
 
@@ -99,10 +99,10 @@ export async function GET(request: NextRequest) {
 
     // 5. 获取推荐工具（精选）
     const { data: featuredTools, error: featuredToolsError } = await client
-      .from('tools')
-      .select('id, name, slug, description, logo_url, category_id, tags, view_count, created_at, is_featured, is_approved')
-      .eq('is_approved', true)
-      .eq('is_featured', true)
+      .from('ai_tools')
+      .select('id, name, slug, description, logo, category_id, view_count, created_at, is_pinned')
+      .eq('status', 'approved')
+      .eq('is_pinned', true)
       .order('created_at', { ascending: false })
       .limit(6)
 
@@ -115,9 +115,9 @@ export async function GET(request: NextRequest) {
 
     // 6. 获取国内热门工具（按名称匹配）
     const { data: domesticTools, error: domesticToolsError } = await client
-      .from('tools')
-      .select('id, name, slug, description, logo_url, category_id, tags, view_count, is_approved')
-      .eq('is_approved', true)
+      .from('ai_tools')
+      .select('id, name, slug, description, logo, category_id, view_count')
+      .eq('status', 'approved')
       .in('name', domesticHotTools.slice(0, 20))
       .limit(10)
 
@@ -127,9 +127,9 @@ export async function GET(request: NextRequest) {
 
     // 7. 获取国外热门工具（按名称匹配）
     const { data: foreignTools, error: foreignToolsError } = await client
-      .from('tools')
-      .select('id, name, slug, description, logo_url, category_id, tags, view_count, is_approved')
-      .eq('is_approved', true)
+      .from('ai_tools')
+      .select('id, name, slug, description, logo, category_id, view_count')
+      .eq('status', 'approved')
       .in('name', foreignHotTools.slice(0, 20))
       .limit(10)
 

@@ -4,6 +4,15 @@ const nextConfig: NextConfig = {
   // 启用 standalone 输出模式，用于 Docker 部署
   output: 'standalone',
 
+  // 配置允许的开发源（解决 Coze 测试环境跨域问题）
+  allowedDevOrigins: [
+    // 允许所有 Coze 开发环境域名
+    '*.dev.coze.site',
+    // 允许本地开发
+    'localhost:*',
+    '127.0.0.1:*',
+  ],
+
   // 注意：不要设置 basePath，否则会导致静态资源路径问题
   // 如果发现静态资源需要 /app 前缀，可能需要检查容器配置
 

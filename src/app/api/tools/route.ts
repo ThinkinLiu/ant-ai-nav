@@ -28,25 +28,45 @@ export async function GET(request: NextRequest) {
 
     // 构建查询
     let query = client
-      .from('tools')
-      .select('id, name, slug, description, logo_url, category_id, tags, view_count, created_at, is_featured, is_approved', { count: 'exact' })
-      .eq('is_approved', true)
-    
+      .from('ai_tools')
+      .select('id, name, slug, description, logo, category_id, view_count, created_at, is_pinned', { count: 'exact' })
+      .eq('status', 'approved')
+
     // 应用筛选
     if (categoryId) {
       query = query.eq('category_id', categoryId)
     }
-    
+
     if (tagId) {
-      query = query.contains('tags', [tagId])
+      // 通过关联表查询工具标签
+      const { data: toolIds } = await client
+        .from('tool_tags')
+        .select('tool_id')
+        .eq('tag_id', tagId)
+
+      if (toolIds && toolIds.length > 0) {
+        query = query.in('id', toolIds.map(t => t.tool_id))
+      } else {
+        // 没有匹配的工具标签
+        return NextResponse.json({
+          success: true,
+          data: [],
+          pagination: {
+            page,
+            pageSize: limit,
+            total: 0,
+            totalPages: 0,
+          },
+        })
+      }
     }
-    
+
     if (search) {
       query = query.ilike('name', `%${search}%`)
     }
-    
+
     if (isFeatured) {
-      query = query.eq('is_featured', true)
+      query = query.eq('is_pinned', true)
     }
     
     // 应用排序
