@@ -3,7 +3,10 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // 启用 standalone 输出模式，用于 Docker 部署
   output: 'standalone',
-  
+
+  // 注意：不要设置 basePath，否则会导致静态资源路径问题
+  // 如果发现静态资源需要 /app 前缀，可能需要检查容器配置
+
   // 图片配置
   images: {
     remotePatterns: [
