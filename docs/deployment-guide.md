@@ -1,458 +1,375 @@
-# 部署指南
+# 蚂蚁AI导航 - 完整部署和配置指南
 
-本文档详细介绍如何在 **Coze 环境** 和 **独立服务器环境** 部署蚂蚁AI导航项目。
+## 🚀 快速开始
 
-## 📋 目录
+### 前提条件
 
-- [环境要求](#环境要求)
-- [快速开始](#快速开始)
-- [Coze 环境部署](#coze-环境部署)
-- [独立服务器部署](#独立服务器部署)
-- [环境变量配置](#环境变量配置)
-- [常见问题](#常见问题)
+- Docker 已安装
+- docker-image.tar.gz 镜像文件
+- Supabase 项目（数据库）
 
----
+### 部署步骤
 
-## 环境要求
-
-### 必需环境
-- **Node.js**: 18.x 或更高版本
-- **pnpm**: 8.x 或更高版本
-- **Git**: 用于克隆代码库
-
-### 必需账号
-- **Supabase 账号**: 用于数据库服务
-  - 注册地址: https://supabase.com
-  - 免费额度: 500MB 数据库，1GB 文件存储
-
-### 可选服务
-- **Coze 平台账号**: 用于 AI 生成功能
-  - 注册地址: https://www.coze.cn
-- **S3 兼容存储**: 用于文件上传功能
-  - 推荐服务: Cloudflare R2, AWS S3, 阿里云 OSS
-
----
-
-## 快速开始
-
-### 1. 克隆项目
+#### 1️⃣ 加载 Docker 镜像
 
 ```bash
-git clone <your-repo-url>
-cd ant-ai-navigation
+# 加载镜像
+docker load < docker-image.tar.gz
+
+# 验证镜像
+docker images | grep ant-ai-nav
 ```
 
-### 2. 安装依赖
+#### 2️⃣ 启动容器
 
 ```bash
-pnpm install
-```
+# 停止并删除旧容器（如果存在）
+docker stop ant-ai-nav 2>/dev/null
+docker rm ant-ai-nav 2>/dev/null
 
-### 3. 配置环境变量
+# 创建配置目录
+mkdir -p ./config
+chmod 777 ./config
 
-根据你的部署环境，选择对应的配置模板：
-
-#### Coze 环境
-```bash
-# 参考 .env.example.coze 配置 Coze 平台环境变量
-cat .env.example.coze
-```
-
-#### 独立服务器
-```bash
-# 复制模板并编辑
-cp .env.example.standalone .env.local
-# 编辑 .env.local 填写实际配置
-```
-
-### 4. 检查环境配置
-
-```bash
-# 运行环境检查脚本
-pnpm tsx scripts/check-env.ts
-
-# 显示详细配置
-pnpm tsx scripts/check-env.ts --config
-
-# JSON 格式输出（适合 CI/CD）
-pnpm tsx scripts/check-env.ts --json
-```
-
-### 5. 启动开发服务器
-
-```bash
-pnpm dev
-```
-
-访问 http://localhost:5000 查看效果。
-
----
-
-## Coze 环境部署
-
-### 第一步：准备 Supabase 数据库
-
-1. 登录 [Supabase 控制台](https://supabase.com/dashboard)
-2. 创建新项目或使用现有项目
-3. 获取项目配置信息：
-   - **Project URL**: Settings → API → Project URL
-   - **Anon Key**: Settings → API → Project API keys → anon public
-
-### 第二步：配置 Coze 环境变量
-
-在 Coze 平台设置以下环境变量：
-
-#### 必需变量
-
-| 变量名 | 说明 | 示例 |
-|--------|------|------|
-| `COZE_SUPABASE_URL` | Supabase 项目 URL | `https://xxx.supabase.co` |
-| `COZE_SUPABASE_ANON_KEY` | Supabase 匿名密钥 | `eyJhbGc...` |
-
-#### 可选变量（AI 功能）
-
-| 变量名 | 说明 | 示例 |
-|--------|------|------|
-| `COZE_WORKLOAD_IDENTITY_API_KEY` | Coze API 密钥 | 从 Coze 平台获取 |
-| `COZE_WORKLOAD_IDENTITY_CLIENT_ID` | Coze 客户端 ID | 从 Coze 平台获取 |
-| `COZE_WORKLOAD_IDENTITY_CLIENT_SECRET` | Coze 客户端密钥 | 从 Coze 平台获取 |
-
-### 第三步：部署到 Coze
-
-1. 在 Coze 平台创建新的应用
-2. 连接你的代码仓库
-3. 配置构建命令（已内置）：
-   ```bash
-   bash ./scripts/build.sh
-   ```
-4. 配置启动命令（已内置）：
-   ```bash
-   bash ./scripts/start.sh
-   ```
-5. 部署应用
-
-### 第四步：验证部署
-
-部署完成后，访问应用 URL，检查：
-- ✅ 页面正常加载
-- ✅ 数据库连接正常
-- ✅ AI 功能可用（如已配置）
-
----
-
-## 独立服务器部署
-
-### 方案一：使用 Docker（推荐）
-
-#### 1. 构建镜像
-
-```bash
-# 构建生产镜像
-docker build -t ant-ai-navigation:latest .
-```
-
-#### 2. 运行容器
-
-```bash
+# 启动容器
 docker run -d \
-  --name ant-ai-nav \
-  -p 3000:3000 \
-  -e NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co \
-  -e NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc... \
-  -e COZE_WORKLOAD_IDENTITY_API_KEY=your-key \
-  ant-ai-navigation:latest
+    -p 5000:5000 \
+    --name ant-ai-nav \
+    -v $(pwd)/config:/app/config \
+    --restart unless-stopped \
+    ant-ai-nav:latest
+
+# 查看启动日志
+docker logs --tail 30 ant-ai-nav
 ```
 
-#### 3. 使用 Docker Compose（推荐）
-
-创建 `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-
-services:
-  web:
-    image: ant-ai-navigation:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
-      - COZE_WORKLOAD_IDENTITY_API_KEY=your-key
-      - NODE_ENV=production
-    restart: unless-stopped
-```
-
-运行：
-```bash
-docker-compose up -d
-```
-
-### 方案二：使用 PM2
-
-#### 1. 安装 PM2
+#### 3️⃣ 验证服务
 
 ```bash
-npm install -g pm2
-```
+# 检查容器状态
+docker ps | grep ant-ai-nav
 
-#### 2. 构建项目
-
-```bash
-# 配置环境变量
-cp .env.example.standalone .env.local
-# 编辑 .env.local
-
-# 安装依赖
-pnpm install --frozen-lockfile
-
-# 构建
-pnpm run build
-```
-
-#### 3. 启动服务
-
-```bash
-pm2 start pnpm --name "ant-ai-nav" -- start
-```
-
-#### 4. 设置开机自启
-
-```bash
-pm2 startup
-pm2 save
-```
-
-### 方案三：使用 Vercel / Netlify
-
-#### Vercel 部署
-
-1. 连接 GitHub 仓库
-2. 自动检测 Next.js 框架
-3. 配置环境变量：
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-4. 部署
-
-#### Netlify 部署
-
-1. 连接 GitHub 仓库
-2. 构建命令: `pnpm run build`
-3. 发布目录: `.next`
-4. 配置环境变量
-5. 部署
-
----
-
-## 环境变量配置
-
-### 环境变量命名支持
-
-项目支持多种环境变量命名方式，优先级从高到低：
-
-#### Supabase URL
-
-1. `NEXT_PUBLIC_SUPABASE_URL` （标准 Next.js 命名）
-2. `COZE_SUPABASE_URL` （Coze 环境命名）
-3. `SUPABASE_URL` （通用命名）
-
-#### Supabase Anon Key
-
-1. `NEXT_PUBLIC_SUPABASE_ANON_KEY` （标准命名）
-2. `COZE_SUPABASE_ANON_KEY` （Coze 环境命名）
-3. `SUPABASE_ANON_KEY` （通用命名）
-4. `SUPABASE_SERVICE_ROLE_KEY` （服务端命名）
-
-### 环境检测
-
-项目会自动检测运行环境：
-
-- **Coze 环境**: 检测到 `COZE_WORKSPACE_PATH` 或 `COZE_INTEGRATION_BASE_URL`
-- **独立服务器**: 生产环境且非 Coze 环境
-- **开发环境**: 本地开发（`NODE_ENV=development`）
-
-### 配置验证
-
-#### 命令行验证
-
-```bash
-# 检查环境配置
-pnpm tsx scripts/check-env.ts
-
-# 显示详细配置（隐藏敏感信息）
-pnpm tsx scripts/check-env.ts --config
-
-# JSON 格式输出（适合 CI/CD）
-pnpm tsx scripts/check-env.ts --json
-
-# 显示帮助信息
-pnpm tsx scripts/check-env.ts --help
-```
-
-#### 代码中验证
-
-```typescript
-import { validateEnv, detectEnvironment } from '@/lib/env-config';
-
-// 验证环境变量
-const result = validateEnv();
-if (!result.isValid) {
-  console.error('缺少环境变量:', result.missing);
-}
-
-// 检测当前环境
-const env = detectEnvironment();
-console.log('当前环境:', env); // 'coze' | 'standalone' | 'development'
+# 测试服务
+curl -I http://localhost:5000
 ```
 
 ---
 
-## 常见问题
+## ⚙️ 数据库配置
 
-### Q1: 部署时提示"缺少数据库配置"
+### 方式 1: 通过 Web 界面配置（推荐）
 
-**原因**: 环境变量未正确设置
+1. 访问配置页面：`http://mayiai.itlao5.com/settings`
+2. 填写以下信息：
+   - **Supabase URL**: 你的 Supabase 项目 URL
+   - **Supabase Anon Key**: 匿名访问密钥
+   - **Supabase Service Role Key**: 服务端密钥（管理员权限）
 
-**解决方案**:
+### 方式 2: 通过 API 配置
 
-1. 检查环境变量是否设置：
-   ```bash
-   pnpm tsx scripts/check-env.ts
-   ```
-
-2. **Coze 环境**: 在 Coze 平台设置环境变量
-   - `COZE_SUPABASE_URL`
-   - `COZE_SUPABASE_ANON_KEY`
-
-3. **独立服务器**: 创建 `.env.local` 文件
-   ```bash
-   cp .env.example.standalone .env.local
-   # 编辑 .env.local 填写实际配置
-   ```
-
-### Q2: Coze 环境和独立服务器的区别
-
-| 特性 | Coze 环境 | 独立服务器 |
-|------|----------|----------|
-| 环境变量命名 | `COZE_*` 或 `NEXT_PUBLIC_*` | `NEXT_PUBLIC_*` |
-| 配置方式 | Coze 平台设置 | `.env.local` 文件 |
-| 构建脚本 | 自动处理 | 需手动配置 |
-| 热更新 | 支持 | 需配置 PM2 等 |
-| 日志查看 | Coze 控制台 | 服务器日志文件 |
-
-### Q3: 如何切换环境？
-
-项目会自动检测环境，无需手动切换。只需确保：
-- **Coze 环境**: 设置 `COZE_*` 环境变量
-- **独立服务器**: 创建 `.env.local` 文件
-
-### Q4: AI 功能不可用
-
-**可能原因**:
-1. 未配置 Coze API 密钥
-2. API 密钥无效或过期
-
-**解决方案**:
-1. 检查环境变量：
-   ```bash
-   pnpm tsx scripts/check-env.ts --config
-   ```
-2. 确保配置了 `COZE_WORKLOAD_IDENTITY_API_KEY`
-3. 验证 API 密钥是否有效
-
-### Q5: 文件上传功能不可用
-
-**可能原因**: 未配置 S3 存储服务
-
-**解决方案**:
-配置以下环境变量：
 ```bash
-S3_ACCESS_KEY_ID=your-access-key
-S3_SECRET_ACCESS_KEY=your-secret-key
-S3_BUCKET_NAME=your-bucket-name
-S3_REGION=auto
-S3_ENDPOINT=https://your-s3-endpoint.com
+curl -X POST http://localhost:5000/api/config/database/save \
+    -H "Content-Type: application/json" \
+    -d '{
+        "supabaseUrl": "https://your-project.supabase.co",
+        "supabaseAnonKey": "your-anon-key",
+        "supabaseServiceRoleKey": "your-service-role-key"
+    }'
 ```
 
-### Q6: 如何更新部署？
+### 获取 Supabase 凭证
 
-#### Coze 环境
-1. 推送代码到仓库
-2. Coze 平台自动构建和部署（如已开启自动部署）
-3. 或手动触发重新部署
+1. 访问 [Supabase Dashboard](https://supabase.com/dashboard)
+2. 选择你的项目
+3. 进入 **Settings** → **API**
+4. 复制以下信息：
+   - **Project URL**: `https://your-project.supabase.co`
+   - **anon/public key**: 匿名访问密钥
+   - **service_role key**: 服务端密钥
 
-#### 独立服务器
+---
+
+## 🔧 静态资源配置
+
+### 检查 _next 软链接
+
 ```bash
-# 拉取最新代码
-git pull
+# 检查软链接
+docker exec ant-ai-nav sh -c "ls -la /app/_next"
+# 应该显示: _next -> .next
 
-# 重新构建
-pnpm run build
+# 如果不存在，创建
+docker exec -it -u root ant-ai-nav sh -c "cd /app && ln -sf .next _next"
 
-# 重启服务
-pm2 restart ant-ai-nav
+# 重启容器
+docker restart ant-ai-nav
 ```
 
-### Q7: 如何查看日志？
+### 验证静态资源
 
-#### Coze 环境
-在 Coze 控制台查看应用日志
-
-#### 独立服务器
 ```bash
-# PM2 日志
-pm2 logs ant-ai-nav
+# 测试静态资源
+curl -I http://localhost:5000/_next/static/BUILD_ID
+# 应该返回 HTTP 200
+```
 
-# Docker 日志
+---
+
+## 🗄️ 数据库初始化
+
+如果数据库是新的，需要创建表结构。
+
+### 方式 1: 通过管理后台
+
+1. 访问：`http://mayiai.itlao5.com/admin/data-migration`
+2. 执行数据迁移脚本
+
+### 方式 2: 手动执行 SQL
+
+在 Supabase Dashboard 的 SQL Editor 中执行初始化脚本。
+
+---
+
+## ✅ 部署验证
+
+### 使用自动化检查脚本
+
+```bash
+# 给脚本添加执行权限
+chmod +x scripts/deploy-checklist.sh
+
+# 运行检查
+./scripts/deploy-checklist.sh
+```
+
+### 手动验证
+
+```bash
+# 1. 检查容器状态
+docker ps | grep ant-ai-nav
+
+# 2. 检查日志（应该没有错误）
+docker logs --tail 50 ant-ai-nav | grep -iE "error|exception|failed"
+
+# 3. 测试首页
+curl -I http://localhost:5000
+
+# 4. 测试 API
+curl http://localhost:5000/api/home
+
+# 5. 测试静态资源
+curl -I http://localhost:5000/_next/static/BUILD_ID
+```
+
+---
+
+## 🛠️ 常见问题
+
+### 问题 1: 静态资源 404
+
+**症状**: 浏览器控制台显示静态资源 404 错误
+
+**解决方案**:
+
+```bash
+# 检查软链接
+docker exec ant-ai-nav sh -c "ls -la /app/_next"
+
+# 如果不存在，创建
+docker exec -it -u root ant-ai-nav sh -c "cd /app && ln -sf .next _next"
+
+# 重启容器
+docker restart ant-ai-nav
+```
+
+### 问题 2: 数据库配置失败
+
+**症状**: 保存配置时提示权限错误
+
+**解决方案**:
+
+```bash
+# 检查配置目录权限
+ls -la ./config
+
+# 修复权限
+chmod 777 ./config
+
+# 重启容器
+docker restart ant-ai-nav
+```
+
+### 问题 3: API 返回 500
+
+**症状**: 所有 API 接口返回 500 错误
+
+**解决方案**:
+
+1. 检查数据库配置是否正确
+2. 检查 Supabase 连接是否正常
+3. 查看日志：`docker logs --tail 100 ant-ai-nav`
+
+### 问题 4: 容器无法启动
+
+**症状**: 容器启动后立即退出
+
+**解决方案**:
+
+```bash
+# 查看详细日志
 docker logs ant-ai-nav
 
-# 应用日志文件
-tail -f /app/work/logs/bypass/app.log
+# 检查端口占用
+netstat -tlnp | grep 5000
+
+# 重新创建容器
+docker stop ant-ai-nav
+docker rm ant-ai-nav
+docker run -d -p 5000:5000 --name ant-ai-nav \
+    -v $(pwd)/config:/app/config \
+    --restart unless-stopped \
+    ant-ai-nav:latest
 ```
 
 ---
 
-## 技术支持
+## 📋 部署检查清单
 
-- **文档**: [README.md](../README.md)
-- **问题反馈**: [GitHub Issues](your-repo-url/issues)
-- **Coze 文档**: https://www.coze.cn/docs
-- **Supabase 文档**: https://supabase.com/docs
-
----
-
-## 附录
-
-### 环境变量完整列表
-
-| 变量名 | 必需 | 说明 | 默认值 |
-|--------|------|------|--------|
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase 项目 URL | - |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase 匿名密钥 | - |
-| `COZE_SUPABASE_URL` | ⭕ | Coze 环境的 Supabase URL | - |
-| `COZE_SUPABASE_ANON_KEY` | ⭕ | Coze 环境的 Supabase 密钥 | - |
-| `COZE_WORKLOAD_IDENTITY_API_KEY` | ⭕ | Coze API 密钥 | - |
-| `COZE_WORKLOAD_IDENTITY_CLIENT_ID` | ⭕ | Coze 客户端 ID | - |
-| `COZE_WORKLOAD_IDENTITY_CLIENT_SECRET` | ⭕ | Coze 客户端密钥 | - |
-| `S3_ACCESS_KEY_ID` | ⭕ | S3 访问密钥 ID | - |
-| `S3_SECRET_ACCESS_KEY` | ⭕ | S3 访问密钥 | - |
-| `S3_BUCKET_NAME` | ⭕ | S3 存储桶名称 | - |
-| `S3_REGION` | ⭕ | S3 区域 | `auto` |
-| `S3_ENDPOINT` | ⭕ | S3 端点 URL | - |
-| `NODE_ENV` | ⭕ | 运行环境 | `development` |
-
-### 部署检查清单
-
-部署前请确认：
-
-- [ ] 已配置 Supabase 数据库
-- [ ] 已设置必需的环境变量
-- [ ] 已运行环境检查脚本
-- [ ] 已测试本地开发环境
-- [ ] 已准备生产环境配置
-- [ ] 已配置域名和 HTTPS（如需要）
-- [ ] 已设置监控和日志（如需要）
+- [ ] Docker 镜像已加载
+- [ ] 容器已启动并运行
+- [ ] 配置目录已创建（`./config`）
+- [ ] 配置目录权限正确（777）
+- [ ] `_next` 软链接存在
+- [ ] 静态资源可访问
+- [ ] 数据库已配置
+- [ ] 数据库表已初始化
+- [ ] 首页可访问
+- [ ] API 接口正常
+- [ ] 无错误日志
 
 ---
 
-**最后更新**: 2025-01-17
+## 🌐 访问地址
+
+部署完成后，你可以通过以下地址访问：
+
+- **网站首页**: `http://mayiai.itlao5.com/`
+- **配置页面**: `http://mayiai.itlao5.com/settings`
+- **管理后台**: `http://mayiai.itlao5.com/admin`
+- **数据迁移**: `http://mayiai.itlao5.com/admin/data-migration`
+
+---
+
+## 📝 常用命令
+
+### 容器管理
+
+```bash
+# 查看容器状态
+docker ps | grep ant-ai-nav
+
+# 查看日志
+docker logs -f ant-ai-nav
+
+# 重启容器
+docker restart ant-ai-nav
+
+# 停止容器
+docker stop ant-ai-nav
+
+# 进入容器
+docker exec -it ant-ai-nav sh
+
+# 删除容器
+docker stop ant-ai-nav && docker rm ant-ai-nav
+```
+
+### 配置管理
+
+```bash
+# 查看配置目录
+ls -la ./config
+
+# 查看数据库配置
+cat ./config/database.json
+
+# 修复配置目录权限
+chmod 777 ./config
+```
+
+### 调试
+
+```bash
+# 检查静态资源
+docker exec ant-ai-nav ls -la /app/_next
+
+# 测试静态资源
+curl -I http://localhost:5000/_next/static/BUILD_ID
+
+# 测试 API
+curl http://localhost:5000/api/home
+
+# 查看错误日志
+docker logs --tail 100 ant-ai-nav | grep -iE "error|exception|failed"
+```
+
+---
+
+## 🔄 更新部署
+
+当有新版本时：
+
+```bash
+# 1. 下载新镜像
+docker load < docker-image.tar.gz
+
+# 2. 停止旧容器
+docker stop ant-ai-nav
+
+# 3. 删除旧容器
+docker rm ant-ai-nav
+
+# 4. 删除旧镜像（可选）
+docker rmi ant-ai-nav:old-tag
+
+# 5. 启动新容器
+docker run -d \
+    -p 5000:5000 \
+    --name ant-ai-nav \
+    -v $(pwd)/config:/app/config \
+    --restart unless-stopped \
+    ant-ai-nav:latest
+
+# 6. 验证
+docker logs --tail 20 ant-ai-nav
+```
+
+---
+
+## 📚 相关文档
+
+- [Docker 部署指南](./docker-deployment.md)
+- [静态资源问题解决方案](./static-404-solution.md)
+- [API 错误修复指南](./api-400-500-fix.md)
+- [数据库配置指南](./database-configuration.md)
+
+---
+
+## 💡 提示
+
+1. **首次部署后，必须先配置数据库**
+2. **配置数据库后，可能需要初始化数据库表**
+3. **静态资源问题通过创建 _next 软链接解决**
+4. **遇到问题先查看日志：`docker logs ant-ai-nav`**
+5. **使用 `./scripts/deploy-checklist.sh` 快速检查部署状态**
+
+---
+
+## 🆘 获取帮助
+
+如果遇到问题：
+
+1. 查看日志：`docker logs ant-ai-nav`
+2. 运行检查脚本：`./scripts/deploy-checklist.sh`
+3. 查看相关文档
+4. 检查 GitHub Issues
