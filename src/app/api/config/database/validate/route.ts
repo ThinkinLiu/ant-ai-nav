@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // 执行一个简单的查询测试连接
-    const { error } = await supabase.from('ai_tools').select('count', { count: 'exact', head: true });
+    const { error } = await supabase.from('tools').select('count', { count: 'exact', head: true });
 
     if (error) {
       return NextResponse.json(

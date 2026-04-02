@@ -126,10 +126,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # 复制 public 目录
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# 创建 _next 软链接，指向 .next 目录
-# 浏览器请求 /_next/static/... 时，实际路径是 .next/static/...
-RUN ln -sf /app/.next /app/_next
-
 # 4. 创建配置目录并设置权限
 RUN mkdir -p /app/config && \
     chown -R nextjs:nodejs /app/config && \
@@ -180,16 +176,7 @@ RUN echo "=== 验证最终文件结构 ===" && \
     fi && \
     echo "" && \
     echo "=== 检查关键静态资源 ===" && \
-    find /app/.next/static -name "*.js" -o -name "*.css" 2>/dev/null | head -5 && \
-    echo "" && \
-    echo "=== _next 软链接检查 ===" && \
-    if [ -L "/app/_next" ]; then \
-        echo "✅ _next 软链接存在，指向: $(readlink /app/_next)"; \
-    elif [ -d "/app/_next" ]; then \
-        echo "⚠️  _next 是目录（可能存在冲突）"; \
-    else \
-        echo "❌ _next 不存在"; \
-    fi
+    find /app/.next/static -name "*.js" -o -name "*.css" 2>/dev/null | head -5
 
 USER nextjs
 
@@ -198,20 +185,6 @@ EXPOSE 5000
 ENV NODE_ENV=production
 ENV PORT=5000
 ENV HOSTNAME="0.0.0.0"
-
-# 创建启动脚本，确保 _next 软链接在服务器启动前就存在
-RUN echo '#!/bin/sh\n\
-# 确保 _next 软链接存在\n\
-if [ ! -L "/app/_next" ]; then\n\
-  ln -sf /app/.next /app/_next\n\
-  echo "✅ Created _next symlink"\n\
-fi\n\
-# 启动 Next.js 服务器\n\
-exec node "$@"\n\
-' > /app/start.sh && chmod +x /app/start.sh
-
-# 使用启动脚本
-ENTRYPOINT ["/app/start.sh"]
 
 # 启动应用
 CMD ["node", "server.js"]
