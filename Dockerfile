@@ -134,6 +134,9 @@ RUN echo "=== 验证文件结构 ===" && \
     [ -d "/app/.next/static" ] && echo "✅ .next/static 存在" || echo "❌ .next/static 不存在" && \
     [ -d "/app/public" ] && echo "✅ public 存在" || echo "❌ public 不存在"
 
+# 修复所有文件的所有者（确保 nextjs 用户可以读写）
+RUN chown -R nextjs:nodejs /app
+
 USER nextjs
 
 EXPOSE 5000
