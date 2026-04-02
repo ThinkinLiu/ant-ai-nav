@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getSupabaseClient, tryGetSupabaseClient } from '@/storage/database/supabase-client'
+import { tryGetSupabaseClientAsync } from '@/storage/database/supabase-client'
 import { PersonDetail } from './PersonDetail'
 
 interface Props {
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 
 // 生成静态参数 - 在构建时如果环境变量不存在则返回空数组
 export async function generateStaticParams() {
-  const supabase = tryGetSupabaseClient()
+  const supabase = await tryGetSupabaseClientAsync()
   if (!supabase) {
     // 构建时环境变量不存在，返回空数组
     // 这样页面会在运行时动态生成
