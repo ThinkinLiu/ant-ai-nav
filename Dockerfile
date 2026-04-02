@@ -126,6 +126,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # 复制 public 目录
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# 创建 _next 软链接，指向 .next/static（解决浏览器访问 _next 路径问题）
+RUN ln -sf /app/.next/static /app/_next
+
 # 4. 创建配置目录并设置权限
 RUN mkdir -p /app/config && \
     chown -R nextjs:nodejs /app/config && \
@@ -176,7 +179,16 @@ RUN echo "=== 验证最终文件结构 ===" && \
     fi && \
     echo "" && \
     echo "=== 检查关键静态资源 ===" && \
-    find /app/.next/static -name "*.js" -o -name "*.css" 2>/dev/null | head -5
+    find /app/.next/static -name "*.js" -o -name "*.css" 2>/dev/null | head -5 && \
+    echo "" && \
+    echo "=== _next 软链接检查 ===" && \
+    if [ -L "/app/_next" ]; then \
+        echo "✅ _next 软链接存在，指向: $(readlink /app/_next)"; \
+    elif [ -d "/app/_next" ]; then \
+        echo "⚠️  _next 是目录（可能存在冲突）"; \
+    else \
+        echo "❌ _next 不存在"; \
+    fi
 
 USER nextjs
 
