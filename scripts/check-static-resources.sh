@@ -29,12 +29,18 @@ done
 echo ""
 echo "=== 检查 _next 路径 ==="
 if [ -L "/app/_next" ]; then
-    echo "_next 是软链接，指向: $(readlink /app/_next)"
+    TARGET=$(readlink /app/_next)
+    echo "_next 是软链接，指向: $TARGET"
+    if [ "$TARGET" = "/app/.next" ]; then
+        echo "✅ 软链接指向正确（应该指向 .next）"
+    else
+        echo "❌ 软链接指向错误（应该指向 /app/.next）"
+    fi
 elif [ -d "/app/_next" ]; then
     echo "_next 是目录"
     ls -la /app/_next
 else
-    echo "_next 不存在（这是正常的，Next.js 会在运行时处理）"
+    echo "_next 不存在（需要创建软链接）"
 fi
 
 echo ""

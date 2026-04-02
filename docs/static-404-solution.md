@@ -31,11 +31,19 @@ GET https://mayiai.itlao5.com/_next/static/css/xxx.css 404 (Not Found)
 **临时解决（在运行中的容器）：**
 
 ```bash
-# 使用 root 用户创建软链接
-docker exec -it -u root ant-ai-nav sh -c "ln -sf /app/.next/static /app/_next"
+# 删除旧的软链接（如果存在）
+docker exec -it -u root ant-ai-nav sh -c "rm -f /app/_next"
+
+# 创建正确的软链接：_next -> .next
+docker exec -it -u root ant-ai-nav sh -c "ln -sf /app/.next /app/_next"
 
 # 验证
 docker exec ant-ai-nav sh -c "ls -la /app/_next"
+# 应该显示: _next -> .next
+
+# 验证静态资源路径
+docker exec ant-ai-nav sh -c "ls -la /app/_next/static"
+# 应该显示 .next/static 目录的内容
 
 # 重启容器
 docker restart ant-ai-nav
@@ -52,8 +60,9 @@ docker logs --tail 20 ant-ai-nav
 # 复制 public 目录
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# 创建 _next 软链接，指向 .next/static
-RUN ln -sf /app/.next/static /app/_next
+# 创建 _next 软链接，指向 .next 目录
+# 浏览器请求 /_next/static/... 时，实际路径是 .next/static/...
+RUN ln -sf /app/.next /app/_next
 ```
 
 **修改后需要重新构建镜像：**
@@ -112,8 +121,18 @@ curl -I http://localhost:5000/_next/static/BUILD_ID
 Next.js 服务器会自动处理 `/_next` 路径，它会：
 1. 检查文件系统中的 `/app/_next` 目录
 2. 如果存在，直接提供静态资源
-3. 通过软链接，`/_next` 实际指向 `.next/static`
+3. 通过软链接，`/_next` 实际指向 `.next`
 4. 浏览器请求 `/_next/static/xxx.js` 时，服务器读取 `.next/static/xxx.js`
+
+**为什么是 `_next` -> `.next` 而不是 `_next` -> `.next/static`？**
+
+- 如果 `_next` -> `.next`：
+  - 浏览器请求 `/_next/static/xxx.js`
+  - 实际路径：`.next/static/xxx.js` ✅ 正确
+
+- 如果 `_next` -> `.next/static`：
+  - 浏览器请求 `/_next/static/xxx.js`
+  - 实际路径：`.next/static/static/xxx.js` ❌ 错误（多了一层 static）
 
 ## 替代方案
 

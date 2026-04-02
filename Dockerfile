@@ -126,8 +126,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # 复制 public 目录
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# 创建 _next 软链接，指向 .next/static（解决浏览器访问 _next 路径问题）
-RUN ln -sf /app/.next/static /app/_next
+# 创建 _next 软链接，指向 .next 目录
+# 浏览器请求 /_next/static/... 时，实际路径是 .next/static/...
+RUN ln -sf /app/.next /app/_next
 
 # 4. 创建配置目录并设置权限
 RUN mkdir -p /app/config && \

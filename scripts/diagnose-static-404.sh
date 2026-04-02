@@ -126,13 +126,13 @@ elif [ "$HAS_NEXT_LINK" = "no" ]; then
     echo "❌ 问题：_next 软链接不存在"
     echo ""
     echo "📋 解决方案："
-    echo "   执行以下命令创建软链接："
+    echo "   执行以下命令创建软链接（注意：_next 指向 .next，不是 .next/static）："
     echo ""
-    echo "   docker exec -it -u root $CONTAINER_NAME sh -c \"ln -sf /app/.next/static /app/_next\""
+    echo "   docker exec -it -u root $CONTAINER_NAME sh -c \"ln -sf /app/.next /app/_next\""
     echo "   docker restart $CONTAINER_NAME"
 else
     LINK_TARGET=$(docker exec $CONTAINER_NAME readlink /app/_next 2>/dev/null)
-    if [ "$LINK_TARGET" = "/app/.next/static" ]; then
+    if [ "$LINK_TARGET" = "/app/.next" ]; then
         echo "✅ 静态资源配置正常"
         echo ""
         echo "📋 如果仍然出现 404，请检查："
@@ -141,11 +141,12 @@ else
         echo "   3. Docker 日志: docker logs $CONTAINER_NAME"
     else
         echo "⚠️  _next 软链接指向错误: $LINK_TARGET"
+        echo "   应该指向: /app/.next"
         echo ""
         echo "📋 解决方案："
         echo "   删除并重新创建软链接："
         echo ""
-        echo "   docker exec -it -u root $CONTAINER_NAME sh -c \"rm -f /app/_next && ln -sf /app/.next/static /app/_next\""
+        echo "   docker exec -it -u root $CONTAINER_NAME sh -c \"rm -f /app/_next && ln -sf /app/.next /app/_next\""
         echo "   docker restart $CONTAINER_NAME"
     fi
 fi
@@ -158,7 +159,7 @@ echo "   查看静态资源结构："
 echo "   docker exec $CONTAINER_NAME find /app/.next/static -type f | head -20"
 echo ""
 echo "   手动创建软链接："
-echo "   docker exec -it -u root $CONTAINER_NAME sh -c \"ln -sf /app/.next/static /app/_next\""
+echo "   docker exec -it -u root $CONTAINER_NAME sh -c \"ln -sf /app/.next /app/_next\""
 echo ""
 echo "   重启容器："
 echo "   docker restart $CONTAINER_NAME"
