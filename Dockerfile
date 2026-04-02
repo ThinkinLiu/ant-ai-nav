@@ -199,5 +199,19 @@ ENV NODE_ENV=production
 ENV PORT=5000
 ENV HOSTNAME="0.0.0.0"
 
+# 创建启动脚本，确保 _next 软链接在服务器启动前就存在
+RUN echo '#!/bin/sh\n\
+# 确保 _next 软链接存在\n\
+if [ ! -L "/app/_next" ]; then\n\
+  ln -sf /app/.next /app/_next\n\
+  echo "✅ Created _next symlink"\n\
+fi\n\
+# 启动 Next.js 服务器\n\
+exec node "$@"\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
+# 使用启动脚本
+ENTRYPOINT ["/app/start.sh"]
+
 # 启动应用
 CMD ["node", "server.js"]
