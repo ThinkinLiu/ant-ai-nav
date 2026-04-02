@@ -26,7 +26,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 #### 🤖 Docker 镜像构建（推荐服务器部署）
 
 1. 进入 **Actions** 标签
-2. 点击 **Build Static Export**
+2. 点击 **Build and Export Docker Image**
 3. 点击 **Run workflow** → 选择分支 → 运行
 4. 等待构建完成，下载 `docker-image` 产物
 5. 上传到服务器并加载：

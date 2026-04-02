@@ -1,6 +1,6 @@
-# 蚂蚁AI导航 - 数据库文档
+# 数据库初始化脚本
 
-本文档提供蚂蚁AI导航项目的完整数据库结构和初始化指南。
+本目录包含蚂蚁AI导航项目的完整数据库结构和数据初始化脚本。
 
 ## 📁 文件说明
 
@@ -35,90 +35,53 @@
 - **13_site_settings.sql** - 网站功能设置数据（1条记录）
 - **14_traffic_data_sources.sql** - 流量数据源配置（4条记录）
 
-### 扩展功能
-- **15_ai_news_fields.sql** - 资讯表扩展字段
-- **init-oauth-settings.sql** - OAuth 设置初始化
-
 ## 🚀 使用方法
 
-### 方法 1：使用 Supabase（推荐）
+### 初始化数据库
 
-1. **创建 Supabase 项目**
-   - 访问 [supabase.com](https://supabase.com)
-   - 创建新项目
-   - 记录 Project URL 和 API Key
-
-2. **导入数据库结构**
-   ```bash
-   # 方式 1: 通过 Supabase Dashboard
-   - 进入项目 → SQL Editor
-   - 复制并执行 00_schema.sql 的内容
-   - 按顺序执行 01-14 的数据文件
-
-   # 方式 2: 使用 psql 命令
-   psql "postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres" -f 00_schema.sql
-   psql "postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres" -f 01_categories.sql
-   # ... 依次执行其他文件
-   ```
-
-3. **配置环境变量**
-   ```bash
-   # 在 .env 或环境变量中设置
-   NEXT_PUBLIC_SUPABASE_URL=https://[project-ref].supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=[your-anon-key]
-   SUPABASE_SERVICE_ROLE_KEY=[your-service-role-key]
-   ```
-
-### 方法 2：使用本地 PostgreSQL
+按顺序执行以下脚本：
 
 ```bash
-# 1. 创建数据库
-createdb ant_ai_nav
+# 1. 创建表结构
+psql -U username -d database_name -f 00_schema.sql
 
-# 2. 创建表结构
-psql -U username -d ant_ai_nav -f 00_schema.sql
+# 2. 导入基础数据
+psql -U username -d database_name -f 01_categories.sql
+psql -U username -d database_name -f 02_tags.sql
+psql -U username -d database_name -f 04_users.sql
 
-# 3. 导入基础数据
-psql -U username -d ant_ai_nav -f 01_categories.sql
-psql -U username -d ant_ai_nav -f 02_tags.sql
-psql -U username -d ant_ai_nav -f 04_users.sql
+# 3. 导入内容数据
+psql -U username -d database_name -f 03_ai_hall_of_fame.sql
+psql -U username -d database_name -f 05_ai_tools.sql
+psql -U username -d database_name -f 06_ai_timeline.sql
 
-# 4. 导入内容数据
-psql -U username -d ant_ai_nav -f 03_ai_hall_of_fame.sql
-psql -U username -d ant_ai_nav -f 05_ai_tools.sql
-psql -U username -d ant_ai_nav -f 06_ai_timeline.sql
+# 4. 导入关联数据
+psql -U username -d database_name -f 07_tool_tags.sql
 
-# 5. 导入关联数据
-psql -U username -d ant_ai_nav -f 07_tool_tags.sql
+# 5. 导入交互数据
+psql -U username -d database_name -f 08_comments.sql
 
-# 6. 导入交互数据
-psql -U username -d ant_ai_nav -f 08_comments.sql
+# 6. 导入审核数据
+psql -U username -d database_name -f 09_publisher_applications.sql
 
-# 7. 导入审核数据
-psql -U username -d ant_ai_nav -f 09_publisher_applications.sql
+# 7. 导入排行榜数据
+psql -U username -d database_name -f 10_ai_tool_rankings.sql
+psql -U username -d database_name -f 11_ranking_update_log.sql
 
-# 8. 导入排行榜数据
-psql -U username -d ant_ai_nav -f 10_ai_tool_rankings.sql
-psql -U username -d ant_ai_nav -f 11_ranking_update_log.sql
-
-# 9. 导入系统设置
-psql -U username -d ant_ai_nav -f 12_seo_settings.sql
-psql -U username -d ant_ai_nav -f 13_site_settings.sql
-psql -U username -d ant_ai_nav -f 14_traffic_data_sources.sql
-
-# 10. 导入扩展功能
-psql -U username -d ant_ai_nav -f 15_ai_news_fields.sql
-psql -U username -d ant_ai_nav -f init-oauth-settings.sql
+# 8. 导入系统设置
+psql -U username -d database_name -f 12_seo_settings.sql
+psql -U username -d database_name -f 13_site_settings.sql
+psql -U username -d database_name -f 14_traffic_data_sources.sql
 ```
 
-### 方法 3：使用初始化脚本
+### 一键初始化
 
 ```bash
 # Linux/Mac
-./database/init.sh
+cat database/*.sql | psql -U username -d database_name
 
 # Windows
-database\init.bat
+Get-Content database\*.sql | psql -U username -d database_name
 ```
 
 ## 📊 数据统计
@@ -294,29 +257,12 @@ ORDER BY view_count DESC
 LIMIT 10;
 ```
 
-## 🔐 运行时配置
+## 📞 技术支持
 
-本项目支持运行时配置数据库连接信息，无需在构建时预配置环境变量。
-
-### 首次配置
-1. 访问 `/settings` 页面
-2. 填写 Supabase URL 和 Anonymous Key
-3. 验证连接并保存
-
-### 管理后台
-1. 访问 `/admin/settings` 页面
-2. 查看和修改配置（密钥已脱敏）
-3. 验证连接并保存
-
-### 配置文件
-配置保存在 `/app/config/database.json`
-
-## 📚 相关文档
-
-- [运行时数据库配置指南](../docs/runtime-database-config.md)
-- [管理后台配置指南](../docs/admin-settings-guide.md)
-- [部署指南](../docs/deploy-docker.md)
+如有问题，请联系：
+- Email: admin@antai.com
+- GitHub: [项目地址]
 
 ---
 
-**最后更新**: 2025-04-01
+**最后更新时间**: 2025-01-15

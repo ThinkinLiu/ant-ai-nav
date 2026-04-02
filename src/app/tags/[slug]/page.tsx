@@ -4,7 +4,7 @@ import { useState, useEffect, use, useCallback } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { getSupabaseClientClient } from '@/storage/database/supabase-client-client'
+import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { ToolLogoNext } from '@/components/tools/ToolLogo'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -83,7 +83,7 @@ export default function TagPage({ params }: Props) {
 
   // 获取教程数据（"tutorial"分类的资讯）
   const fetchTutorials = useCallback(async (name: string, page: number) => {
-    const supabase = getSupabaseClientClient()
+    const supabase = getSupabaseClient()
     const start = (page - 1) * PAGE_SIZE
     const end = start + PAGE_SIZE - 1
     
@@ -112,7 +112,7 @@ export default function TagPage({ params }: Props) {
 
   // 获取工具数据
   const fetchTools = useCallback(async (tagId: number | null, page: number) => {
-    const supabase = getSupabaseClientClient()
+    const supabase = getSupabaseClient()
     const start = (page - 1) * PAGE_SIZE
     const end = start + PAGE_SIZE - 1
     
@@ -174,7 +174,7 @@ export default function TagPage({ params }: Props) {
 
   // 获取资讯数据（排除"tutorial"分类）
   const fetchNews = useCallback(async (name: string, page: number) => {
-    const supabase = getSupabaseClientClient()
+    const supabase = getSupabaseClient()
     const start = (page - 1) * PAGE_SIZE
     const end = start + PAGE_SIZE - 1
     
@@ -206,7 +206,7 @@ export default function TagPage({ params }: Props) {
     const init = async () => {
       setLoading(true)
       try {
-        const supabase = getSupabaseClientClient()
+        const supabase = getSupabaseClient()
 
         // 获取标签信息
         let { data: tag } = await supabase
@@ -300,7 +300,7 @@ export default function TagPage({ params }: Props) {
     // 加载对应数据
     if (tab === 'tools') {
       // 重新获取工具数据
-      const supabase = getSupabaseClientClient()
+      const supabase = getSupabaseClient()
       let { data: tag } = await supabase
         .from('tags')
         .select('id')
@@ -332,7 +332,7 @@ export default function TagPage({ params }: Props) {
   const handlePageChange = async (page: number) => {
     setTabLoading(true)
 
-    const supabase = getSupabaseClientClient()
+    const supabase = getSupabaseClient()
 
     if (activeTab === 'tools') {
       setToolsPage(page)

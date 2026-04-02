@@ -108,7 +108,7 @@ CI 工作流会自动运行，无需手动操作。
 **步骤**:
 
 1. 进入仓库的 **Actions** 标签
-2. 找到 **Build Static Export** 工作流
+2. 找到 **Build and Export Docker Image** 工作流
 3. 点击 **Run workflow**
 4. 选择要构建的分支（默认 `main`）
 5. 点击绿色的 **Run workflow** 按钮

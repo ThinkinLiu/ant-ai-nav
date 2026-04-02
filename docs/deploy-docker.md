@@ -1,140 +1,184 @@
 # Docker 部署指南
 
-本文档提供蚂蚁AI导航项目的 Docker 容器化部署方案。
+本文档提供蚂蚁AI导航项目的 Docker 容器化部署方案，适用于 CentOS 7 等旧系统环境。
 
-## 前置要求
+## 一、环境要求
 
 | 软件 | 版本要求 | 说明 |
 |------|----------|------|
 | Docker | 20.10+ | 容器运行环境 |
-| Docker Compose | 2.0+ | 容器编排工具（可选） |
+| Docker Compose | 2.0+ | 容器编排工具 |
 
-## 快速开始
+## 二、安装 Docker
 
-### 方法 1：使用 GitHub Actions 构建（推荐）
+### CentOS / RHEL
 
-如果您的服务器内存较小（如 1GB），建议使用 GitHub Actions 在云端构建 Docker 镜像。
+```bash
+# 安装 Docker
+curl -fsSL https://get.docker.com | sh
+
+# 启动 Docker 服务
+systemctl start docker
+systemctl enable docker
+
+# 验证安装
+docker -v
+```
+
+### Ubuntu / Debian
+
+```bash
+# 安装 Docker
+curl -fsSL https://get.docker.com | sh
+
+# 启动 Docker 服务
+systemctl start docker
+systemctl enable docker
+
+# 安装 Docker Compose（如果未自动安装）
+apt-get install docker-compose-plugin
+
+# 验证安装
+docker -v
+docker compose version
+```
+
+## 三、项目部署
+
+### 🚀 推荐：使用 GitHub Actions 构建（适合低内存服务器）
+
+如果您的服务器内存较小（如 1GB），建议使用 GitHub Actions 在云端构建 Docker 镜像，然后在服务器上下载并加载。
 
 #### 步骤 1：配置 GitHub Secrets
 
 在 GitHub 仓库中配置以下 Secrets：
 
 1. 进入仓库 → **Settings** → **Secrets and variables** → **Actions**
-2. 点击 **New repository secret**，添加：
+2. 添加以下 Secrets：
 
 | Secret 名称 | 说明 | 示例值 |
 |------------|------|--------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 项目 URL | `https://xxx.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 匿名密钥 | `eyJhbGciOiJ...` |
 
-**注意**：可以不配置，部署后通过 `/settings` 页面配置。
-
 #### 步骤 2：触发构建
 
 1. 进入 GitHub 仓库 → **Actions** 标签页
-2. 选择 **Build Static Export** 工作流
-3. 点击 **Run workflow**
-4. 等待构建完成
+2. 选择 **Build and Export Docker Image** 工作流
+3. 点击 **Run workflow**，选择要构建的分支（默认 `main`）
+4. 等待构建完成（约 5-10 分钟）
 
-#### 步骤 3：下载并部署
+#### 步骤 3：下载并加载镜像
 
 ```bash
-# 下载构建产物
-# 在 Actions 页面下载 docker-image artifact
+# 在服务器上执行
 
-# 解压并加载镜像
-tar -xzf ant-ai-nav.tar.gz
+# 1. 下载构建产物
+# 在 GitHub Actions 页面，构建完成后下载 docker-image artifact
+# 解压得到 ant-ai-nav.tar.gz
+
+# 2. 上传到服务器
+scp ant-ai-nav.tar.gz root@your-server:/www/wwwroot/ant-ai-nav/
+
+# 3. 加载镜像
+cd /www/wwwroot/ant-ai-nav
 docker load < ant-ai-nav.tar.gz
 
-# 运行容器
-docker run -d -p 5000:5000 --name ant-ai-nav ant-ai-nav:latest
+# 4. 标记镜像（如果需要）
+docker tag ant-ai-nav:latest ant-ai-nav:latest
 ```
 
-### 方法 2：本地构建
-
-#### 步骤 1：克隆项目
+#### 步骤 4：启动服务
 
 ```bash
-git clone https://github.com/ThinkinLiu/ant-ai-nav.git
-cd ant-ai-nav
+# 配置环境变量（如前面的"第二步"所示）
+# 创建 docker-compose.yml 文件
+
+# 启动服务
+docker-compose up -d
 ```
 
-#### 步骤 2：创建 docker-compose.yml
+### 方式A：本地构建（适合内存充足的服务器）
 
-```yaml
-version: '3.8'
-
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: ant-ai-nav:latest
-    container_name: ant-ai-nav
-    ports:
-      - "5000:5000"
-    environment:
-      - NODE_ENV=production
-      - PORT=5000
-    volumes:
-      - ./config:/app/config
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-```
-
-#### 步骤 3：构建并启动
+#### 第一步：上传项目代码
 
 ```bash
-# 构建并启动
+# 创建项目目录
+mkdir -p /www/wwwroot/ant-ai-nav
+cd /www/wwwroot/ant-ai-nav
+
+# 方式A：Git 克隆（推荐）
+git clone https://github.com/ThinkinLiu/ant-ai-nav.git .
+
+# 方式B：上传压缩包
+# 将项目压缩包上传到服务器后解压
+```
+
+### 第二步：配置环境变量
+
+```bash
+# 创建环境变量文件
+cat > .env.local << 'EOF'
+# Supabase 数据库配置
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# 站点配置
+NEXT_PUBLIC_SITE_URL=https://your-domain.com
+NEXT_PUBLIC_SITE_NAME=蚂蚁AI导航
+
+# 运行环境
+NODE_ENV=production
+EOF
+```
+
+### 第三步：构建并启动
+
+```bash
+cd /www/wwwroot/ant-ai-nav
+
+# 构建镜像并启动（首次部署）
 docker-compose up -d --build
 
-# 查看状态
+# 查看运行状态
 docker-compose ps
 
 # 查看日志
 docker-compose logs -f
 ```
 
-## 首次配置
+### 第四步：验证部署
 
-### 访问配置页面
+```bash
+# 检查容器状态
+docker ps
 
-首次访问网站会自动跳转到配置页面：
+# 检查端口响应
+curl http://127.0.0.1:5000
 
+# 查看应用日志
+docker-compose logs app
 ```
-http://your-domain.com/settings
-```
 
-### 配置数据库
+## 四、Nginx 配置
 
-填写 Supabase 连接信息：
-
-- **Supabase URL**: `https://your-project.supabase.co`
-- **Supabase Anonymous Key**: 在 Supabase 控制台获取
-
-点击"验证连接" → "保存配置" → 完成！
-
-## Nginx 配置
-
-### 宝塔面板配置
+### 在宝塔面板配置反向代理
 
 1. **宝塔面板** → **网站** → **添加站点**
 2. 填写域名，PHP 选择「纯静态」
 3. 网站设置 → **反向代理** → **添加反向代理**
    - 代理名称：`ant-ai-nav`
    - 目标URL：`http://127.0.0.1:5000`
+   - 发送域名：`$host`
 
-### 手动配置 Nginx
+### 或手动配置 Nginx
 
 ```nginx
 server {
     listen 80;
     server_name your-domain.com;
-
+    
     location / {
         proxy_pass http://127.0.0.1:5000;
         proxy_http_version 1.1;
@@ -148,26 +192,14 @@ server {
 }
 ```
 
-## SSL 证书配置
-
-### 使用宝塔面板
+## 五、SSL 证书配置
 
 1. 宝塔面板 → 网站 → 设置 → **SSL**
 2. 选择 **Let's Encrypt** 免费证书
 3. 点击申请
 4. 开启 **强制 HTTPS**
 
-### 使用 Certbot
-
-```bash
-# 安装 certbot
-apt-get install certbot python3-certbot-nginx
-
-# 申请证书
-certbot --nginx -d your-domain.com
-```
-
-## 常用命令
+## 六、常用命令
 
 ### 容器管理
 
@@ -194,6 +226,8 @@ docker exec -it ant-ai-nav sh
 ### 更新部署
 
 ```bash
+cd /www/wwwroot/ant-ai-nav
+
 # 拉取最新代码
 git pull
 
@@ -220,15 +254,52 @@ docker volume prune
 docker system prune -a
 ```
 
-## 故障排查
+## 七、进阶配置
 
-### 静态资源 404
+### 资源限制
 
-**症状**：页面能访问但样式和脚本全部 404
+编辑 `docker-compose.yml`：
 
-**解决方案**：
+```yaml
+deploy:
+  resources:
+    limits:
+      cpus: '2'        # 最大 CPU 核心数
+      memory: 2G       # 最大内存
+    reservations:
+      cpus: '0.5'      # 最小 CPU 核心数
+      memory: 512M     # 最小内存
+```
 
-[查看静态资源 404 修复指南 →](./docker-static-404-fix.md)
+### 多实例部署
+
+```bash
+# 启动多个实例（负载均衡）
+docker-compose up -d --scale app=3
+
+# 需要配合 Nginx 负载均衡使用
+```
+
+### 自动重启
+
+```yaml
+# docker-compose.yml 中已配置
+restart: unless-stopped
+```
+
+### 健康检查
+
+```yaml
+# docker-compose.yml 中已配置
+healthcheck:
+  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+```
+
+## 八、故障排查
 
 ### 容器无法启动
 
@@ -264,7 +335,7 @@ docker stats ant-ai-nav
 docker system prune -a
 ```
 
-## 镜像构建失败
+### 镜像构建失败
 
 ```bash
 # 清理构建缓存重新构建
@@ -274,7 +345,80 @@ docker-compose build --no-cache
 docker-compose build --progress=plain
 ```
 
-## 备份与恢复
+### 静态资源 404
+
+如果页面能访问但样式和脚本全部 404，说明静态资源没有正确复制到容器中。
+
+#### 诊断步骤
+
+```bash
+# 1. 进入容器
+docker exec -it ant-ai-nav sh
+
+# 2. 检查文件结构
+ls -la /app
+ls -la /app/.next
+ls -la /app/.next/static
+
+# 3. 运行验证脚本
+sh /app/scripts/verify-docker-static.sh
+```
+
+#### 预期结构
+
+容器内应该有以下目录：
+
+```
+/app
+├── .next/
+│   ├── static/          # 静态资源（CSS、JS等）
+│   │   ├── chunks/
+│   │   ├── media/
+│   │   └── 7cDB8QgaZ1FCFqYndeaOk/
+│   ├── server/          # 服务器代码
+│   └── BUILD_ID
+├── public/              # 公共静态文件
+├── node_modules/        # 最小化依赖
+├── server.js            # 应用入口
+└── package.json
+```
+
+#### 解决方案
+
+如果 `.next/static` 不存在，说明 Dockerfile 的复制路径有问题。
+
+**检查 Dockerfile 中的复制路径：**
+
+```dockerfile
+# 应该是这样的路径（注意 workspace/projects 层级）
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/workspace/projects ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+```
+
+**重新构建镜像：**
+
+```bash
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+**原因说明：**
+
+Next.js standalone 模式会将构建产物放在 `.next/standalone/workspace/projects/` 目录（取决于构建时的工作目录），而不是直接放在 `.next/standalone/` 目录。因此 Dockerfile 中需要正确指定源路径。
+
+### 镜像构建失败
+
+```bash
+# 清理构建缓存重新构建
+docker-compose build --no-cache
+
+# 查看构建日志
+docker-compose build --progress=plain
+```
+
+## 九、备份与恢复
 
 ### 备份
 
@@ -299,54 +443,7 @@ tar -xzvf ant-ai-nav-config.tar.gz
 docker-compose up -d
 ```
 
-## 进阶配置
-
-### 资源限制
-
-编辑 `docker-compose.yml`：
-
-```yaml
-services:
-  app:
-    deploy:
-      resources:
-        limits:
-          cpus: '2'        # 最大 CPU 核心数
-          memory: 2G       # 最大内存
-        reservations:
-          cpus: '0.5'      # 最小 CPU 核心数
-          memory: 512M     # 最小内存
-```
-
-### 多实例部署
-
-```bash
-# 启动多个实例（负载均衡）
-docker-compose up -d --scale app=3
-
-# 需要配合 Nginx 负载均衡使用
-```
-
-### 自动重启
-
-```yaml
-# docker-compose.yml 中已配置
-restart: unless-stopped
-```
-
-### 健康检查
-
-```yaml
-# docker-compose.yml 中已配置
-healthcheck:
-  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
-  start_period: 40s
-```
-
-## 监控与日志
+## 十、监控与日志
 
 ### 日志管理
 
@@ -369,13 +466,16 @@ docker stats ant-ai-nav
 docker-compose logs -f --tail=100
 ```
 
-## 更多资源
-
-- [静态资源 404 修复指南](./docker-static-404-fix.md)
-- [运行时配置指南](./runtime-database-config.md)
-- [管理后台配置指南](./admin-settings-guide.md)
-- [数据库部署指南](./database-deployment.md)
-
 ---
 
-**最后更新**: 2025-04-01
+## 快速参考卡
+
+| 操作 | 命令 |
+|------|------|
+| 启动 | `docker-compose up -d` |
+| 停止 | `docker-compose down` |
+| 重启 | `docker-compose restart` |
+| 日志 | `docker-compose logs -f` |
+| 状态 | `docker-compose ps` |
+| 更新 | `docker-compose up -d --build` |
+| 进入容器 | `docker exec -it ant-ai-nav sh` |
