@@ -83,19 +83,34 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # 复制构建产物
-# Next.js 16 standalone 模式：需要正确的复制路径
-# 关键：必须按此顺序复制，否则静态资源可能丢失
+# Next.js 16 standalone 模式：输出路径取决于构建时的工作目录
+# 可能的路径：
+# - /app/.next/standalone/ (标准路径，工作目录是 /app)
+# - /app/.next/standalone/workspace/projects/ (嵌套路径，工作目录是 /workspace/projects)
 
-# 1. 先复制 standalone 输出（包含 server.js 和最小化 node_modules）
-# 注意：Next.js standalone 输出在 .next/standalone/workspace/projects/
-# 需要复制 workspace/projects/* 到容器根目录
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/workspace/projects ./
+# 复制整个 standalone 目录
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 
-# 2. 复制静态文件（CSS、JS 等资源）到正确位置
-# standalone 输出中 .next 目录不完整，需要单独复制静态资源
+# 检查并调整目录结构（处理嵌套路径）
+RUN if [ -d "workspace/projects" ]; then \
+      echo "检测到嵌套路径，调整目录结构..." && \
+      mv workspace/projects/* . 2>/dev/null || true; \
+      mv workspace/projects/.next . 2>/dev/null || true; \
+      rm -rf workspace; \
+      echo "✅ 目录结构调整完成"; \
+    elif [ -d "workspace" ]; then \
+      echo "检测到 workspace 目录，调整目录结构..." && \
+      mv workspace/* . 2>/dev/null || true; \
+      rm -rf workspace; \
+      echo "✅ 目录结构调整完成"; \
+    else \
+      echo "使用标准路径，无需调整"; \
+    fi
+
+# 复制静态文件（CSS、JS 等资源）到正确位置
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# 3. 复制 public 目录
+# 复制 public 目录
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # 验证文件结构
