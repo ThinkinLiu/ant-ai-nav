@@ -2,6 +2,9 @@
 
 import Link from 'next/link'
 import { categoryConfig, importanceConfig } from '../config'
+import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Edit } from 'lucide-react'
 
 interface RelatedPerson {
   id: number
@@ -55,8 +58,12 @@ interface Props {
 }
 
 export function EventDetail({ event, sameYearEvents, prevEvent, nextEvent }: Props) {
+  const { user } = useAuth()
   const categoryInfo = event.category && categoryConfig[event.category]
   const importanceInfo = importanceConfig[event.importance] || importanceConfig.normal
+
+  // 检查是否是管理员
+  const isAdmin = user?.role === 'admin'
 
   const formatDate = () => {
     let date = `${event.year}年`
@@ -103,10 +110,21 @@ export function EventDetail({ event, sameYearEvents, prevEvent, nextEvent }: Pro
                       <div className="text-sm font-medium text-muted-foreground">
                         {formatDate()}
                       </div>
-                      <h1 className="text-2xl md:text-3xl font-bold mt-1">{event.title}</h1>
-                      {event.title_en && (
-                        <p className="text-lg text-muted-foreground mt-1">{event.title_en}</p>
-                      )}
+                      <div className="flex items-center gap-3 mt-1">
+                        <h1 className="text-2xl md:text-3xl font-bold">{event.title}</h1>
+                        {event.title_en && (
+                          <p className="text-lg text-muted-foreground">{event.title_en}</p>
+                        )}
+                        {/* 管理员修改按钮 */}
+                        {isAdmin && (
+                          <Button variant="outline" size="sm" asChild className="gap-1">
+                            <Link href={`/admin/timeline/${event.id}/edit`}>
+                              <Edit className="h-4 w-4" />
+                              修改
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
