@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 // 格式化时间，精确到分钟
 function formatDateTime(dateStr: string): string {
@@ -56,6 +57,7 @@ interface Props {
 }
 
 export function NewsList({ totalCount, categoryConfig }: Props) {
+  const searchParams = useSearchParams()
   const [news, setNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -65,6 +67,14 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
   const [showHotOnly, setShowHotOnly] = useState(false)
   const pageSize = 15
   const observerRef = useRef<HTMLDivElement>(null)
+
+  // 初始化时读取 URL 参数
+  useEffect(() => {
+    const categoryParam = searchParams.get('category')
+    if (categoryParam) {
+      setSelectedCategory(categoryParam)
+    }
+  }, [searchParams])
 
   const fetchNews = useCallback(async (pageNum: number, category: string | null, search: string, hotOnly: boolean) => {
     setLoading(true)
