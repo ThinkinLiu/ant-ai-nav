@@ -544,6 +544,19 @@ function HomePageContent() {
     }
   }, [searchQuery, categoryId, isFeatured, activeCategory, fetchFilteredTools])
 
+  // 根据 URL 参数 categoryId 自动选中对应的分类 tab
+  useEffect(() => {
+    if (categoryId && categories.length > 0) {
+      const category = categories.find(c => c.id === parseInt(categoryId))
+      if (category && category.slug) {
+        setActiveCategory(category.slug)
+      }
+    } else if (!searchQuery && !isFeatured) {
+      // 如果没有 categoryId，则重置为 'all'
+      setActiveCategory('all')
+    }
+  }, [categoryId, categories, searchQuery, isFeatured])
+
   // 切换Tab
   const handleTabChange = async (slug: string) => {
     const tab = tabs.find(t => t.slug === slug)
