@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense, useCallback } from 'react'
+import { useState, useEffect, Suspense, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -298,6 +298,8 @@ function HomePageContent() {
   const [page, setPage] = useState<number>(1)
   const [loadingMore, setLoadingMore] = useState<boolean>(false)
   const [hasMore, setHasMore] = useState<boolean>(true)
+  const [categoriesLoaded, setCategoriesLoaded] = useState<boolean>(false)
+  const processedCategoryIdRef = useRef<string | null>(null)
   const { user } = useAuth()
 
   // 获取原始分类数据（所有工具统计）
@@ -330,6 +332,7 @@ function HomePageContent() {
         setTabFame(data.data.tabFame || [])
         setTabTimeline(data.data.tabTimeline || [])
         setHotTools(data.data.hotTools || [])
+        setCategoriesLoaded(true)
         setError(null)
       } else {
         console.error('API 返回错误:', data.error)
@@ -536,7 +539,7 @@ function HomePageContent() {
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, categoryId, isFeatured, activeCategory, categories]) // 添加 categories 依赖
+  }, [searchQuery, categoryId, isFeatured, activeCategory]) // 移除 categories 依赖，避免无限循环
 
   // 搜索/筛选时单独请求
   useEffect(() => {
@@ -547,16 +550,22 @@ function HomePageContent() {
 
   // 根据 URL 参数 categoryId 自动选中对应的分类 tab
   useEffect(() => {
+    // 如果 categoryId 没有变化，跳过
+    if (categoryId === processedCategoryIdRef.current) return
+
+    // 如果 categoryId 存在且 categories 已加载，设置对应的分类
     if (categoryId && categories.length > 0) {
       const category = categories.find(c => c.id === parseInt(categoryId))
       if (category && category.slug) {
         setActiveCategory(category.slug)
       }
-    } else if (!searchQuery && !isFeatured) {
-      // 如果没有 categoryId，则重置为 'all'
+      processedCategoryIdRef.current = categoryId
+    } else if (!categoryId && !searchQuery && !isFeatured) {
+      // 如果没有 categoryId、searchQuery 和 isFeatured，则重置为 'all'
       setActiveCategory('all')
+      processedCategoryIdRef.current = null
     }
-  }, [categoryId, categories, searchQuery, isFeatured])
+  }, [categoryId, categories, searchQuery, isFeatured]) // 恢复依赖，但使用 ref 避免重复处理
 
   // 切换Tab
   const handleTabChange = async (slug: string) => {
