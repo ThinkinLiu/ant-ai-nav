@@ -66,18 +66,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.6,
     },
-    {
-      url: `${baseUrl}/hot-china`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/hot-global`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.7,
-    },
   ]
   
   // 静态页面 - 其他页面
