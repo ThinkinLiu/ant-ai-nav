@@ -34,7 +34,7 @@ interface Tool {
   view_count: number
   favorite_count: number
   created_at: string
-  category: { id: number; name: string; color: string } | null
+  category: { id: number; name: string; slug: string; color: string } | null
   publisher: { id: string; name: string; avatar: string | null } | null
   tags: { id: number; name: string; slug: string }[]
   avgRating: number
@@ -267,7 +267,7 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                     <p className="text-muted-foreground">{tool.description}</p>
                     <div className="flex items-center gap-4 mt-4">
                       {tool.category ? (
-                        <Link href={`/tools?category=${tool.category.id}`}>
+                        <Link href={`/tools?category=${tool.category.slug}`}>
                           <Badge
                             variant="outline"
                             className="cursor-pointer hover:opacity-80 transition-opacity"
