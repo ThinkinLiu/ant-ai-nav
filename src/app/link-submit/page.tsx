@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import LinkSubmitClient from './client'
+import { Suspense } from 'react'
 
 export const metadata: Metadata = {
   title: '申请友情链接 - 蚂蚁AI导航',
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function LinkSubmitPage() {
-  return <LinkSubmitClient />
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-12">加载中...</div>}>
+      <LinkSubmitClient />
+    </Suspense>
+  )
 }
