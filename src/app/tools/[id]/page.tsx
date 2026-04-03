@@ -266,9 +266,19 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                     </div>
                     <p className="text-muted-foreground">{tool.description}</p>
                     <div className="flex items-center gap-4 mt-4">
-                      <Badge variant="outline" style={{ borderColor: tool.category?.color, color: tool.category?.color }}>
-                        {tool.category?.name || '未分类'}
-                      </Badge>
+                      {tool.category ? (
+                        <Link href={`/tools?category=${tool.category.id}`}>
+                          <Badge
+                            variant="outline"
+                            className="cursor-pointer hover:opacity-80 transition-opacity"
+                            style={{ borderColor: tool.category.color, color: tool.category.color }}
+                          >
+                            {tool.category.name}
+                          </Badge>
+                        </Link>
+                      ) : (
+                        <Badge variant="outline">未分类</Badge>
+                      )}
                       {tool.is_free ? (
                         <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">免费</Badge>
                       ) : (
