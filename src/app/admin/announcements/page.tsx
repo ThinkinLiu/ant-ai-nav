@@ -16,11 +16,14 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { useAuth } from '@/contexts/AuthContext'
-import { 
+import {
   Plus, Edit, Trash2, Megaphone, Calendar, ExternalLink,
   GripVertical, Save
 } from 'lucide-react'
 import { toast } from 'sonner'
+
+// 强制动态渲染
+export const dynamic = 'force-dynamic'
 
 interface Announcement {
   id: number
