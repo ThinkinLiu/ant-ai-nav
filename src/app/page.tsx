@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense, useCallback } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -276,6 +276,7 @@ interface HomeData {
 
 function HomePageContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const searchQuery = searchParams.get('search')
   const categoryId = searchParams.get('categoryId')
   const isFeatured = searchParams.get('isFeatured')
@@ -602,6 +603,24 @@ function HomePageContent() {
 
   const handleCategoryChange = (slug: string) => {
     setActiveCategory(slug)
+
+    // 更新 URL 参数
+    const params = new URLSearchParams(searchParams.toString())
+
+    if (slug === 'all') {
+      // 点击"全部"时，移除 categoryId 参数
+      params.delete('categoryId')
+    } else {
+      // 点击具体分类时，设置 categoryId 参数
+      const category = categories.find(c => c.slug === slug)
+      if (category) {
+        params.set('categoryId', category.id.toString())
+      }
+    }
+
+    // 保留其他参数（如 search、isFeatured）
+    const newUrl = params.toString() ? `/?${params.toString()}` : '/'
+    router.replace(newUrl, { scroll: false })
   }
 
   // 获取Tab图标
