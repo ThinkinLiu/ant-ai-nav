@@ -22,10 +22,11 @@ export async function GET() {
       )
     }
 
-    // 获取每个分类的工具数量
+    // 获取每个分类的工具数量（只统计已审核的工具）
     const { data: toolsCount } = await client
       .from('ai_tools')
       .select('category_id')
+      .eq('status', 'approved')
 
     const countMap = new Map<number, number>()
     if (toolsCount) {
