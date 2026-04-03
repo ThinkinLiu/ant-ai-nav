@@ -52,28 +52,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 2. 使用SQL聚合直接获取每个分类的工具数量
-    const { data: countData, error: countError } = await client
-      .rpc('get_tool_counts_by_category')
+    // 2. 使用 Supabase count 功能统计每个分类的工具数量
+    const countMap = new Map<number, number>()
 
-    let countMap = new Map<number, number>()
-    
-    if (countError || !countData) {
-      const { data: allTools } = await client
+    for (const category of categories || []) {
+      const { count } = await client
         .from('ai_tools')
-        .select('category_id')
+        .select('*', { count: 'exact', head: true })
         .eq('status', 'approved')
-        .limit(3000)
+        .eq('category_id', category.id)
 
-      if (allTools) {
-        for (const tool of allTools) {
-          const count = countMap.get(tool.category_id) || 0
-          countMap.set(tool.category_id, count + 1)
-        }
-      }
-    } else {
-      for (const item of countData) {
-        countMap.set(item.category_id, item.count)
+      if (count !== null) {
+        countMap.set(category.id, count)
       }
     }
 
