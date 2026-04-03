@@ -77,7 +77,7 @@ export function Header() {
             精选推荐
           </Link>
           <Link href="/categories" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            分类浏览
+            AI分类
           </Link>
           <Link href="/news?category=tutorial" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             AI教程
@@ -228,7 +228,7 @@ export function Header() {
                 精选推荐
               </Link>
               <Link href="/categories" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
-                分类浏览
+                AI分类
               </Link>
               <Link href="/news?category=tutorial" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
                 AI教程
