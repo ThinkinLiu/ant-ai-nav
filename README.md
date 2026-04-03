@@ -188,6 +188,7 @@ pnpm dev
 ```
 
 访问 http://localhost:5000 查看效果。
+[Ant AI Nav演示地址](https://ai.mayiai.site/)
 
 ---
 
@@ -617,6 +618,6 @@ DELETE /api/tools/[id]   # 删除
 
 **如果这个项目对你有帮助，请给个 ⭐️ Star 支持一下！**
 
-Made with ❤️ by Ant AI Nav Team
+Made with ❤️ by [Ant AI Nav](https://ai.mayiai.site/) Team
 
 </div>
