@@ -989,7 +989,7 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
                `${categories.find(c => c.slug === activeCategory)?.name || '分类工具'}`}
             </h2>
             <p className="text-muted-foreground">
-              共 {tools.length} 个工具
+              已加载 {tools.length} 个工具
             </p>
           </div>
 

@@ -218,7 +218,7 @@ function ToolsPageContent() {
                 <h1 className="text-2xl font-bold">{getSortTitle()}</h1>
               </div>
               <Badge variant="secondary" className="text-sm">
-                共 {total} 个工具
+                已加载 {total} 个工具
               </Badge>
             </div>
             
