@@ -310,15 +310,30 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
       const data = await response.json()
 
       if (data.success) {
+        // 去重处理：确保 tabs 中没有重复的 ID
+        const uniqueTabs = (data.data.tabs || []).filter((tab: Tab, index: number, self: Tab[]) =>
+          self.findIndex((t: Tab) => t.id === tab.id) === index
+        )
+
+        // 去重处理：确保工具列表中没有重复的 ID
+        const deduplicateTools = (tools: Tool[]) => {
+          const seen = new Set<number>()
+          return tools.filter((tool: Tool) => {
+            if (seen.has(tool.id)) return false
+            seen.add(tool.id)
+            return true
+          })
+        }
+
         setCategories(data.data.categories || [])
         setTotalToolCount(data.data.totalToolCount || 0)
-        setTabs(data.data.tabs || [])
+        setTabs(uniqueTabs)
         setCurrentTab(data.data.currentTab || null)
-        setTabTools(data.data.tabTools || [])
+        setTabTools(deduplicateTools(data.data.tabTools || []))
         setTabNews(data.data.tabNews || [])
         setTabFame(data.data.tabFame || [])
         setTabTimeline(data.data.tabTimeline || [])
-        setHotTools(data.data.hotTools || [])
+        setHotTools(deduplicateTools(data.data.hotTools || []))
         setCategoriesLoaded(true)
         setError(null)
       } else {
@@ -386,15 +401,30 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
             if (homeResponse.ok) {
               const homeData = await homeResponse.json()
               if (homeData.success) {
+                // 去重处理：确保 tabs 中没有重复的 ID
+                const uniqueTabs = (homeData.data.tabs || []).filter((tab: Tab, index: number, self: Tab[]) =>
+                  self.findIndex((t: Tab) => t.id === tab.id) === index
+                )
+
+                // 去重处理：确保工具列表中没有重复的 ID
+                const deduplicateTools = (tools: Tool[]) => {
+                  const seen = new Set<number>()
+                  return tools.filter((tool: Tool) => {
+                    if (seen.has(tool.id)) return false
+                    seen.add(tool.id)
+                    return true
+                  })
+                }
+
                 setCategories(homeData.data.categories || [])
                 setTotalToolCount(homeData.data.totalToolCount || 0)
-                setTabs(homeData.data.tabs || [])
+                setTabs(uniqueTabs)
                 setCurrentTab(homeData.data.currentTab || null)
-                setTabTools(homeData.data.tabTools || [])
+                setTabTools(deduplicateTools(homeData.data.tabTools || []))
                 setTabNews(homeData.data.tabNews || [])
                 setTabFame(homeData.data.tabFame || [])
                 setTabTimeline(homeData.data.tabTimeline || [])
-                setHotTools(homeData.data.hotTools || [])
+                setHotTools(deduplicateTools(homeData.data.hotTools || []))
               }
             }
 
@@ -764,11 +794,11 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
           <div className="container mx-auto px-4">
             <Tabs value={currentTab?.slug || tabs[0]?.slug} onValueChange={handleTabChange}>
               <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0 mb-6">
-                {tabs.map((tab) => {
+                {tabs.filter((tab, index, self) => self.findIndex(t => t.id === tab.id) === index).map((tab) => {
                   const Icon = getTabIcon(tab.icon)
                   return (
                     <TabsTrigger
-                      key={tab.id}
+                      key={`tab-${tab.id}`}
                       value={tab.slug}
                       className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                       style={tab.color ? {
@@ -798,15 +828,26 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
               </div>
             ) : (
               <>
-                {/* 工具Tab */}
-                {currentTab?.type === 'tools' && tabTools.length > 0 && (
+                {/* 工具Tab - 支持所有工具相关的类型 */}
+                {(
+                  currentTab?.type === 'tools' ||
+                  currentTab?.type === 'hot_tools' ||
+                  currentTab?.type === 'domestic_tools' ||
+                  currentTab?.type === 'foreign_tools' ||
+                  currentTab?.type === 'lobster_tools' ||
+                  currentTab?.type === 'category' ||
+                  currentTab?.type === 'tag' ||
+                  currentTab?.type === 'ranking'
+                ) && tabTools.length > 0 && (
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-                    {tabTools.map((tool) => (
-                      <Link key={tool.id} href={`/tool/${tool.slug}`} className="group">
+                    {tabTools.filter((tool, index, self) => self.findIndex(t => t.id === tool.id) === index).map((tool) => (
+                      <Link key={`tool-${tool.id}-${tool.slug}`} href={`/tool/${tool.slug}`} className="group">
                         <Card className="overflow-hidden h-full transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary">
                           <CardContent className="p-4 text-center">
                             <ToolLogoNext
-                              tool={tool}
+                              logo={tool.logo}
+                              name={tool.name}
+                              website={tool.website}
                               size={48}
                               className="mx-auto mb-2 transition-transform duration-200 group-hover:scale-110"
                             />
@@ -823,8 +864,8 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
                 {/* AI名人堂Tab */}
                 {currentTab?.type === 'fame' && tabFame.length > 0 && (
                   <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-4">
-                    {tabFame.map((fame) => (
-                      <Link key={fame.id} href={`/hall-of-fame/${fame.id}`} className="group">
+                    {tabFame.filter((fame, index, self) => self.findIndex(f => f.id === fame.id) === index).map((fame) => (
+                      <Link key={`fame-${fame.id}`} href={`/hall-of-fame/${fame.id}`} className="group">
                         <Card className="overflow-hidden h-full transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer">
                           <CardContent className="p-3 text-center">
                             <div className="relative w-12 h-12 mx-auto mb-2 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400">
@@ -856,10 +897,10 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
                 )}
 
                 {/* 资讯Tab */}
-                {currentTab?.type === 'articles' && tabNews.length > 0 && (
+                {(currentTab?.type === 'articles' || currentTab?.type === 'news' || currentTab?.type === 'tutorial_tools') && tabNews.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {tabNews.map((news) => (
-                      <Link key={news.id} href={`/article/${news.id}`} className="group">
+                    {tabNews.filter((news, index, self) => self.findIndex(n => n.id === news.id) === index).map((news) => (
+                      <Link key={`news-${news.id}`} href={`/article/${news.id}`} className="group">
                         <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg cursor-pointer">
                           {news.cover_image && (
                             <div className="relative h-48 overflow-hidden">
@@ -902,8 +943,8 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
                 {/* 大事纪Tab */}
                 {currentTab?.type === 'timeline' && tabTimeline.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {tabTimeline.map((timeline) => (
-                      <Link key={timeline.id} href={`/timeline/${timeline.id}`} className="group">
+                    {tabTimeline.filter((timeline, index, self) => self.findIndex(t => t.id === timeline.id) === index).map((timeline) => (
+                      <Link key={`timeline-${timeline.id}`} href={`/timeline/${timeline.id}`} className="group">
                         <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg cursor-pointer border-2 hover:border-primary">
                           <CardContent className="p-4">
                             <div className="flex items-start gap-4">
@@ -960,12 +1001,12 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
                 <h3 className="text-xl font-semibold">热门工具</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {hotTools.slice(0, 4).map((tool) => (
-                  <Link key={tool.id} href={`/tool/${tool.slug}`} className="group">
+                {hotTools.slice(0, 4).filter((tool, index, self) => self.findIndex(t => t.id === tool.id) === index).map((tool) => (
+                  <Link key={`hot-${tool.id}`} href={`/tool/${tool.slug}`} className="group">
                     <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary">
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
-                          <ToolLogoNext tool={tool} size={48} />
+                          <ToolLogoNext logo={tool.logo} name={tool.name} website={tool.website} size={48} />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
@@ -1029,12 +1070,12 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
           ) : tools.length > 0 ? (
             <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {tools.map((tool) => (
-                <Link key={tool.id} href={`/tool/${tool.slug}`} className="group">
+              {tools.filter((tool, index, self) => self.findIndex(t => t.id === tool.id) === index).map((tool) => (
+                <Link key={`latest-${tool.id}`} href={`/tool/${tool.slug}`} className="group">
                   <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
-                        <ToolLogoNext tool={tool} size={48} className="transition-transform duration-200 group-hover:scale-110" />
+                        <ToolLogoNext logo={tool.logo} name={tool.name} website={tool.website} size={48} className="transition-transform duration-200 group-hover:scale-110" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
