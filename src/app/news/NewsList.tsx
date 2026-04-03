@@ -67,14 +67,20 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
   const [showHotOnly, setShowHotOnly] = useState(false)
   const pageSize = 15
   const observerRef = useRef<HTMLDivElement>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // 初始化时读取 URL 参数
   useEffect(() => {
     const categoryParam = searchParams.get('category')
-    if (categoryParam) {
-      setSelectedCategory(categoryParam)
-    }
-  }, [searchParams])
+    const searchParam = searchParams.get('search')
+    const hotParam = searchParams.get('hot') === 'true'
+
+    // 设置初始状态
+    setSelectedCategory(categoryParam || null)
+    setSearchQuery(searchParam || '')
+    setShowHotOnly(hotParam)
+    setIsInitialized(true)
+  }, []) // 只在组件挂载时执行一次
 
   const fetchNews = useCallback(async (pageNum: number, category: string | null, search: string, hotOnly: boolean) => {
     setLoading(true)
@@ -112,10 +118,13 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
     }
   }, [])
 
+  // 当状态变化时获取数据
   useEffect(() => {
-    fetchNews(1, selectedCategory, searchQuery, showHotOnly)
-    setPage(1)
-  }, [selectedCategory, searchQuery, showHotOnly, fetchNews])
+    if (isInitialized) {
+      fetchNews(1, selectedCategory, searchQuery, showHotOnly)
+      setPage(1)
+    }
+  }, [selectedCategory, searchQuery, showHotOnly, fetchNews, isInitialized])
 
   // 无限滚动
   useEffect(() => {
