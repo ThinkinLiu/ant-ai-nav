@@ -6,18 +6,15 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
 } from '@/components/ui/select'
 import { Flame, Eye, Heart, ArrowLeft, Loader2, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
 import { ToolLogoNext } from '@/components/tools/ToolLogo'
-
-// 强制动态渲染
-export const dynamic = 'force-dynamic'
 
 interface Category {
   id: number
@@ -141,7 +138,7 @@ export default function HotChinaPage() {
             <h1 className="text-3xl font-bold">国内火爆AI工具</h1>
             <Badge variant="destructive" className="ml-2">HOT</Badge>
           </div>
-
+          
           <p className="text-muted-foreground max-w-2xl">
             精选国内最受欢迎的AI工具，包括大模型对话、AI绘画、AI写作、AI编程等多个领域的热门产品。
           </p>
@@ -155,7 +152,7 @@ export default function HotChinaPage() {
           <p className="text-sm text-muted-foreground">
             共找到 <span className="font-medium text-foreground">{total}</span> 个火爆工具
           </p>
-
+          
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={selectedCategory} onValueChange={handleCategoryChange}>
@@ -185,12 +182,12 @@ export default function HotChinaPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {tools.map((tool, index) => (
                 <Link key={tool.id} href={`/tools/${tool.id}`}>
-                  <Card className="overflow-hidden h-full flex flex-col hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
-                    <CardContent className="p-5 flex flex-col flex-1">
-                      <div className="flex items-start gap-3 flex-1">
+                  <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+                    <CardContent className="p-5">
+                      <div className="flex items-start gap-3">
                         {/* Rank Badge */}
                         <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                          (page - 1) * limit + index < 3
+                          (page - 1) * limit + index < 3 
                             ? index === 0 ? 'bg-yellow-400 text-yellow-900' :
                               index === 1 ? 'bg-gray-300 text-gray-700' :
                               'bg-amber-600 text-white'
@@ -201,9 +198,9 @@ export default function HotChinaPage() {
 
                         {/* Logo */}
                         <div className="h-10 w-10 rounded-lg overflow-hidden flex-shrink-0">
-                          <ToolLogoNext
-                            logo={tool.logo}
-                            name={tool.name}
+                          <ToolLogoNext 
+                            logo={tool.logo} 
+                            name={tool.name} 
                             website={tool.website}
                             className="h-full w-full rounded-lg"
                             size={40}
@@ -259,7 +256,7 @@ export default function HotChinaPage() {
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   上一页
                 </Button>
-
+                
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum: number
@@ -272,7 +269,7 @@ export default function HotChinaPage() {
                     } else {
                       pageNum = page - 2 + i
                     }
-
+                    
                     return (
                       <Button
                         key={pageNum}
@@ -286,7 +283,7 @@ export default function HotChinaPage() {
                     )
                   })}
                 </div>
-
+                
                 <Button
                   variant="outline"
                   size="sm"
@@ -296,7 +293,7 @@ export default function HotChinaPage() {
                   下一页
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
-
+                
                 <span className="text-sm text-muted-foreground ml-2">
                   第 {page}/{totalPages} 页
                 </span>

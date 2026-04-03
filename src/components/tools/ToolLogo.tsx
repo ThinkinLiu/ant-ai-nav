@@ -111,26 +111,25 @@ export function ToolLogo({
   const bgColor = useMemo(() => {
     if (fallbackBgColor) return fallbackBgColor
     const colors = [
-      '#EF4444', '#F97316', '#F59E0B', '#EAB308',
+      '#EF4444', '#F97316', '#F59E0B', '#EAB308', 
       '#84CC16', '#22C55E', '#10B981', '#14B8A6',
       '#06B6D4', '#0EA5E9', '#3B82F6', '#6366F1',
       '#8B5CF6', '#A855F7', '#D946EF', '#EC4899'
     ]
     let hash = 0
-    const nameStr = name || 'Unknown'
-    for (let i = 0; i < nameStr.length; i++) {
-      hash = nameStr.charCodeAt(i) + ((hash << 5) - hash)
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash)
     }
     return colors[Math.abs(hash) % colors.length]
   }, [name, fallbackBgColor])
 
   // 首字母头像（最终兜底）
   const renderFallback = () => (
-    <div
+    <div 
       className={`flex items-center justify-center text-white font-bold ${className}`}
       style={{ backgroundColor: bgColor }}
     >
-      {(name || 'Unknown')[0]?.toUpperCase() || '?'}
+      {name[0]?.toUpperCase() || '?'}
     </div>
   )
 
@@ -225,26 +224,25 @@ export function ToolLogoNext({
   const bgColor = useMemo(() => {
     if (fallbackBgColor) return fallbackBgColor
     const colors = [
-      '#EF4444', '#F97316', '#F59E0B', '#EAB308',
+      '#EF4444', '#F97316', '#F59E0B', '#EAB308', 
       '#84CC16', '#22C55E', '#10B981', '#14B8A6',
       '#06B6D4', '#0EA5E9', '#3B82F6', '#6366F1',
       '#8B5CF6', '#A855F7', '#D946EF', '#EC4899'
     ]
     let hash = 0
-    const nameStr = name || 'Unknown'
-    for (let i = 0; i < nameStr.length; i++) {
-      hash = nameStr.charCodeAt(i) + ((hash << 5) - hash)
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash)
     }
     return colors[Math.abs(hash) % colors.length]
   }, [name, fallbackBgColor])
 
   // 首字母头像（最终兜底）
   const renderFallback = () => (
-    <div
+    <div 
       className={`flex items-center justify-center text-white font-bold ${className}`}
       style={{ backgroundColor: bgColor, width: size, height: size }}
     >
-      {(name || 'Unknown')[0]?.toUpperCase() || '?'}
+      {name[0]?.toUpperCase() || '?'}
     </div>
   )
 
