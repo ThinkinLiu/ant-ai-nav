@@ -185,9 +185,9 @@ export default function HotChinaPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {tools.map((tool, index) => (
                 <Link key={tool.id} href={`/tools/${tool.id}`}>
-                  <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
-                    <CardContent className="p-5">
-                      <div className="flex items-start gap-3">
+                  <Card className="overflow-hidden h-full flex flex-col hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+                    <CardContent className="p-5 flex flex-col flex-1">
+                      <div className="flex items-start gap-3 flex-1">
                         {/* Rank Badge */}
                         <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
                           (page - 1) * limit + index < 3

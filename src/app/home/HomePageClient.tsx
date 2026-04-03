@@ -1003,9 +1003,9 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {hotTools.slice(0, 4).filter((tool, index, self) => self.findIndex(t => t.id === tool.id) === index).map((tool) => (
                   <Link key={`hot-${tool.id}`} href={`/tool/${tool.slug}`} className="group">
-                    <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
+                    <Card className="overflow-hidden h-full flex flex-col transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary">
+                      <CardContent className="p-4 flex flex-col flex-1">
+                        <div className="flex items-start gap-3 flex-1">
                           <ToolLogoNext logo={tool.logo} name={tool.name} website={tool.website} size={48} />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
@@ -1072,9 +1072,9 @@ export function HomePageClient({ searchQuery, categoryId, isFeatured }: HomePage
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {tools.filter((tool, index, self) => self.findIndex(t => t.id === tool.id) === index).map((tool) => (
                 <Link key={`latest-${tool.id}`} href={`/tool/${tool.slug}`} className="group">
-                  <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
+                  <Card className="overflow-hidden h-full flex flex-col transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer border-2 hover:border-primary">
+                    <CardContent className="p-4 flex flex-col flex-1">
+                      <div className="flex items-start gap-3 flex-1">
                         <ToolLogoNext logo={tool.logo} name={tool.name} website={tool.website} size={48} className="transition-transform duration-200 group-hover:scale-110" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">

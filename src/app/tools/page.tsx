@@ -311,8 +311,8 @@ function ToolsPageContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {tools.map((tool, index) => (
                 <Link key={tool.id} href={`/tools/${tool.id}`}>
-                  <Card className="overflow-hidden h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
-                    <CardContent className="p-6">
+                  <Card className="overflow-hidden h-full flex flex-col hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
+                    <CardContent className="p-6 flex flex-col flex-1">
                       {/* 热度排名标识 */}
                       {sortBy === 'view_count' && (page - 1) * limit + index < 10 && (
                         <div className="absolute top-3 right-3">
@@ -327,7 +327,7 @@ function ToolsPageContent() {
                         </div>
                       )}
                       
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 flex-1">
                         <ToolLogoNext 
                           logo={tool.logo}
                           name={tool.name}
