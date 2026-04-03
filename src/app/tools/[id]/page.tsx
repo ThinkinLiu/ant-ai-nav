@@ -34,7 +34,7 @@ interface Tool {
   view_count: number
   favorite_count: number
   created_at: string
-  category: { id: number; name: string; color: string } | null
+  category: { id: number; name: string; slug: string; color: string } | null
   publisher: { id: string; name: string; avatar: string | null } | null
   tags: { id: number; name: string; slug: string }[]
   avgRating: number
@@ -266,9 +266,19 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
                     </div>
                     <p className="text-muted-foreground">{tool.description}</p>
                     <div className="flex items-center gap-4 mt-4">
-                      <Badge variant="outline" style={{ borderColor: tool.category?.color, color: tool.category?.color }}>
-                        {tool.category?.name || '未分类'}
-                      </Badge>
+                      {tool.category ? (
+                        <Link href={`/tools?category=${tool.category.slug}`}>
+                          <Badge
+                            variant="outline"
+                            className="cursor-pointer hover:opacity-80 transition-opacity"
+                            style={{ borderColor: tool.category.color, color: tool.category.color }}
+                          >
+                            {tool.category.name}
+                          </Badge>
+                        </Link>
+                      ) : (
+                        <Badge variant="outline">未分类</Badge>
+                      )}
                       {tool.is_free ? (
                         <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">免费</Badge>
                       ) : (

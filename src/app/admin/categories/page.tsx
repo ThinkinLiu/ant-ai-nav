@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -30,7 +31,8 @@ import {
   Trash2, 
   GripVertical,
   AlertCircle,
-  Layers
+  Layers,
+  ExternalLink
 } from 'lucide-react'
 import { useConfirm } from '@/hooks/use-confirm'
 
@@ -357,9 +359,22 @@ export default function CategoriesManagementPage() {
                       {category.description || '-'}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="secondary">
-                        {category.toolCount}
-                      </Badge>
+                      {category.toolCount > 0 ? (
+                        <Link href={`/?categoryId=${category.id}`}>
+                          <Badge
+                            variant="secondary"
+                            className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                            title="点击查看该分类的工具"
+                          >
+                            {category.toolCount}
+                            <ExternalLink className="ml-1 h-3 w-3" />
+                          </Badge>
+                        </Link>
+                      ) : (
+                        <Badge variant="secondary">
+                          0
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-center">
                       {category.sort_order}

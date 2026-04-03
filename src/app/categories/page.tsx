@@ -62,7 +62,7 @@ export default function CategoriesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-3xl font-bold">分类浏览</h1>
+        <h1 className="text-3xl font-bold">AI分类</h1>
         <Badge variant="secondary" className="text-base px-3 py-1">
           共 {totalToolCount} 个工具
         </Badge>

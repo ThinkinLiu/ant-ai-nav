@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category')
     const search = searchParams.get('search')
     const authorId = searchParams.get('authorId')
+    const hot = searchParams.get('hot') === 'true'
     const sortBy = searchParams.get('sortBy') || 'published_at'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
 
@@ -32,6 +33,9 @@ export async function GET(request: NextRequest) {
     }
     if (search) {
       query = query.or(`title.ilike.%${search}%,summary.ilike.%${search}%`)
+    }
+    if (hot) {
+      query = query.eq('is_hot', true)
     }
 
     // 排序

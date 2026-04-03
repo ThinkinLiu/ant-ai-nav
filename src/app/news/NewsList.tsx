@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 // 格式化时间，精确到分钟
 function formatDateTime(dateStr: string): string {
@@ -56,6 +57,7 @@ interface Props {
 }
 
 export function NewsList({ totalCount, categoryConfig }: Props) {
+  const searchParams = useSearchParams()
   const [news, setNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -65,6 +67,20 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
   const [showHotOnly, setShowHotOnly] = useState(false)
   const pageSize = 15
   const observerRef = useRef<HTMLDivElement>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  // 初始化时读取 URL 参数
+  useEffect(() => {
+    const categoryParam = searchParams.get('category')
+    const searchParam = searchParams.get('search')
+    const hotParam = searchParams.get('hot') === 'true'
+
+    // 设置初始状态
+    setSelectedCategory(categoryParam || null)
+    setSearchQuery(searchParam || '')
+    setShowHotOnly(hotParam)
+    setIsInitialized(true)
+  }, []) // 只在组件挂载时执行一次
 
   const fetchNews = useCallback(async (pageNum: number, category: string | null, search: string, hotOnly: boolean) => {
     setLoading(true)
@@ -102,10 +118,13 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
     }
   }, [])
 
+  // 当状态变化时获取数据
   useEffect(() => {
-    fetchNews(1, selectedCategory, searchQuery, showHotOnly)
-    setPage(1)
-  }, [selectedCategory, searchQuery, showHotOnly, fetchNews])
+    if (isInitialized) {
+      fetchNews(1, selectedCategory, searchQuery, showHotOnly)
+      setPage(1)
+    }
+  }, [selectedCategory, searchQuery, showHotOnly, fetchNews, isInitialized])
 
   // 无限滚动
   useEffect(() => {

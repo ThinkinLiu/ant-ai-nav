@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -30,6 +31,7 @@ import {
   Trash2,
   AlertCircle,
   Newspaper,
+  ExternalLink
 } from 'lucide-react'
 import { useConfirm } from '@/hooks/use-confirm'
 
@@ -349,9 +351,22 @@ export default function NewsCategoriesManagementPage() {
                       {category.description || '-'}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="secondary">
-                        {category.newsCount}
-                      </Badge>
+                      {category.newsCount > 0 ? (
+                        <Link href={`/news?category=${category.slug}`}>
+                          <Badge
+                            variant="secondary"
+                            className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                            title="点击查看该分类的资讯"
+                          >
+                            {category.newsCount}
+                            <ExternalLink className="ml-1 h-3 w-3" />
+                          </Badge>
+                        </Link>
+                      ) : (
+                        <Badge variant="secondary">
+                          0
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-center">
                       {category.sort_order}

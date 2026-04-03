@@ -45,7 +45,7 @@ export async function Footer() {
             <h3 className="font-semibold mb-4">快速链接</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link href="/" className="hover:text-foreground transition-colors">首页</Link></li>
-              <li><Link href="/categories" className="hover:text-foreground transition-colors">分类浏览</Link></li>
+              <li><Link href="/categories" className="hover:text-foreground transition-colors">AI分类</Link></li>
               <li><Link href="/?isFeatured=true" className="hover:text-foreground transition-colors">精选推荐</Link></li>
               <li><Link href="/publisher" className="hover:text-foreground transition-colors">发布工具</Link></li>
             </ul>

@@ -3,6 +3,9 @@
 import Link from 'next/link'
 import { getCategoryConfig } from '../config'
 import { Avatar } from '../components/Avatar'
+import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Edit } from 'lucide-react'
 
 interface Person {
   id: number
@@ -40,7 +43,11 @@ interface Props {
 }
 
 export function PersonDetail({ person, relatedPeople }: Props) {
+  const { user } = useAuth()
   const categoryInfo = getCategoryConfig(person.category)
+
+  // 检查是否是管理员
+  const isAdmin = user?.role === 'admin'
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -76,10 +83,23 @@ export function PersonDetail({ person, relatedPeople }: Props) {
                 <div className="flex-1">
                   <div className="flex items-start gap-3 flex-wrap">
                     <div>
-                      <h1 className="text-2xl md:text-3xl font-bold">{person.name}</h1>
-                      {person.name_en && (
-                        <p className="text-lg text-muted-foreground mt-1">{person.name_en}</p>
-                      )}
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <h1 className="text-2xl md:text-3xl font-bold">{person.name}</h1>
+                          {person.name_en && (
+                            <p className="text-lg text-muted-foreground mt-1">{person.name_en}</p>
+                          )}
+                        </div>
+                        {/* 管理员修改按钮 */}
+                        {isAdmin && (
+                          <Button variant="outline" size="sm" asChild className="gap-1">
+                            <Link href={`/admin/hall-of-fame/${person.id}/edit`}>
+                              <Edit className="h-4 w-4" />
+                              修改
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     {categoryInfo && (
                       <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium flex items-center gap-1.5">

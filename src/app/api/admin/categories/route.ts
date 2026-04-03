@@ -22,16 +22,19 @@ export async function GET() {
       )
     }
 
-    // 获取每个分类的工具数量
-    const { data: toolsCount } = await client
-      .from('ai_tools')
-      .select('category_id')
-
+    // 获取每个分类的工具数量（只统计已审核的工具）
+    // 使用 Supabase 的 count 功能，避免被默认分页限制
     const countMap = new Map<number, number>()
-    if (toolsCount) {
-      for (const tool of toolsCount) {
-        const count = countMap.get(tool.category_id) || 0
-        countMap.set(tool.category_id, count + 1)
+
+    for (const category of categories || []) {
+      const { count } = await client
+        .from('ai_tools')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'approved')
+        .eq('category_id', category.id)
+
+      if (count !== null) {
+        countMap.set(category.id, count)
       }
     }
 

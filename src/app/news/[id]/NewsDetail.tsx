@@ -99,11 +99,14 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
             <div className="p-6 md:p-8">
               {/* Meta */}
               <div className="flex items-center gap-2 flex-wrap mb-4">
-                {categoryInfo && (
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium flex items-center gap-1.5">
+                {categoryInfo && news.category && (
+                  <Link
+                    href={`/news?category=${news.category}`}
+                    className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium flex items-center gap-1.5 hover:bg-primary/20 transition-colors cursor-pointer"
+                  >
                     <span>{categoryInfo?.icon}</span>
                     <span>{categoryInfo?.label}</span>
-                  </span>
+                  </Link>
                 )}
                 {news.is_hot && (
                   <span className="px-3 py-1 bg-red-500/10 text-red-600 dark:text-red-400 rounded-full text-sm font-medium">

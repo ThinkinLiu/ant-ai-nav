@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Search, Menu, X, Plus, Settings, LogOut, User, LayoutDashboard } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface SiteSettings {
@@ -22,10 +23,40 @@ interface SiteSettings {
 
 export function Header() {
   const { user, logout } = useAuth()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({ ranking_enabled: true })
   const router = useRouter()
+
+  // 判断菜单项是否激活
+  const isActive = (href: string) => {
+    if (href === '/') {
+      return pathname === '/' && !searchParams.get('isFeatured') && !searchParams.get('search') && !searchParams.get('categoryId')
+    }
+    if (href === '/?isFeatured=true') {
+      return searchParams.get('isFeatured') === 'true'
+    }
+    if (href === '/categories') {
+      return pathname === '/categories' || searchParams.get('categoryId') !== null
+    }
+    if (href === '/news?category=tutorial') {
+      return pathname === '/news' && searchParams.get('category') === 'tutorial'
+    }
+    if (href === '/news') {
+      return pathname === '/news' && searchParams.get('category') !== 'tutorial'
+    }
+    // 对于其他路径，直接匹配 pathname
+    return pathname === href || pathname.startsWith(href + '/')
+  }
+
+  // 获取激活的菜单项样式
+  const getActiveClass = (href: string) => {
+    return isActive(href)
+      ? 'text-primary font-semibold'
+      : 'text-muted-foreground hover:text-foreground'
+  }
 
   useEffect(() => {
     // 获取网站设置
@@ -70,30 +101,30 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-4">
-          <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/" className={`text-sm font-medium transition-colors ${getActiveClass('/')}`}>
             首页
           </Link>
-          <Link href="/?isFeatured=true" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/?isFeatured=true" className={`text-sm font-medium transition-colors ${getActiveClass('/?isFeatured=true')}`}>
             精选推荐
           </Link>
-          <Link href="/categories" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            分类浏览
+          <Link href="/categories" className={`text-sm font-medium transition-colors ${getActiveClass('/categories')}`}>
+            AI分类
           </Link>
-          <Link href="/news?category=tutorial" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/news?category=tutorial" className={`text-sm font-medium transition-colors ${getActiveClass('/news?category=tutorial')}`}>
             AI教程
           </Link>
           {siteSettings.ranking_enabled && (
-            <Link href="/ranking" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/ranking" className={`text-sm font-medium transition-colors ${getActiveClass('/ranking')}`}>
               排行榜
             </Link>
           )}
-          <Link href="/news" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/news" className={`text-sm font-medium transition-colors ${getActiveClass('/news')}`}>
             AI资讯
           </Link>
-          <Link href="/hall-of-fame" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/hall-of-fame" className={`text-sm font-medium transition-colors ${getActiveClass('/hall-of-fame')}`}>
             AI名人堂
           </Link>
-          <Link href="/timeline" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/timeline" className={`text-sm font-medium transition-colors ${getActiveClass('/timeline')}`}>
             AI大事纪
           </Link>
         </nav>
@@ -221,30 +252,30 @@ export function Header() {
               </div>
             </form>
             <nav className="flex flex-col space-y-2">
-              <Link href="/" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+              <Link href="/" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
                 首页
               </Link>
-              <Link href="/?isFeatured=true" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+              <Link href="/?isFeatured=true" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/?isFeatured=true')}`} onClick={() => setIsMenuOpen(false)}>
                 精选推荐
               </Link>
-              <Link href="/categories" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
-                分类浏览
+              <Link href="/categories" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/categories')}`} onClick={() => setIsMenuOpen(false)}>
+                AI分类
               </Link>
-              <Link href="/news?category=tutorial" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+              <Link href="/news?category=tutorial" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/news?category=tutorial')}`} onClick={() => setIsMenuOpen(false)}>
                 AI教程
               </Link>
               {siteSettings.ranking_enabled && (
-                <Link href="/ranking" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                <Link href="/ranking" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/ranking')}`} onClick={() => setIsMenuOpen(false)}>
                   排行榜
                 </Link>
               )}
-              <Link href="/news" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+              <Link href="/news" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/news')}`} onClick={() => setIsMenuOpen(false)}>
                 AI资讯
               </Link>
-              <Link href="/hall-of-fame" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+              <Link href="/hall-of-fame" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/hall-of-fame')}`} onClick={() => setIsMenuOpen(false)}>
                 AI名人堂
               </Link>
-              <Link href="/timeline" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+              <Link href="/timeline" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/timeline')}`} onClick={() => setIsMenuOpen(false)}>
                 AI大事纪
               </Link>
               {user ? (

@@ -119,18 +119,6 @@ export default async function NewsPage({ searchParams }: PageProps) {
     .from('ai_news')
     .select('*', { count: 'exact', head: true })
   
-  // 获取各分类数量
-  const { data: categoryStats } = await supabase
-    .from('ai_news')
-    .select('category')
-  
-  const categoryCounts: Record<string, number> = {}
-  categoryStats?.forEach(item => {
-    if (item.category) {
-      categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1
-    }
-  })
-  
   // 获取默认分类（is_default=true）
   const { data: defaultCategories } = await supabase
     .from('news_categories')
@@ -182,20 +170,6 @@ export default async function NewsPage({ searchParams }: PageProps) {
             共 <span className="text-primary font-medium">{totalCount || 0}</span> 条资讯
           </div>
         </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-        {Object.entries(categoryConfigFromDB).map(([key, config]) => (
-          <div 
-            key={key}
-            className={`bg-gradient-to-br ${config.color} border rounded-xl p-4 text-center`}
-          >
-            <div className="text-2xl mb-1">{config.icon}</div>
-            <div className="text-xl font-bold">{categoryCounts[key] || 0}</div>
-            <div className="text-xs text-muted-foreground">{config.label}</div>
-          </div>
-        ))}
       </div>
 
       {/* Featured News */}
