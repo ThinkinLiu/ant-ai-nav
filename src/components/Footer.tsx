@@ -117,47 +117,54 @@ export async function Footer() {
 
         {/* 版权信息 */}
         {copyrightEnabled && (
-          <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground space-y-2">
-            {siteUrl ? (
-              <a 
-                href={siteUrl} 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-foreground transition-colors font-medium"
-              >
-                {siteName}
-              </a>
-            ) : (
-              <span className="font-medium">{siteName}</span>
-            )}
-            
-            {copyrightText && (
+          <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground space-y-3">
+            {/* 版权文本（包含站点名称） */}
+            {copyrightText ? (
               <div dangerouslySetInnerHTML={{ __html: copyrightText }} />
+            ) : (
+              <div className="space-y-1">
+                {siteUrl ? (
+                  <a 
+                    href={siteUrl} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors font-medium"
+                  >
+                    {siteName}
+                  </a>
+                ) : (
+                  <span className="font-medium">{siteName}</span>
+                )}
+              </div>
             )}
             
-            <div className="flex justify-center gap-4 flex-wrap">
-              {icp && (
-                <a 
-                  href={icpUrl || '#'} 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-foreground transition-colors"
-                >
-                  {icp}
-                </a>
-              )}
-              {police && (
-                <a 
-                  href={policeUrl || '#'} 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-foreground transition-colors"
-                >
-                  {police}
-                </a>
-              )}
-            </div>
+            {/* 备案信息 */}
+            {(icp || police) && (
+              <div className="flex justify-center gap-4 flex-wrap">
+                {icp && (
+                  <a 
+                    href={icpUrl || '#'} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    {icp}
+                  </a>
+                )}
+                {police && (
+                  <a 
+                    href={policeUrl || '#'} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    {police}
+                  </a>
+                )}
+              </div>
+            )}
             
+            {/* 附加信息 */}
             {additional && (
               <div dangerouslySetInnerHTML={{ __html: additional }} />
             )}
