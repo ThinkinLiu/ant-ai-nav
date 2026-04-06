@@ -47,6 +47,48 @@ function formatCopyrightYear(yearStart: number, yearEnd: string): string {
   return yearStart.toString()
 }
 
+function replaceCopyrightPlaceholders(
+  text: string,
+  siteName: string,
+  yearStart: number,
+  yearEnd: string,
+  companyName?: string,
+  companyEmail?: string
+): string {
+  const currentYear = new Date().getFullYear()
+  const yearRange = formatCopyrightYear(yearStart, yearEnd)
+  
+  let result = text
+  
+  // 年份相关占位符
+  result = result.replace(/\[年份\]/g, yearStart.toString())
+  result = result.replace(/\[year\]/gi, yearStart.toString())
+  
+  result = result.replace(/\[当前年份\]/g, currentYear.toString())
+  result = result.replace(/\[current_year\]/gi, currentYear.toString())
+  
+  result = result.replace(/\[年份范围\]/g, yearRange)
+  result = result.replace(/\[year_range\]/gi, yearRange)
+  
+  // 站点名称占位符
+  result = result.replace(/\[网站名\]/g, siteName)
+  result = result.replace(/\[site_name\]/gi, siteName)
+  
+  // 公司名称占位符
+  if (companyName) {
+    result = result.replace(/\[公司名\]/g, companyName)
+    result = result.replace(/\[company_name\]/gi, companyName)
+  }
+  
+  // 联系邮箱占位符
+  if (companyEmail) {
+    result = result.replace(/\[联系邮箱\]/g, companyEmail)
+    result = result.replace(/\[email\]/gi, companyEmail)
+  }
+  
+  return result
+}
+
 export async function Footer() {
   const friendLinks = await getFriendLinks()
   const copyrightSettings = await getCopyrightSettings()
@@ -144,7 +186,16 @@ export async function Footer() {
           <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground space-y-2">
             {/* 版权文本（包含年份和站点名称） */}
             {copyrightText ? (
-              <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: copyrightText }} />
+              <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ 
+                __html: replaceCopyrightPlaceholders(
+                  copyrightText,
+                  siteName,
+                  copyrightYearStart,
+                  copyrightYearEnd,
+                  companyName,
+                  companyEmail
+                )
+              }} />
             ) : (
               <div className="space-y-1">
                 <div className="flex items-center justify-center flex-wrap gap-1">
@@ -206,7 +257,16 @@ export async function Footer() {
             
             {/* 附加信息 */}
             {additional && (
-              <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: additional }} />
+              <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ 
+                __html: replaceCopyrightPlaceholders(
+                  additional,
+                  siteName,
+                  copyrightYearStart,
+                  copyrightYearEnd,
+                  companyName,
+                  companyEmail
+                )
+              }} />
             )}
           </div>
         )}

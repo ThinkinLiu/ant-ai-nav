@@ -180,6 +180,59 @@ export default function SEOSettingsPage() {
     }
   }
 
+  const formatCopyrightYear = (yearStart: number, yearEnd: string): string => {
+    const currentYear = new Date().getFullYear()
+    
+    if (yearEnd === 'current') {
+      return `${yearStart} - ${currentYear}`
+    }
+    
+    if (yearEnd === 'forever') {
+      return `${yearStart} - 至今`
+    }
+    
+    if (yearEnd && yearEnd !== yearStart.toString()) {
+      return `${yearStart} - ${yearEnd}`
+    }
+    
+    return yearStart.toString()
+  }
+
+  const replaceCopyrightPlaceholders = (text: string): string => {
+    const currentYear = new Date().getFullYear()
+    const yearRange = formatCopyrightYear(settings.copyright_year_start, settings.copyright_year_end)
+    
+    let result = text
+    
+    // 年份相关占位符
+    result = result.replace(/\[年份\]/g, settings.copyright_year_start.toString())
+    result = result.replace(/\[year\]/gi, settings.copyright_year_start.toString())
+    
+    result = result.replace(/\[当前年份\]/g, currentYear.toString())
+    result = result.replace(/\[current_year\]/gi, currentYear.toString())
+    
+    result = result.replace(/\[年份范围\]/g, yearRange)
+    result = result.replace(/\[year_range\]/gi, yearRange)
+    
+    // 站点名称占位符
+    result = result.replace(/\[网站名\]/g, settings.site_name || '蚂蚁AI导航')
+    result = result.replace(/\[site_name\]/gi, settings.site_name || '蚂蚁AI导航')
+    
+    // 公司名称占位符
+    if (settings.copyright_company_name) {
+      result = result.replace(/\[公司名\]/g, settings.copyright_company_name)
+      result = result.replace(/\[company_name\]/gi, settings.copyright_company_name)
+    }
+    
+    // 联系邮箱占位符
+    if (settings.copyright_company_email) {
+      result = result.replace(/\[联系邮箱\]/g, settings.copyright_company_email)
+      result = result.replace(/\[email\]/gi, settings.copyright_company_email)
+    }
+    
+    return result
+  }
+
   const updateField = (field: keyof SEOSettings, value: any) => {
     setSettings(prev => ({ ...prev, [field]: value }))
   }
@@ -676,7 +729,15 @@ export default function SEOSettingsPage() {
                     minHeight="100px"
                   />
                   <p className="text-xs text-muted-foreground">
-                    可选的版权声明文本。支持<strong>粗体</strong>、<em>斜体</em>、<u>下划线</u>、链接等富文本格式。不填则使用默认格式：© [年份] [站点名称]. All rights reserved.
+                    可选的版权声明文本。支持<strong>粗体</strong>、<em>斜体</em>、<u>下划线</u>、链接等富文本格式。不填则使用默认格式。
+                    <br />
+                    <strong>可用占位符：</strong>
+                    <span className="ml-1">[年份]</span>、
+                    <span>[当前年份]</span>、
+                    <span>[年份范围]</span>、
+                    <span>[网站名]</span>、
+                    <span>[公司名]</span>、
+                    <span>[联系邮箱]</span>
                   </p>
                 </div>
               </CardContent>
@@ -786,7 +847,7 @@ export default function SEOSettingsPage() {
                     className="font-mono text-sm"
                   />
                   <p className="text-xs text-muted-foreground">
-                    支持HTML标签，将显示在版权信息下方
+                    支持HTML标签，将显示在版权信息下方。支持使用占位符：[年份]、[当前年份]、[年份范围]、[网站名]、[公司名]、[联系邮箱]
                   </p>
                 </div>
               </CardContent>
@@ -803,7 +864,9 @@ export default function SEOSettingsPage() {
                     <>
                       {/* 版权文本（包含年份和站点名称） */}
                       {settings.copyright_text ? (
-                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: settings.copyright_text }} />
+                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ 
+                          __html: replaceCopyrightPlaceholders(settings.copyright_text)
+                        }} />
                       ) : (
                         <div className="space-y-1">
                           <div className="flex items-center justify-center flex-wrap gap-1">
@@ -876,7 +939,9 @@ export default function SEOSettingsPage() {
 
                       {/* 附加信息 */}
                       {settings.copyright_additional && (
-                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: settings.copyright_additional }} />
+                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ 
+                          __html: replaceCopyrightPlaceholders(settings.copyright_additional)
+                        }} />
                       )}
                     </>
                   ) : (
