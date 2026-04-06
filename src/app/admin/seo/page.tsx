@@ -98,7 +98,44 @@ export default function SEOSettingsPage() {
       const response = await fetch('/api/admin/seo')
       const data = await response.json()
       if (data.data) {
-        setSettings(data.data)
+        // 将null值转换为空字符串，避免React input报错
+        const sanitizedData = {
+          ...data.data,
+          site_name: data.data.site_name || '',
+          site_description: data.data.site_description || '',
+          site_keywords: data.data.site_keywords || '',
+          site_url: data.data.site_url || '',
+          og_title: data.data.og_title || '',
+          og_description: data.data.og_description || '',
+          og_image: data.data.og_image || '',
+          og_type: data.data.og_type || 'website',
+          twitter_card: data.data.twitter_card || 'summary_large_image',
+          twitter_site: data.data.twitter_site || '',
+          twitter_creator: data.data.twitter_creator || '',
+          structured_data: data.data.structured_data || null,
+          robots_txt: data.data.robots_txt || '',
+          google_site_verification: data.data.google_site_verification || '',
+          baidu_site_verification: data.data.baidu_site_verification || '',
+          google_analytics_id: data.data.google_analytics_id || '',
+          baidu_analytics_id: data.data.baidu_analytics_id || '',
+          la_analytics_id: data.data.la_analytics_id || '',
+          custom_head_scripts: data.data.custom_head_scripts || '',
+          custom_body_scripts: data.data.custom_body_scripts || '',
+          sitemap_domain: data.data.sitemap_domain || '',
+          sitemap_changefreq_default: data.data.sitemap_changefreq_default || 'weekly',
+          sitemap_priority_default: data.data.sitemap_priority_default || '0.5',
+          sitemap_exclude_paths: data.data.sitemap_exclude_paths || '',
+          sitemap_custom_urls: data.data.sitemap_custom_urls || null,
+          copyright_site_name: data.data.copyright_site_name || '',
+          copyright_url: data.data.copyright_url || '',
+          copyright_text: data.data.copyright_text || '',
+          copyright_icp: data.data.copyright_icp || '',
+          copyright_icp_url: data.data.copyright_icp_url || '',
+          copyright_police: data.data.copyright_police || '',
+          copyright_police_url: data.data.copyright_police_url || '',
+          copyright_additional: data.data.copyright_additional || ''
+        }
+        setSettings(sanitizedData)
       }
     } catch (error) {
       console.error('获取SEO配置失败:', error)
