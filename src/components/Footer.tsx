@@ -29,19 +29,43 @@ async function getCopyrightSettings() {
   }
 }
 
+function formatCopyrightYear(yearStart: number, yearEnd: string): string {
+  const currentYear = new Date().getFullYear()
+  
+  if (yearEnd === 'current') {
+    return `${yearStart} - ${currentYear}`
+  }
+  
+  if (yearEnd === 'forever') {
+    return `${yearStart} - 至今`
+  }
+  
+  if (yearEnd && yearEnd !== yearStart.toString()) {
+    return `${yearStart} - ${yearEnd}`
+  }
+  
+  return yearStart.toString()
+}
+
 export async function Footer() {
   const friendLinks = await getFriendLinks()
   const copyrightSettings = await getCopyrightSettings()
   
   const copyrightEnabled = copyrightSettings?.copyright_enabled !== false
-  const siteName = copyrightSettings?.copyright_site_name || '蚂蚁AI导航'
-  const siteUrl = copyrightSettings?.copyright_url
+  const siteName = copyrightSettings?.site_name || '蚂蚁AI导航'
+  const siteUrl = copyrightSettings?.site_url
   const copyrightText = copyrightSettings?.copyright_text
+  const copyrightYearStart = copyrightSettings?.copyright_year_start || 2024
+  const copyrightYearEnd = copyrightSettings?.copyright_year_end || 'current'
+  const companyName = copyrightSettings?.copyright_company_name
+  const companyEmail = copyrightSettings?.copyright_company_email
   const icp = copyrightSettings?.copyright_icp
   const icpUrl = copyrightSettings?.copyright_icp_url
   const police = copyrightSettings?.copyright_police
   const policeUrl = copyrightSettings?.copyright_police_url
   const additional = copyrightSettings?.copyright_additional
+  
+  const yearDisplay = formatCopyrightYear(copyrightYearStart, copyrightYearEnd)
 
   return (
     <footer className="border-t bg-muted/30">
@@ -117,23 +141,39 @@ export async function Footer() {
 
         {/* 版权信息 */}
         {copyrightEnabled && (
-          <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground space-y-3">
-            {/* 版权文本（包含站点名称） */}
+          <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground space-y-2">
+            {/* 版权文本（包含年份和站点名称） */}
             {copyrightText ? (
-              <div dangerouslySetInnerHTML={{ __html: copyrightText }} />
+              <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: copyrightText }} />
             ) : (
               <div className="space-y-1">
-                {siteUrl ? (
+                <div className="flex items-center justify-center flex-wrap gap-1">
+                  <span>©</span>
+                  <span>{yearDisplay}</span>
+                  {siteUrl ? (
+                    <a 
+                      href={siteUrl} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-foreground transition-colors font-medium"
+                    >
+                      {siteName}
+                    </a>
+                  ) : (
+                    <span className="font-medium">{siteName}</span>
+                  )}
+                  {companyName && (
+                    <span>· {companyName}</span>
+                  )}
+                  <span>All rights reserved.</span>
+                </div>
+                {companyEmail && (
                   <a 
-                    href={siteUrl} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-foreground transition-colors font-medium"
+                    href={`mailto:${companyEmail}`}
+                    className="hover:text-foreground transition-colors"
                   >
-                    {siteName}
+                    {companyEmail}
                   </a>
-                ) : (
-                  <span className="font-medium">{siteName}</span>
                 )}
               </div>
             )}
@@ -166,7 +206,7 @@ export async function Footer() {
             
             {/* 附加信息 */}
             {additional && (
-              <div dangerouslySetInnerHTML={{ __html: additional }} />
+              <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: additional }} />
             )}
           </div>
         )}
