@@ -16,8 +16,32 @@ async function getFriendLinks() {
   }
 }
 
+async function getCopyrightSettings() {
+  try {
+    const client = getSupabaseClient()
+    const { data } = await client
+      .from('seo_settings')
+      .select('*')
+      .single()
+    return data || null
+  } catch {
+    return null
+  }
+}
+
 export async function Footer() {
   const friendLinks = await getFriendLinks()
+  const copyrightSettings = await getCopyrightSettings()
+  
+  const copyrightEnabled = copyrightSettings?.copyright_enabled !== false
+  const siteName = copyrightSettings?.copyright_site_name || '蚂蚁AI导航'
+  const siteUrl = copyrightSettings?.copyright_url
+  const copyrightText = copyrightSettings?.copyright_text
+  const icp = copyrightSettings?.copyright_icp
+  const icpUrl = copyrightSettings?.copyright_icp_url
+  const police = copyrightSettings?.copyright_police
+  const policeUrl = copyrightSettings?.copyright_police_url
+  const additional = copyrightSettings?.copyright_additional
 
   return (
     <footer className="border-t bg-muted/30">
@@ -32,7 +56,7 @@ export async function Footer() {
                 className="h-8 w-8 rounded-lg object-contain"
               />
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                蚂蚁AI导航
+                {siteName}
               </span>
             </div>
             <p className="text-sm text-muted-foreground max-w-md">
@@ -91,9 +115,54 @@ export async function Footer() {
           </p>
         </div>
 
-        <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} 蚂蚁AI导航. All rights reserved.</p>
-        </div>
+        {/* 版权信息 */}
+        {copyrightEnabled && (
+          <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground space-y-2">
+            {siteUrl ? (
+              <a 
+                href={siteUrl} 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors font-medium"
+              >
+                {siteName}
+              </a>
+            ) : (
+              <span className="font-medium">{siteName}</span>
+            )}
+            
+            {copyrightText && (
+              <div dangerouslySetInnerHTML={{ __html: copyrightText }} />
+            )}
+            
+            <div className="flex justify-center gap-4 flex-wrap">
+              {icp && (
+                <a 
+                  href={icpUrl || '#'} 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground transition-colors"
+                >
+                  {icp}
+                </a>
+              )}
+              {police && (
+                <a 
+                  href={policeUrl || '#'} 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground transition-colors"
+                >
+                  {police}
+                </a>
+              )}
+            </div>
+            
+            {additional && (
+              <div dangerouslySetInnerHTML={{ __html: additional }} />
+            )}
+          </div>
+        )}
       </div>
     </footer>
   )

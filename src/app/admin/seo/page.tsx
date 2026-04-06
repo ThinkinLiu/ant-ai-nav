@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Save, Globe, Share2, Search, Code, BarChart3, Loader2, Map } from 'lucide-react'
+import { Save, Globe, Share2, Search, Code, BarChart3, Loader2, Map, Copyright } from 'lucide-react'
 
 interface SEOSettings {
   site_name: string
@@ -36,6 +36,15 @@ interface SEOSettings {
   sitemap_priority_default: string
   sitemap_exclude_paths: string
   sitemap_custom_urls: any
+  copyright_enabled: boolean
+  copyright_site_name: string
+  copyright_url: string
+  copyright_text: string
+  copyright_icp: string
+  copyright_icp_url: string
+  copyright_police: string
+  copyright_police_url: string
+  copyright_additional: string
 }
 
 export default function SEOSettingsPage() {
@@ -65,7 +74,16 @@ export default function SEOSettingsPage() {
     sitemap_changefreq_default: 'weekly',
     sitemap_priority_default: '0.5',
     sitemap_exclude_paths: '',
-    sitemap_custom_urls: null
+    sitemap_custom_urls: null,
+    copyright_enabled: true,
+    copyright_site_name: '',
+    copyright_url: '',
+    copyright_text: '',
+    copyright_icp: '',
+    copyright_icp_url: '',
+    copyright_police: '',
+    copyright_police_url: '',
+    copyright_additional: ''
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -165,6 +183,10 @@ export default function SEOSettingsPage() {
           <TabsTrigger value="sitemap">
             <Map className="mr-2 h-4 w-4" />
             Sitemap配置
+          </TabsTrigger>
+          <TabsTrigger value="copyright">
+            <Copyright className="mr-2 h-4 w-4" />
+            版权信息
           </TabsTrigger>
           <TabsTrigger value="analytics">
             <BarChart3 className="mr-2 h-4 w-4" />
@@ -527,6 +549,213 @@ export default function SEOSettingsPage() {
                   <p className="text-xs text-muted-foreground">
                     点击链接查看生成的Sitemap文件。修改配置后需要等待缓存刷新（默认1小时）。
                   </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* 版权信息配置 */}
+        <TabsContent value="copyright">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>版权信息设置</CardTitle>
+                <CardDescription>配置网站底部的版权信息和备案信息</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="copyright_enabled"
+                    checked={settings.copyright_enabled}
+                    onChange={(e) => updateField('copyright_enabled', e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="copyright_enabled" className="cursor-pointer">
+                    启用版权信息显示
+                  </Label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="copyright_site_name">站点名称</Label>
+                    <Input
+                      id="copyright_site_name"
+                      value={settings.copyright_site_name}
+                      onChange={(e) => updateField('copyright_site_name', e.target.value)}
+                      placeholder="蚂蚁AI导航"
+                      disabled={!settings.copyright_enabled}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="copyright_url">站点链接</Label>
+                    <Input
+                      id="copyright_url"
+                      value={settings.copyright_url}
+                      onChange={(e) => updateField('copyright_url', e.target.value)}
+                      placeholder="https://mayiai.site"
+                      disabled={!settings.copyright_enabled}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="copyright_text">版权文本</Label>
+                  <Textarea
+                    id="copyright_text"
+                    value={settings.copyright_text}
+                    onChange={(e) => updateField('copyright_text', e.target.value)}
+                    placeholder="© 2024 蚂蚁AI导航. All rights reserved."
+                    rows={2}
+                    disabled={!settings.copyright_enabled}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    支持HTML标签，例如：&lt;b&gt;&lt;/b&gt;、&lt;i&gt;&lt;/i&gt;
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>备案信息</CardTitle>
+                <CardDescription>配置网站备案信息（ICP备案、公安备案等）</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="copyright_icp">ICP备案号</Label>
+                    <Input
+                      id="copyright_icp"
+                      value={settings.copyright_icp}
+                      onChange={(e) => updateField('copyright_icp', e.target.value)}
+                      placeholder="京ICP备XXXXXXXX号"
+                      disabled={!settings.copyright_enabled}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="copyright_icp_url">ICP备案查询链接</Label>
+                    <Input
+                      id="copyright_icp_url"
+                      value={settings.copyright_icp_url}
+                      onChange={(e) => updateField('copyright_icp_url', e.target.value)}
+                      placeholder="https://beian.miit.gov.cn"
+                      disabled={!settings.copyright_enabled}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="copyright_police">公安备案号</Label>
+                    <Input
+                      id="copyright_police"
+                      value={settings.copyright_police}
+                      onChange={(e) => updateField('copyright_police', e.target.value)}
+                      placeholder="京公网安备 XXXXXXXX号"
+                      disabled={!settings.copyright_enabled}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="copyright_police_url">公安备案查询链接</Label>
+                    <Input
+                      id="copyright_police_url"
+                      value={settings.copyright_police_url}
+                      onChange={(e) => updateField('copyright_police_url', e.target.value)}
+                      placeholder="http://www.beian.gov.cn"
+                      disabled={!settings.copyright_enabled}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>其他信息</CardTitle>
+                <CardDescription>添加额外的版权相关信息</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="copyright_additional">附加信息</Label>
+                  <Textarea
+                    id="copyright_additional"
+                    value={settings.copyright_additional}
+                    onChange={(e) => updateField('copyright_additional', e.target.value)}
+                    placeholder="其他需要显示在版权区域的信息..."
+                    rows={3}
+                    disabled={!settings.copyright_enabled}
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    支持HTML标签，将显示在版权信息下方
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>版权信息预览</CardTitle>
+                <CardDescription>查看版权信息在底部的显示效果</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg p-4 bg-muted/30 space-y-2">
+                  {settings.copyright_enabled ? (
+                    <>
+                      <div className="text-center text-sm">
+                        {settings.copyright_site_name && settings.copyright_url ? (
+                          <a 
+                            href={settings.copyright_url} 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline"
+                          >
+                            {settings.copyright_site_name}
+                          </a>
+                        ) : settings.copyright_site_name ? (
+                          <span>{settings.copyright_site_name}</span>
+                        ) : (
+                          <span>您的站点名称</span>
+                        )}
+                      </div>
+                      <div className="text-center text-sm text-muted-foreground">
+                        {settings.copyright_text || '© 2024 您的站点. All rights reserved.'}
+                      </div>
+                      <div className="flex justify-center gap-4 text-xs text-muted-foreground">
+                        {settings.copyright_icp && (
+                          <a 
+                            href={settings.copyright_icp_url || '#'} 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline"
+                          >
+                            {settings.copyright_icp}
+                          </a>
+                        )}
+                        {settings.copyright_police && (
+                          <a 
+                            href={settings.copyright_police_url || '#'} 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline"
+                          >
+                            {settings.copyright_police}
+                          </a>
+                        )}
+                      </div>
+                      {settings.copyright_additional && (
+                        <div className="text-center text-xs text-muted-foreground mt-2">
+                          <div dangerouslySetInnerHTML={{ __html: settings.copyright_additional }} />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center text-sm text-muted-foreground">
+                      版权信息已禁用
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
