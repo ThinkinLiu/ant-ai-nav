@@ -100,9 +100,9 @@ export default function ContactPage() {
               在GitHub上查看我们的开源项目，提交Issue或参与贡献代码。
             </p>
             <Button asChild className="w-full">
-              <a 
-                href="https://github.com/ThinkinLiu/" 
-                target="_blank" 
+              <a
+                href="https://github.com/ThinkinLiu/ant-ai-nav"
+                target="_blank"
                 rel="noopener noreferrer"
               >
                 <Github className="h-4 w-4 mr-2" />
@@ -207,9 +207,9 @@ export default function ContactPage() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button asChild variant="outline">
-              <a 
-                href="https://github.com/ThinkinLiu/ai-navigation/issues" 
-                target="_blank" 
+              <a
+                href="https://github.com/ThinkinLiu/ant-ai-nav/issues"
+                target="_blank"
                 rel="noopener noreferrer"
               >
                 <Github className="h-4 w-4 mr-2" />
