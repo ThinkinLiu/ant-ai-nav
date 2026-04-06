@@ -45,6 +45,10 @@ interface SEOSettings {
   copyright_police: string
   copyright_police_url: string
   copyright_additional: string
+  copyright_year_start: number
+  copyright_year_end: string
+  copyright_company_name: string
+  copyright_company_email: string
 }
 
 export default function SEOSettingsPage() {
@@ -83,7 +87,11 @@ export default function SEOSettingsPage() {
     copyright_icp_url: '',
     copyright_police: '',
     copyright_police_url: '',
-    copyright_additional: ''
+    copyright_additional: '',
+    copyright_year_start: 2024,
+    copyright_year_end: 'current',
+    copyright_company_name: '',
+    copyright_company_email: ''
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -133,7 +141,11 @@ export default function SEOSettingsPage() {
           copyright_icp_url: data.data.copyright_icp_url || '',
           copyright_police: data.data.copyright_police || '',
           copyright_police_url: data.data.copyright_police_url || '',
-          copyright_additional: data.data.copyright_additional || ''
+          copyright_additional: data.data.copyright_additional || '',
+          copyright_year_start: data.data.copyright_year_start || new Date().getFullYear(),
+          copyright_year_end: data.data.copyright_year_end || 'current',
+          copyright_company_name: data.data.copyright_company_name || '',
+          copyright_company_email: data.data.copyright_company_email || ''
         }
         setSettings(sanitizedData)
       }
@@ -614,41 +626,57 @@ export default function SEOSettingsPage() {
                   </Label>
                 </div>
 
+                {/* 版权年份 */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="copyright_site_name">站点名称</Label>
+                    <Label htmlFor="copyright_year_start">起始年份</Label>
                     <Input
-                      id="copyright_site_name"
-                      value={settings.copyright_site_name}
-                      onChange={(e) => updateField('copyright_site_name', e.target.value)}
-                      placeholder="蚂蚁AI导航"
+                      id="copyright_year_start"
+                      type="number"
+                      min="1990"
+                      max={new Date().getFullYear()}
+                      value={settings.copyright_year_start}
+                      onChange={(e) => updateField('copyright_year_start', parseInt(e.target.value))}
+                      placeholder="2024"
                       disabled={!settings.copyright_enabled}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="copyright_url">站点链接</Label>
-                    <Input
-                      id="copyright_url"
-                      value={settings.copyright_url}
-                      onChange={(e) => updateField('copyright_url', e.target.value)}
-                      placeholder="https://mayiai.site"
+                    <Label htmlFor="copyright_year_end">结束年份</Label>
+                    <select
+                      id="copyright_year_end"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={settings.copyright_year_end}
+                      onChange={(e) => updateField('copyright_year_end', e.target.value)}
                       disabled={!settings.copyright_enabled}
-                    />
+                    >
+                      <option value="current">当前年份（自动）</option>
+                      <option value="forever">永久</option>
+                      {Array.from({ length: new Date().getFullYear() - 2000 + 1 }, (_, i) => {
+                        const year = new Date().getFullYear() - i
+                        return (
+                          <option key={year} value={year.toString()}>
+                            {year}
+                          </option>
+                        )
+                      })}
+                    </select>
                   </div>
                 </div>
 
+                {/* 版权文本 */}
                 <div className="space-y-2">
-                  <Label htmlFor="copyright_text">版权文本</Label>
+                  <Label htmlFor="copyright_text">版权声明文本</Label>
                   <Textarea
                     id="copyright_text"
                     value={settings.copyright_text}
                     onChange={(e) => updateField('copyright_text', e.target.value)}
-                    placeholder="© 2024 蚂蚁AI导航. All rights reserved."
+                    placeholder="All rights reserved."
                     rows={2}
                     disabled={!settings.copyright_enabled}
                   />
                   <p className="text-xs text-muted-foreground">
-                    支持HTML标签，例如：&lt;b&gt;&lt;/b&gt;、&lt;i&gt;&lt;/i&gt;
+                    可选的版权声明文本。不填则使用默认格式：© [年份] [站点名称]. All rights reserved.
                   </p>
                 </div>
               </CardContent>
@@ -657,7 +685,7 @@ export default function SEOSettingsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>备案信息</CardTitle>
-                <CardDescription>配置网站备案信息（ICP备案、公安备案等）</CardDescription>
+                <CardDescription>配置网站备案信息（中国大陆网站必须）</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -667,7 +695,7 @@ export default function SEOSettingsPage() {
                       id="copyright_icp"
                       value={settings.copyright_icp}
                       onChange={(e) => updateField('copyright_icp', e.target.value)}
-                      placeholder="京ICP备XXXXXXXX号"
+                      placeholder="京ICP备XXXXXXXX号-X"
                       disabled={!settings.copyright_enabled}
                     />
                   </div>
@@ -710,6 +738,38 @@ export default function SEOSettingsPage() {
 
             <Card>
               <CardHeader>
+                <CardTitle>公司信息</CardTitle>
+                <CardDescription>配置运营主体信息（可选）</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="copyright_company_name">公司/组织名称</Label>
+                    <Input
+                      id="copyright_company_name"
+                      value={settings.copyright_company_name}
+                      onChange={(e) => updateField('copyright_company_name', e.target.value)}
+                      placeholder="示例：XX科技有限公司"
+                      disabled={!settings.copyright_enabled}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="copyright_company_email">联系邮箱</Label>
+                    <Input
+                      id="copyright_company_email"
+                      type="email"
+                      value={settings.copyright_company_email}
+                      onChange={(e) => updateField('copyright_company_email', e.target.value)}
+                      placeholder="contact@example.com"
+                      disabled={!settings.copyright_enabled}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>其他信息</CardTitle>
                 <CardDescription>添加额外的版权相关信息</CardDescription>
               </CardHeader>
@@ -738,29 +798,41 @@ export default function SEOSettingsPage() {
                 <CardDescription>查看版权信息在底部的显示效果</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="border rounded-lg p-4 bg-muted/30 space-y-2">
+                <div className="border rounded-lg p-6 bg-muted/30 space-y-3">
                   {settings.copyright_enabled ? (
                     <>
                       <div className="text-center text-sm">
-                        {settings.copyright_site_name && settings.copyright_url ? (
-                          <a 
-                            href={settings.copyright_url} 
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:underline"
-                          >
-                            {settings.copyright_site_name}
-                          </a>
-                        ) : settings.copyright_site_name ? (
-                          <span>{settings.copyright_site_name}</span>
+                        {settings.copyright_text ? (
+                          <span>{settings.copyright_text}</span>
                         ) : (
-                          <span>您的站点名称</span>
+                          <span>
+                            © {settings.copyright_year_start}
+                            {settings.copyright_year_end === 'current' && (
+                              <span> - {new Date().getFullYear()}</span>
+                            )}
+                            {settings.copyright_year_end === 'forever' && (
+                              <span> - 至今</span>
+                            )}
+                            {settings.copyright_year_end !== 'current' && settings.copyright_year_end !== 'forever' && (
+                              <span> - {settings.copyright_year_end}</span>
+                            )}
+                            {' '}
+                            <a 
+                              href={settings.site_url || '#'} 
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline font-medium"
+                            >
+                              {settings.site_name || '蚂蚁AI导航'}
+                            </a>
+                            {settings.copyright_company_name && (
+                              <span> · {settings.copyright_company_name}</span>
+                            )}
+                          </span>
                         )}
                       </div>
-                      <div className="text-center text-sm text-muted-foreground">
-                        {settings.copyright_text || '© 2024 您的站点. All rights reserved.'}
-                      </div>
-                      <div className="flex justify-center gap-4 text-xs text-muted-foreground">
+                      
+                      <div className="flex justify-center gap-4 text-xs text-muted-foreground flex-wrap">
                         {settings.copyright_icp && (
                           <a 
                             href={settings.copyright_icp_url || '#'} 
@@ -782,6 +854,18 @@ export default function SEOSettingsPage() {
                           </a>
                         )}
                       </div>
+                      
+                      {settings.copyright_company_email && (
+                        <div className="text-center text-xs text-muted-foreground">
+                          <a 
+                            href={`mailto:${settings.copyright_company_email}`}
+                            className="hover:underline"
+                          >
+                            {settings.copyright_company_email}
+                          </a>
+                        </div>
+                      )}
+                      
                       {settings.copyright_additional && (
                         <div className="text-center text-xs text-muted-foreground mt-2">
                           <div dangerouslySetInnerHTML={{ __html: settings.copyright_additional }} />
