@@ -42,7 +42,22 @@ export async function GET() {
         baidu_analytics_id: '',
         la_analytics_id: '',
         custom_head_scripts: '',
-        custom_body_scripts: ''
+        custom_body_scripts: '',
+        sitemap_enabled: true,
+        sitemap_domain: '',
+        sitemap_changefreq_default: 'weekly',
+        sitemap_priority_default: '0.5',
+        sitemap_exclude_paths: '',
+        sitemap_custom_urls: null,
+        copyright_enabled: true,
+        copyright_site_name: '',
+        copyright_url: '',
+        copyright_text: '',
+        copyright_icp: '',
+        copyright_icp_url: '',
+        copyright_police: '',
+        copyright_police_url: '',
+        copyright_additional: ''
       }
     })
   }
@@ -89,6 +104,21 @@ export async function PUT(request: NextRequest) {
         la_analytics_id: body.la_analytics_id,
         custom_head_scripts: body.custom_head_scripts,
         custom_body_scripts: body.custom_body_scripts,
+        sitemap_enabled: body.sitemap_enabled,
+        sitemap_domain: body.sitemap_domain,
+        sitemap_changefreq_default: body.sitemap_changefreq_default,
+        sitemap_priority_default: body.sitemap_priority_default,
+        sitemap_exclude_paths: body.sitemap_exclude_paths,
+        sitemap_custom_urls: body.sitemap_custom_urls,
+        copyright_enabled: body.copyright_enabled,
+        copyright_site_name: body.copyright_site_name,
+        copyright_url: body.copyright_url,
+        copyright_text: body.copyright_text,
+        copyright_icp: body.copyright_icp,
+        copyright_icp_url: body.copyright_icp_url,
+        copyright_police: body.copyright_police,
+        copyright_police_url: body.copyright_police_url,
+        copyright_additional: body.copyright_additional,
         updated_at: new Date().toISOString()
       })
       .eq('id', existing.id)
@@ -118,7 +148,22 @@ export async function PUT(request: NextRequest) {
         baidu_analytics_id: body.baidu_analytics_id,
         la_analytics_id: body.la_analytics_id,
         custom_head_scripts: body.custom_head_scripts,
-        custom_body_scripts: body.custom_body_scripts
+        custom_body_scripts: body.custom_body_scripts,
+        sitemap_enabled: body.sitemap_enabled,
+        sitemap_domain: body.sitemap_domain,
+        sitemap_changefreq_default: body.sitemap_changefreq_default,
+        sitemap_priority_default: body.sitemap_priority_default,
+        sitemap_exclude_paths: body.sitemap_exclude_paths,
+        sitemap_custom_urls: body.sitemap_custom_urls,
+        copyright_enabled: body.copyright_enabled,
+        copyright_site_name: body.copyright_site_name,
+        copyright_url: body.copyright_url,
+        copyright_text: body.copyright_text,
+        copyright_icp: body.copyright_icp,
+        copyright_icp_url: body.copyright_icp_url,
+        copyright_police: body.copyright_police,
+        copyright_police_url: body.copyright_police_url,
+        copyright_additional: body.copyright_additional
       })
       .select()
       .single()
