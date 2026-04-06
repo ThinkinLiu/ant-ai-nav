@@ -8,9 +8,66 @@ export const dynamic = 'force-dynamic'
 // 配置：每小时重新验证一次
 export const revalidate = 3600 // 1小时（单位：秒）
 
+// 辅助函数：验证并返回正确的更新频率类型
+function getValidChangeFrequency(value: string): MetadataRoute.Sitemap[number]['changeFrequency'] {
+  const validFreqs: MetadataRoute.Sitemap[number]['changeFrequency'][] = [
+    'always', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'never'
+  ]
+  return validFreqs.includes(value as any) ? value as any : 'weekly'
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://mayiai.site'
+  const supabase = getSupabaseClient()
   const now = new Date()
+  
+  // 从数据库读取SEO配置
+  let seoConfig = null
+  try {
+    const { data } = await supabase
+      .from('seo_settings')
+      .select('*')
+      .single()
+    
+    if (data) {
+      seoConfig = data
+    }
+  } catch (error) {
+    console.error('读取SEO配置失败:', error)
+  }
+  
+  // 判断是否启用sitemap
+  const sitemapEnabled = seoConfig?.sitemap_enabled !== false // 默认启用
+  
+  if (!sitemapEnabled) {
+    // 如果禁用sitemap，返回空数组
+    return []
+  }
+  
+  // 获取域名：优先使用数据库配置 > 环境变量 > 默认值
+  const baseUrl = seoConfig?.sitemap_domain || process.env.NEXT_PUBLIC_SITE_URL || 'https://mayiai.site'
+  
+  // 获取默认更新频率
+  const defaultChangeFreq = getValidChangeFrequency(seoConfig?.sitemap_changefreq_default || 'weekly')
+  
+  // 获取默认优先级
+  const defaultPriority = parseFloat(seoConfig?.sitemap_priority_default || '0.5')
+  
+  // 获取排除路径
+  const excludePaths = seoConfig?.sitemap_exclude_paths
+    ? seoConfig.sitemap_exclude_paths.split('\n').map((p: string) => p.trim()).filter((p: string) => p)
+    : []
+  
+  // 检查路径是否被排除
+  const isExcluded = (path: string) => {
+    return excludePaths.some((excludePath: string) => {
+      if (excludePath.endsWith('*')) {
+        // 通配符匹配
+        const prefix = excludePath.slice(0, -1)
+        return path.startsWith(prefix)
+      }
+      return path === excludePath
+    })
+  }
   
   // 静态页面 - 核心页面（高优先级）
   const corePages: MetadataRoute.Sitemap = [
@@ -38,7 +95,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.8,
     },
-  ]
+  ].filter(page => !isExcluded(new URL(page.url).pathname)) as MetadataRoute.Sitemap
   
   // 静态页面 - 内容页面
   const contentPages: MetadataRoute.Sitemap = [
@@ -66,7 +123,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.6,
     },
-  ]
+  ].filter(page => !isExcluded(new URL(page.url).pathname)) as MetadataRoute.Sitemap
   
   // 静态页面 - 其他页面
   const otherPages: MetadataRoute.Sitemap = [
@@ -94,7 +151,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
-  ]
+  ].filter(page => !isExcluded(new URL(page.url).pathname)) as MetadataRoute.Sitemap
   
   // 基础站点地图（不包含动态页面）
   const baseSitemap = [
@@ -168,49 +225,69 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const toolPages: MetadataRoute.Sitemap = tools.map((tool) => ({
       url: `${baseUrl}/tools/${tool.slug}`,
       lastModified: tool.updated_at ? new Date(tool.updated_at) : (tool.created_at ? new Date(tool.created_at) : now),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }))
+      changeFrequency: defaultChangeFreq,
+      priority: Math.min(defaultPriority + 0.2, 1), // 工具详情优先级略高于默认值
+    })).filter(page => !isExcluded(new URL(page.url).pathname)) as MetadataRoute.Sitemap
     
     // 分类详情页（动态）
     const categoryPages: MetadataRoute.Sitemap = categories.map((category) => ({
       url: `${baseUrl}/categories/${category.slug}`,
       lastModified: category.updated_at ? new Date(category.updated_at) : now,
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }))
+      changeFrequency: defaultChangeFreq,
+      priority: Math.min(defaultPriority + 0.2, 1), // 分类详情优先级略高于默认值
+    })).filter(page => !isExcluded(new URL(page.url).pathname)) as MetadataRoute.Sitemap
     
     // 名人堂详情页（动态）
     const hallOfFamePages: MetadataRoute.Sitemap = hallOfFame.map((person) => ({
       url: `${baseUrl}/hall-of-fame/${person.id}`,
       lastModified: person.updated_at ? new Date(person.updated_at) : now,
-      changeFrequency: 'monthly' as const,
-      priority: 0.6,
-    }))
+      changeFrequency: 'monthly',
+      priority: Math.min(defaultPriority + 0.1, 1), // 名人堂优先级略高于默认值
+    })).filter(page => !isExcluded(new URL(page.url).pathname)) as MetadataRoute.Sitemap
     
     // 资讯详情页（动态）
     const newsPages: MetadataRoute.Sitemap = news.map((item) => ({
       url: `${baseUrl}/news/${item.slug || item.id}`,
       lastModified: item.updated_at ? new Date(item.updated_at) : (item.published_at ? new Date(item.published_at) : now),
-      changeFrequency: 'monthly' as const,
-      priority: 0.6,
-    }))
+      changeFrequency: 'monthly',
+      priority: Math.min(defaultPriority + 0.1, 1), // 资讯详情优先级略高于默认值
+    })).filter(page => !isExcluded(new URL(page.url).pathname)) as MetadataRoute.Sitemap
     
     // 大事纪详情页（动态）
     const timelinePages: MetadataRoute.Sitemap = timeline.map((event) => ({
       url: `${baseUrl}/timeline/${event.id}`,
       lastModified: event.updated_at ? new Date(event.updated_at) : now,
-      changeFrequency: 'yearly' as const,
-      priority: 0.5,
-    }))
+      changeFrequency: 'yearly',
+      priority: Math.max(defaultPriority - 0.1, 0), // 大事纪优先级略低于默认值
+    })).filter(page => !isExcluded(new URL(page.url).pathname)) as MetadataRoute.Sitemap
     
     // 标签详情页（动态）
     const tagPages: MetadataRoute.Sitemap = tags.map((tag) => ({
       url: `${baseUrl}/tags/${tag.slug}`,
       lastModified: tag.created_at ? new Date(tag.created_at) : now,
-      changeFrequency: 'weekly' as const,
-      priority: 0.6,
-    }))
+      changeFrequency: defaultChangeFreq,
+      priority: Math.min(defaultPriority + 0.1, 1), // 标签详情优先级略高于默认值
+    })).filter(page => !isExcluded(new URL(page.url).pathname)) as MetadataRoute.Sitemap
+    
+    // 自定义URL（从数据库读取）
+    const customUrls: MetadataRoute.Sitemap = []
+    if (seoConfig?.sitemap_custom_urls && Array.isArray(seoConfig.sitemap_custom_urls)) {
+      for (const customUrl of seoConfig.sitemap_custom_urls) {
+        if (customUrl.url) {
+          // 验证自定义URL的更新频率
+          const customChangeFreq = customUrl.changeFrequency 
+            ? getValidChangeFrequency(customUrl.changeFrequency)
+            : defaultChangeFreq
+          
+          customUrls.push({
+            url: `${baseUrl}${customUrl.url.startsWith('/') ? '' : '/'}${customUrl.url}`,
+            lastModified: customUrl.lastModified ? new Date(customUrl.lastModified) : now,
+            changeFrequency: customChangeFreq,
+            priority: customUrl.priority !== undefined ? customUrl.priority : defaultPriority,
+          })
+        }
+      }
+    }
     
     // 合并所有页面
     return [
@@ -221,6 +298,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...newsPages,
       ...timelinePages,
       ...tagPages,
+      ...customUrls,
     ]
   } catch (error) {
     // 数据库连接失败时返回基础站点地图

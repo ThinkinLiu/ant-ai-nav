@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Save, Globe, Share2, Search, Code, BarChart3, Loader2 } from 'lucide-react'
+import { Save, Globe, Share2, Search, Code, BarChart3, Loader2, Map } from 'lucide-react'
 
 interface SEOSettings {
   site_name: string
@@ -30,6 +30,12 @@ interface SEOSettings {
   la_analytics_id: string
   custom_head_scripts: string
   custom_body_scripts: string
+  sitemap_enabled: boolean
+  sitemap_domain: string
+  sitemap_changefreq_default: string
+  sitemap_priority_default: string
+  sitemap_exclude_paths: string
+  sitemap_custom_urls: any
 }
 
 export default function SEOSettingsPage() {
@@ -53,7 +59,13 @@ export default function SEOSettingsPage() {
     baidu_analytics_id: '',
     la_analytics_id: '',
     custom_head_scripts: '',
-    custom_body_scripts: ''
+    custom_body_scripts: '',
+    sitemap_enabled: true,
+    sitemap_domain: '',
+    sitemap_changefreq_default: 'weekly',
+    sitemap_priority_default: '0.5',
+    sitemap_exclude_paths: '',
+    sitemap_custom_urls: null
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -149,6 +161,10 @@ export default function SEOSettingsPage() {
           <TabsTrigger value="search">
             <Search className="mr-2 h-4 w-4" />
             搜索引擎
+          </TabsTrigger>
+          <TabsTrigger value="sitemap">
+            <Map className="mr-2 h-4 w-4" />
+            Sitemap配置
           </TabsTrigger>
           <TabsTrigger value="analytics">
             <BarChart3 className="mr-2 h-4 w-4" />
@@ -340,6 +356,178 @@ export default function SEOSettingsPage() {
                   rows={8}
                   className="font-mono text-sm"
                 />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Sitemap配置 */}
+        <TabsContent value="sitemap">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sitemap设置</CardTitle>
+                <CardDescription>配置网站地图生成规则，帮助搜索引擎更好地索引您的网站</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="sitemap_enabled"
+                    checked={settings.sitemap_enabled}
+                    onChange={(e) => updateField('sitemap_enabled', e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="sitemap_enabled" className="cursor-pointer">
+                    启用Sitemap自动生成
+                  </Label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sitemap_domain">Sitemap域名</Label>
+                    <Input
+                      id="sitemap_domain"
+                      value={settings.sitemap_domain}
+                      onChange={(e) => updateField('sitemap_domain', e.target.value)}
+                      placeholder="https://example.com"
+                      disabled={!settings.sitemap_enabled}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Sitemap中使用的域名，留空则使用环境变量或默认值
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sitemap_changefreq_default">默认更新频率</Label>
+                    <select
+                      id="sitemap_changefreq_default"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={settings.sitemap_changefreq_default}
+                      onChange={(e) => updateField('sitemap_changefreq_default', e.target.value)}
+                      disabled={!settings.sitemap_enabled}
+                    >
+                      <option value="always">Always</option>
+                      <option value="hourly">Hourly</option>
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                      <option value="never">Never</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="sitemap_priority_default">默认优先级</Label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      id="sitemap_priority_default"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={settings.sitemap_priority_default}
+                      onChange={(e) => updateField('sitemap_priority_default', e.target.value)}
+                      disabled={!settings.sitemap_enabled}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-mono w-16 text-right">
+                      {settings.sitemap_priority_default}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    范围：0.0 - 1.0，数值越大优先级越高（默认0.5）
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>路径排除</CardTitle>
+                <CardDescription>指定不需要包含在Sitemap中的路径</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sitemap_exclude_paths">排除路径列表</Label>
+                  <Textarea
+                    id="sitemap_exclude_paths"
+                    value={settings.sitemap_exclude_paths}
+                    onChange={(e) => updateField('sitemap_exclude_paths', e.target.value)}
+                    placeholder="/admin&#10;/api&#10;/login"
+                    rows={6}
+                    disabled={!settings.sitemap_enabled}
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    每行一个路径，例如：/admin、/api、/login。这些路径将被排除在Sitemap之外
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>自定义URL</CardTitle>
+                <CardDescription>手动添加额外的URL到Sitemap中</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sitemap_custom_urls">自定义URL列表</Label>
+                  <Textarea
+                    id="sitemap_custom_urls"
+                    value={settings.sitemap_custom_urls ? JSON.stringify(settings.sitemap_custom_urls, null, 2) : ''}
+                    onChange={(e) => {
+                      try {
+                        const value = e.target.value.trim()
+                        const parsed = value ? JSON.parse(value) : null
+                        updateField('sitemap_custom_urls', parsed)
+                      } catch (error) {
+                        // JSON格式错误时不更新状态
+                        console.warn('JSON格式错误:', error)
+                      }
+                    }}
+                    placeholder={`[
+  {
+    "url": "/custom-page",
+    "lastModified": "2024-01-01",
+    "changeFrequency": "weekly",
+    "priority": 0.7
+  }
+]`}
+                    rows={10}
+                    disabled={!settings.sitemap_enabled}
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    JSON格式的URL列表。可选字段：url（必填）、lastModified（YYYY-MM-DD）、changeFrequency、priority
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Sitemap预览</CardTitle>
+                <CardDescription>查看当前Sitemap配置预览</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <p className="text-sm">
+                    <strong>访问地址：</strong>{' '}
+                    <a
+                      href="/sitemap.xml"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      /sitemap.xml
+                    </a>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    点击链接查看生成的Sitemap文件。修改配置后需要等待缓存刷新（默认1小时）。
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
