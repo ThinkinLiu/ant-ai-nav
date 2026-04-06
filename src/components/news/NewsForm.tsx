@@ -66,6 +66,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
     sourceUrl: '',
     isFeatured: false,
     isHot: false,
+    publishedAt: '',
   })
 
   // 加载分类列表
@@ -119,6 +120,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
           sourceUrl: news.source_url || '',
           isFeatured: news.is_featured || false,
           isHot: news.is_hot || false,
+          publishedAt: news.published_at || '',
         })
       } else {
         toast.error(result.error || '加载失败')
@@ -182,6 +184,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
         sourceUrl: formData.sourceUrl.trim(),
         isFeatured: user.role === 'admin' ? formData.isFeatured : false,
         isHot: user.role === 'admin' ? formData.isHot : false,
+        publishedAt: user.role === 'admin' && formData.publishedAt ? formData.publishedAt : new Date().toISOString(),
       }
 
       let response
@@ -438,6 +441,21 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
               {/* 管理员选项 */}
               {user.role === 'admin' && (
                 <div className="space-y-4 pt-4 border-t">
+                  {/* 发布时间 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="publishedAt">发布时间</Label>
+                    <Input
+                      id="publishedAt"
+                      type="datetime-local"
+                      value={formData.publishedAt}
+                      onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
+                      max={new Date().toISOString().slice(0, 16)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {mode === 'create' ? '留空则使用当前时间' : '修改发布时间将影响资讯排序'}
+                    </p>
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>推荐文章</Label>
@@ -498,6 +516,9 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-6">
                           {formData.category && (
                             <span>分类: {categories.find(c => c.slug === formData.category)?.name}</span>
+                          )}
+                          {formData.publishedAt && (
+                            <span>发布时间: {new Date(formData.publishedAt).toLocaleString('zh-CN')}</span>
                           )}
                           {formData.source && (
                             <span>来源: {formData.source}</span>

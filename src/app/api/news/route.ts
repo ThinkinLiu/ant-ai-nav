@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
       source,
       sourceUrl,
       authorId,
+      publishedAt,
     } = body
 
     // 验证必填字段
@@ -140,8 +141,8 @@ export async function POST(request: NextRequest) {
         source_url: sourceUrl,
         author_id: authorId,
         status: 'draft',
-        // 设置发布时间为当前时间（草稿状态）
-        published_at: new Date().toISOString(),
+        // 使用自定义发布时间或当前时间
+        published_at: publishedAt || new Date().toISOString(),
       })
       .select()
       .single()

@@ -47,7 +47,7 @@ async function deleteToolByName(name: string) {
     console.log(`  状态: ${tool.status}`);
     console.log();
   });
-  console.log("=".repeat(80);
+  console.log("=".repeat(80));
   console.log();
 
   // 2. 删除所有匹配的工具
