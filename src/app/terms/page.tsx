@@ -223,20 +223,20 @@ export default function TermsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium mb-1">服务咨询</p>
-                <a href="mailto:support@itlao5.com" className="text-sm text-primary hover:underline">
-                  support@itlao5.com
+                <a href="mailto:support@mayiai.site" className="text-sm text-primary hover:underline">
+                  support@mayiai.site
                 </a>
               </div>
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium mb-1">违规举报</p>
-                <a href="mailto:report@itlao5.com" className="text-sm text-primary hover:underline">
-                  report@itlao5.com
+                <a href="mailto:report@mayiai.site" className="text-sm text-primary hover:underline">
+                  report@mayiai.site
                 </a>
               </div>
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium mb-1">版权投诉</p>
-                <a href="mailto:copyright@itlao5.com" className="text-sm text-primary hover:underline">
-                  copyright@itlao5.com
+                <a href="mailto:copyright@mayiai.site" className="text-sm text-primary hover:underline">
+                  copyright@mayiai.site
                 </a>
               </div>
             </div>
