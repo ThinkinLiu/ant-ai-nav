@@ -798,78 +798,85 @@ export default function SEOSettingsPage() {
                 <CardDescription>查看版权信息在底部的显示效果</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="border rounded-lg p-6 bg-muted/30 space-y-3">
+                <div className="border rounded-lg p-6 bg-muted/30 space-y-2">
                   {settings.copyright_enabled ? (
                     <>
-                      <div className="text-center text-sm prose prose-sm max-w-none">
-                        {settings.copyright_text ? (
-                          <div dangerouslySetInnerHTML={{ __html: settings.copyright_text }} />
-                        ) : (
-                          <span>
-                            © {settings.copyright_year_start}
-                            {settings.copyright_year_end === 'current' && (
-                              <span> - {new Date().getFullYear()}</span>
+                      {/* 版权文本（包含年份和站点名称） */}
+                      {settings.copyright_text ? (
+                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: settings.copyright_text }} />
+                      ) : (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-center flex-wrap gap-1">
+                            <span>©</span>
+                            <span>
+                              {settings.copyright_year_start}
+                              {settings.copyright_year_end === 'current' && (
+                                <span> - {new Date().getFullYear()}</span>
+                              )}
+                              {settings.copyright_year_end === 'forever' && (
+                                <span> - 至今</span>
+                              )}
+                              {settings.copyright_year_end !== 'current' && settings.copyright_year_end !== 'forever' && (
+                                <span> - {settings.copyright_year_end}</span>
+                              )}
+                            </span>
+                            {settings.site_url ? (
+                              <a
+                                href={settings.site_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-foreground transition-colors font-medium"
+                              >
+                                {settings.site_name || '蚂蚁AI导航'}
+                              </a>
+                            ) : (
+                              <span className="font-medium">{settings.site_name || '蚂蚁AI导航'}</span>
                             )}
-                            {settings.copyright_year_end === 'forever' && (
-                              <span> - 至今</span>
-                            )}
-                            {settings.copyright_year_end !== 'current' && settings.copyright_year_end !== 'forever' && (
-                              <span> - {settings.copyright_year_end}</span>
-                            )}
-                            {' '}
-                            <a
-                              href={settings.site_url || '#'}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:underline font-medium"
-                            >
-                              {settings.site_name || '蚂蚁AI导航'}
-                            </a>
                             {settings.copyright_company_name && (
-                              <span> · {settings.copyright_company_name}</span>
+                              <span>· {settings.copyright_company_name}</span>
                             )}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex justify-center gap-4 text-xs text-muted-foreground flex-wrap">
-                        {settings.copyright_icp && (
-                          <a
-                            href={settings.copyright_icp_url || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:underline"
-                          >
-                            {settings.copyright_icp}
-                          </a>
-                        )}
-                        {settings.copyright_police && (
-                          <a
-                            href={settings.copyright_police_url || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:underline"
-                          >
-                            {settings.copyright_police}
-                          </a>
-                        )}
-                      </div>
-
-                      {settings.copyright_company_email && (
-                        <div className="text-center text-xs text-muted-foreground">
-                          <a
-                            href={`mailto:${settings.copyright_company_email}`}
-                            className="hover:underline"
-                          >
-                            {settings.copyright_company_email}
-                          </a>
+                            <span>All rights reserved.</span>
+                          </div>
+                          {settings.copyright_company_email && (
+                            <a
+                              href={`mailto:${settings.copyright_company_email}`}
+                              className="hover:text-foreground transition-colors"
+                            >
+                              {settings.copyright_company_email}
+                            </a>
+                          )}
                         </div>
                       )}
 
-                      {settings.copyright_additional && (
-                        <div className="text-center text-xs text-muted-foreground mt-2 prose prose-sm max-w-none">
-                          <div dangerouslySetInnerHTML={{ __html: settings.copyright_additional }} />
+                      {/* 备案信息 */}
+                      {(settings.copyright_icp || settings.copyright_police) && (
+                        <div className="flex justify-center gap-4 flex-wrap">
+                          {settings.copyright_icp && (
+                            <a
+                              href={settings.copyright_icp_url || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-foreground transition-colors"
+                            >
+                              {settings.copyright_icp}
+                            </a>
+                          )}
+                          {settings.copyright_police && (
+                            <a
+                              href={settings.copyright_police_url || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-foreground transition-colors"
+                            >
+                              {settings.copyright_police}
+                            </a>
+                          )}
                         </div>
+                      )}
+
+                      {/* 附加信息 */}
+                      {settings.copyright_additional && (
+                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: settings.copyright_additional }} />
                       )}
                     </>
                   ) : (
