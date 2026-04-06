@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import RichTextEditor from '@/components/ui/rich-text-editor'
 import { Save, Globe, Share2, Search, Code, BarChart3, Loader2, Map, Copyright } from 'lucide-react'
 
 interface SEOSettings {
@@ -667,16 +668,15 @@ export default function SEOSettingsPage() {
                 {/* 版权文本 */}
                 <div className="space-y-2">
                   <Label htmlFor="copyright_text">版权声明文本</Label>
-                  <Textarea
-                    id="copyright_text"
-                    value={settings.copyright_text}
-                    onChange={(e) => updateField('copyright_text', e.target.value)}
-                    placeholder="All rights reserved."
-                    rows={2}
+                  <RichTextEditor
+                    content={settings.copyright_text}
+                    onChange={(content) => updateField('copyright_text', content)}
                     disabled={!settings.copyright_enabled}
+                    placeholder="输入版权声明文本，支持富文本格式..."
+                    minHeight="100px"
                   />
                   <p className="text-xs text-muted-foreground">
-                    可选的版权声明文本。不填则使用默认格式：© [年份] [站点名称]. All rights reserved.
+                    可选的版权声明文本。支持<strong>粗体</strong>、<em>斜体</em>、<u>下划线</u>、链接等富文本格式。不填则使用默认格式：© [年份] [站点名称]. All rights reserved.
                   </p>
                 </div>
               </CardContent>
@@ -801,9 +801,9 @@ export default function SEOSettingsPage() {
                 <div className="border rounded-lg p-6 bg-muted/30 space-y-3">
                   {settings.copyright_enabled ? (
                     <>
-                      <div className="text-center text-sm">
+                      <div className="text-center text-sm prose prose-sm max-w-none">
                         {settings.copyright_text ? (
-                          <span>{settings.copyright_text}</span>
+                          <div dangerouslySetInnerHTML={{ __html: settings.copyright_text }} />
                         ) : (
                           <span>
                             © {settings.copyright_year_start}
@@ -817,8 +817,8 @@ export default function SEOSettingsPage() {
                               <span> - {settings.copyright_year_end}</span>
                             )}
                             {' '}
-                            <a 
-                              href={settings.site_url || '#'} 
+                            <a
+                              href={settings.site_url || '#'}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="hover:underline font-medium"
@@ -831,11 +831,11 @@ export default function SEOSettingsPage() {
                           </span>
                         )}
                       </div>
-                      
+
                       <div className="flex justify-center gap-4 text-xs text-muted-foreground flex-wrap">
                         {settings.copyright_icp && (
-                          <a 
-                            href={settings.copyright_icp_url || '#'} 
+                          <a
+                            href={settings.copyright_icp_url || '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:underline"
@@ -844,8 +844,8 @@ export default function SEOSettingsPage() {
                           </a>
                         )}
                         {settings.copyright_police && (
-                          <a 
-                            href={settings.copyright_police_url || '#'} 
+                          <a
+                            href={settings.copyright_police_url || '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:underline"
@@ -854,10 +854,10 @@ export default function SEOSettingsPage() {
                           </a>
                         )}
                       </div>
-                      
+
                       {settings.copyright_company_email && (
                         <div className="text-center text-xs text-muted-foreground">
-                          <a 
+                          <a
                             href={`mailto:${settings.copyright_company_email}`}
                             className="hover:underline"
                           >
@@ -865,9 +865,9 @@ export default function SEOSettingsPage() {
                           </a>
                         </div>
                       )}
-                      
+
                       {settings.copyright_additional && (
-                        <div className="text-center text-xs text-muted-foreground mt-2">
+                        <div className="text-center text-xs text-muted-foreground mt-2 prose prose-sm max-w-none">
                           <div dangerouslySetInnerHTML={{ __html: settings.copyright_additional }} />
                         </div>
                       )}
