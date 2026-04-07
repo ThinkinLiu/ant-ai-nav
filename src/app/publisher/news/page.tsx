@@ -47,7 +47,8 @@ interface News {
   is_featured: boolean
   is_hot: boolean
   reject_reason: string | null
-  category: string
+  category: string | string[]
+  tags: string[]
   author_id: string | null
 }
 
@@ -532,9 +533,16 @@ export default function PublisherNews() {
                         )}
                         {item.category && (
                           <Badge variant="outline" className="text-xs">
-                            {CATEGORY_LABELS[item.category] || item.category}
+                            {Array.isArray(item.category)
+                              ? item.category.map(c => CATEGORY_LABELS[c] || c).join(', ')
+                              : CATEGORY_LABELS[item.category] || item.category}
                           </Badge>
                         )}
+                        {Array.isArray(item.tags) && item.tags.length > 0 && item.tags.map((tag, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                         {item.summary}

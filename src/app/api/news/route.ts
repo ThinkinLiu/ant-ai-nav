@@ -66,10 +66,44 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // 解析 category 字段为数组
+    const parsedData = data.map(item => {
+      let parsedCategory = item.category
+      try {
+        if (item.category && typeof item.category === 'string') {
+          const parsed = JSON.parse(item.category)
+          if (Array.isArray(parsed)) {
+            parsedCategory = parsed
+          }
+        }
+      } catch (e) {
+        // 如果解析失败，保持原值
+        parsedCategory = item.category
+      }
+
+      // 确保 tags 是数组
+      let parsedTags = item.tags
+      if (!parsedTags) {
+        parsedTags = []
+      } else if (typeof parsedTags === 'string') {
+        try {
+          parsedTags = JSON.parse(parsedTags)
+        } catch (e) {
+          parsedTags = []
+        }
+      }
+
+      return {
+        ...item,
+        category: parsedCategory,
+        tags: parsedTags,
+      }
+    })
+
     return NextResponse.json({
       success: true,
       data: {
-        data,
+        data: parsedData,
         total: count || 0,
         page,
         limit,
@@ -167,7 +201,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 解析 category 字段返回
-    let parsedCategory = categoryValue
+    let parsedCategory: string | string[] = categoryValue
     try {
       if (categoryValue) {
         const parsed = JSON.parse(categoryValue)
