@@ -9,6 +9,12 @@ const MDEditor = dynamic(
   { ssr: false }
 )
 
+// 动态导入 Markdown 预览组件
+const MarkdownPreview = dynamic(
+  () => import('@uiw/react-md-editor').then((mod) => mod.default.Markdown),
+  { ssr: false }
+)
+
 interface MarkdownEditorProps {
   value: string
   onChange: (value: string | undefined) => void
@@ -85,6 +91,32 @@ export function MarkdownEditorSimple({
           }}
           visibleDragbar={false}
           hideToolbar={true}
+        />
+      </div>
+    </div>
+  )
+}
+
+// Markdown 渲染组件（只读）
+interface MarkdownViewerProps {
+  content: string
+  className?: string
+}
+
+export function MarkdownViewer({ content, className }: MarkdownViewerProps) {
+  if (!content) {
+    return null
+  }
+
+  return (
+    <div className={cn('prose prose-sm dark:prose-invert max-w-none', className)}>
+      <div data-color-mode="light">
+        <MarkdownPreview
+          source={content}
+          style={{
+            backgroundColor: 'transparent',
+            color: 'inherit',
+          }}
         />
       </div>
     </div>

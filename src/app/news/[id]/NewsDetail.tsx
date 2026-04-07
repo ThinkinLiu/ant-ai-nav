@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { categoryConfig, getCategoryConfig, getCategoriesConfig } from '../config'
+import { MarkdownViewer } from '@/components/ui/markdown-editor'
 import { Edit } from 'lucide-react'
 
 interface NewsItem {
@@ -171,11 +172,7 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
 
               {/* Content */}
               {news.content && (
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <div className="text-foreground leading-relaxed whitespace-pre-line">
-                    {news.content}
-                  </div>
-                </div>
+                <MarkdownViewer content={news.content} />
               )}
 
               {/* Source Link */}
