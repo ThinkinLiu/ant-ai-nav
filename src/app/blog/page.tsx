@@ -53,50 +53,50 @@ async function getPopularTags() {
   }
 }
 
-// 获取教程指南数据
-async function getTutorials() {
+// 获取博客数据
+async function getBlogs() {
   try {
     const client = getSupabaseClient()
     const { data, error } = await client
       .from('ai_news')
       .select('*')
-      .like('category', '%tutorial%')
+      .like('category', '%blog%')
       .eq('status', 'approved')
       .order('published_at', { ascending: false })
       .limit(20)
 
     if (error) {
-      console.error('获取教程数据失败:', error)
+      console.error('获取博客数据失败:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('获取教程数据失败:', error)
+    console.error('获取博客数据失败:', error)
     return []
   }
 }
 
-// 获取热门教程（按浏览量排序）
-async function getHotTutorials() {
+// 获取热门博客（按浏览量排序）
+async function getHotBlogs() {
   try {
     const client = getSupabaseClient()
     const { data, error } = await client
       .from('ai_news')
       .select('*')
-      .like('category', '%tutorial%')
+      .like('category', '%blog%')
       .eq('status', 'approved')
       .order('view_count', { ascending: false })
       .limit(6)
 
     if (error) {
-      console.error('获取热门教程失败:', error)
+      console.error('获取热门博客失败:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('获取热门教程失败:', error)
+    console.error('获取热门博客失败:', error)
     return []
   }
 }
@@ -129,8 +129,8 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 export default async function BlogPage() {
-  const tutorials = await getTutorials()
-  const hotTutorials = await getHotTutorials()
+  const blogs = await getBlogs()
+  const hotBlogs = await getHotBlogs()
   const popularTags = await getPopularTags()
 
   return (
@@ -162,52 +162,52 @@ export default async function BlogPage() {
               </h2>
             </div>
             
-            {tutorials.length === 0 ? (
+            {blogs.length === 0 ? (
               <div className="text-center py-12 bg-muted/30 rounded-lg">
-                <p className="text-muted-foreground">暂无教程内容</p>
+                <p className="text-muted-foreground">暂无博客内容</p>
               </div>
             ) : (
               <div className="space-y-6">
-                {tutorials.map((tutorial) => (
+                {blogs.map((blog) => (
                   <article
-                    key={tutorial.id}
+                    key={blog.id}
                     className="bg-card border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
                   >
                     <div className="md:flex">
-                      {tutorial.cover_image && (
+                      {blog.cover_image && (
                         <div className="md:w-1/3">
                           <img
-                            src={tutorial.cover_image}
-                            alt={tutorial.title}
+                            src={blog.cover_image}
+                            alt={blog.title}
                             className="w-full h-48 md:h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
                       )}
-                      <div className={`p-6 ${tutorial.cover_image ? 'md:w-2/3' : ''}`}>
+                      <div className={`p-6 ${blog.cover_image ? 'md:w-2/3' : ''}`}>
                         <div className="flex items-center gap-2 mb-3">
-                          <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
-                            教程指南
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                            博客日志
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {formatRelativeTime(tutorial.published_at)}
+                            {formatRelativeTime(blog.published_at)}
                           </span>
                         </div>
                         <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
-                          <a href={`/news/${tutorial.id}`}>
-                            {tutorial.title}
+                          <a href={`/news/${blog.id}`}>
+                            {blog.title}
                           </a>
                         </h3>
                         <p className="text-muted-foreground mb-4 line-clamp-2">
-                          {tutorial.summary}
+                          {blog.summary}
                         </p>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              👁️ {tutorial.view_count || 0}
+                              👁️ {blog.view_count || 0}
                             </span>
                           </div>
                           <a
-                            href={`/news/${tutorial.id}`}
+                            href={`/news/${blog.id}`}
                             className="text-primary hover:text-primary/80 font-medium text-sm"
                           >
                             阅读更多 →
@@ -229,25 +229,25 @@ export default async function BlogPage() {
                 <span>🔥</span>
                 热门博客
               </h3>
-              {hotTutorials.length === 0 ? (
-                <p className="text-muted-foreground text-sm">暂无热门教程</p>
+              {hotBlogs.length === 0 ? (
+                <p className="text-muted-foreground text-sm">暂无热门博客</p>
               ) : (
                 <div className="space-y-4">
-                  {hotTutorials.map((tutorial, index) => (
+                  {hotBlogs.map((blog, index) => (
                     <a
-                      key={tutorial.id}
-                      href={`/news/${tutorial.id}`}
+                      key={blog.id}
+                      href={`/news/${blog.id}`}
                       className="flex gap-3 group"
                     >
-                      <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                      <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
-                          {tutorial.title}
+                          {blog.title}
                         </h4>
                         <p className="text-xs text-muted-foreground mt-1">
-                          👁️ {tutorial.view_count || 0} 阅读
+                          👁️ {blog.view_count || 0} 阅读
                         </p>
                       </div>
                     </a>
