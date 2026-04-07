@@ -32,18 +32,19 @@ export default async function NewsPage({ searchParams }: PageProps) {
   
   // 教程页面逻辑
   if (isTutorialPage) {
-    // 获取教程总数（使用 JSON 包含查询）
+    // 获取教程总数（使用 LIKE 查询匹配 JSON 数组中的分类）
     const { count: tutorialCount } = await supabase
       .from('ai_news')
       .select('*', { count: 'exact', head: true })
-      .contains('category', '["tutorial"]')
+      .like('category', '%tutorial%')
+      .eq('status', 'approved')
 
     // 获取热门教程（浏览量最高的5个）
     const { data: hotTutorials } = await supabase
       .from('ai_news')
       .select('id, title, summary, cover_image, category, published_at, view_count, tags')
       .eq('status', 'approved')
-      .contains('category', '["tutorial"]')
+      .like('category', '%tutorial%')
       .order('view_count', { ascending: false })
       .limit(5)
     

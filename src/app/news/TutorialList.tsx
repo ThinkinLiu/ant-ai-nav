@@ -60,8 +60,9 @@ export function TutorialList({ hotTutorials }: Props) {
         page: pageNum.toString(),
         limit: pageSize.toString(),
         category: 'tutorial',
+        status: 'approved',
       })
-      
+
       if (search) {
         params.append('search', search)
       }
@@ -76,13 +77,15 @@ export function TutorialList({ hotTutorials }: Props) {
           setTutorials(prev => [...prev, ...data.data.data])
         }
         setTotal(data.data.total)
+      } else {
+        console.error('API returned error:', data.error)
       }
     } catch (error) {
       console.error('获取教程数据失败:', error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [pageSize])
 
   useEffect(() => {
     fetchTutorials(1, searchQuery)
