@@ -42,9 +42,10 @@ interface NewsItem {
 
 interface Props {
   hotTutorials: NewsItem[]
+  category?: 'tutorial' | 'blog'
 }
 
-export function TutorialList({ hotTutorials }: Props) {
+export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
   const [tutorials, setTutorials] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -59,7 +60,7 @@ export function TutorialList({ hotTutorials }: Props) {
       const params = new URLSearchParams({
         page: pageNum.toString(),
         limit: pageSize.toString(),
-        category: 'tutorial',
+        category: category,
         status: 'approved',
       })
 
@@ -81,11 +82,11 @@ export function TutorialList({ hotTutorials }: Props) {
         console.error('API returned error:', data.error)
       }
     } catch (error) {
-      console.error('获取教程数据失败:', error)
+      console.error('获取数据失败:', error)
     } finally {
       setLoading(false)
     }
-  }, [pageSize])
+  }, [pageSize, category])
 
   useEffect(() => {
     fetchTutorials(1, searchQuery)
@@ -140,7 +141,7 @@ export function TutorialList({ hotTutorials }: Props) {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="搜索教程..."
+              placeholder={category === 'blog' ? '搜索博客...' : '搜索教程...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-10 w-full rounded-lg border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/50"
@@ -184,8 +185,8 @@ export function TutorialList({ hotTutorials }: Props) {
                     )}
                     <div className="p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="default" className="text-xs bg-amber-500 hover:bg-amber-600">
-                          教程
+                        <Badge variant="default" className={`text-xs ${category === 'blog' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-amber-500 hover:bg-amber-600'}`}>
+                          {category === 'blog' ? '博客' : '教程'}
                         </Badge>
                         {tutorial.tags && tutorial.tags.length > 0 && (
                           tutorial.tags.slice(0, 3).map((tag, idx) => (
@@ -228,17 +229,19 @@ export function TutorialList({ hotTutorials }: Props) {
           {/* No more data indicator */}
           {!loading && tutorials.length >= total && total > 0 && (
             <div className="text-center py-8 text-muted-foreground text-sm">
-              已加载全部教程
+              已加载全部{category === 'blog' ? '博客' : '教程'}
             </div>
           )}
 
           {/* Empty state */}
           {!loading && tutorials.length === 0 && (
             <div className="text-center py-12">
-              <div className="text-4xl mb-4">📚</div>
-              <h3 className="text-lg font-semibold mb-2">暂无教程</h3>
+              <div className="text-4xl mb-4">{category === 'blog' ? '📝' : '📚'}</div>
+              <h3 className="text-lg font-semibold mb-2">暂无{category === 'blog' ? '博客' : '教程'}</h3>
               <p className="text-muted-foreground">
-                {searchQuery ? '没有找到相关教程，请尝试其他关键词' : '暂时还没有教程内容'}
+                {searchQuery
+                  ? `没有找到相关${category === 'blog' ? '博客' : '教程'}，请尝试其他关键词`
+                  : `暂时还没有${category === 'blog' ? '博客' : '教程'}内容`}
               </p>
             </div>
           )}

@@ -28,8 +28,9 @@ interface PageProps {
 export default async function NewsPage({ searchParams }: PageProps) {
   const params = await searchParams
   const isTutorialPage = params.category === 'tutorial'
+  const isBlogPage = params.category === 'blog'
   const supabase = getSupabaseClient()
-  
+
   // 教程页面逻辑
   if (isTutorialPage) {
     // 获取教程总数（使用 LIKE 查询匹配 JSON 数组中的分类）
@@ -47,7 +48,7 @@ export default async function NewsPage({ searchParams }: PageProps) {
       .like('category', '%tutorial%')
       .order('view_count', { ascending: false })
       .limit(5)
-    
+
     return (
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -113,7 +114,91 @@ export default async function NewsPage({ searchParams }: PageProps) {
       </div>
     )
   }
-  
+
+  // 博客日志页面逻辑（使用与教程相同的样式）
+  if (isBlogPage) {
+    // 获取博客总数
+    const { count: blogCount } = await supabase
+      .from('ai_news')
+      .select('*', { count: 'exact', head: true })
+      .like('category', '%blog%')
+      .eq('status', 'approved')
+
+    // 获取热门博客（浏览量最高的5个）
+    const { data: hotBlogs } = await supabase
+      .from('ai_news')
+      .select('id, title, summary, cover_image, category, published_at, view_count, tags')
+      .eq('status', 'approved')
+      .like('category', '%blog%')
+      .order('view_count', { ascending: false })
+      .limit(5)
+
+    return (
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+                <span className="text-4xl">📝</span>
+                蚂蚁AI之家
+              </h1>
+              <p className="text-muted-foreground">
+                探索AI技术的无限可能，掌握前沿AI工具的使用技巧
+              </p>
+            </div>
+            <div className="text-sm text-muted-foreground bg-muted px-4 py-2 rounded-lg">
+              共 <span className="text-primary font-medium">{blogCount || 0}</span> 篇博客
+            </div>
+          </div>
+        </div>
+
+        {/* Hot Blogs Sidebar + Main List */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main List */}
+          <div className="lg:col-span-3">
+            <TutorialList hotTutorials={hotBlogs || []} category="blog" />
+          </div>
+
+          {/* Hot Blogs Sidebar */}
+          {hotBlogs && hotBlogs.length > 0 && (
+            <div className="lg:col-span-1">
+              <div className="sticky top-24">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <span>🔥</span>
+                  <span>热门博客</span>
+                </h3>
+                <div className="space-y-4">
+                  {hotBlogs.map((blog, index) => (
+                    <a
+                      key={blog.id}
+                      href={`/news/${blog.id}`}
+                      className="group flex gap-3"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-sm font-bold text-blue-500 flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                          {blog.title}
+                        </h4>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                          <span>{formatDateTime(blog.published_at)}</span>
+                          <span>·</span>
+                          <span>{blog.view_count || 0} 阅读</span>
+                        </div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   // 普通资讯页面逻辑
   
   // 获取统计信息
