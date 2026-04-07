@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
-import { categoryConfig, getCategoryConfig } from '../config'
+import { categoryConfig, getCategoryConfig, getCategoriesConfig } from '../config'
 import { Edit } from 'lucide-react'
 
 interface NewsItem {
@@ -50,8 +50,10 @@ interface Props {
 
 export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
   const { user } = useAuth()
-  const categoryInfo = getCategoryConfig(news.category)
-  
+  const categories = getCategoriesConfig(news.category)
+  const firstCategory = categories[0]
+  const categoryList = news.category
+
   // 检查是否是管理员或发布者本人
   const canEdit = user?.role === 'admin' || user?.id === news.author_id?.toString()
 
@@ -99,14 +101,17 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
             <div className="p-6 md:p-8">
               {/* Meta */}
               <div className="flex items-center gap-2 flex-wrap mb-4">
-                {categoryInfo && news.category && (
-                  <Link
-                    href={`/news?category=${news.category}`}
-                    className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium flex items-center gap-1.5 hover:bg-primary/20 transition-colors cursor-pointer"
-                  >
-                    <span>{categoryInfo?.icon}</span>
-                    <span>{categoryInfo?.label}</span>
-                  </Link>
+                {categories.length > 0 && (
+                  categories.map((cat) => (
+                    <Link
+                      key={cat.label}
+                      href={`/news?category=${cat.label === '行业动态' ? 'industry' : cat.label === '学术研究' ? 'research' : cat.label === '产品发布' ? 'product' : cat.label === '政策法规' ? 'policy' : cat.label === '教程指南' ? 'tutorial' : 'blog'}`}
+                      className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium flex items-center gap-1.5 hover:bg-primary/20 transition-colors cursor-pointer"
+                    >
+                      <span>{cat.icon}</span>
+                      <span>{cat.label}</span>
+                    </Link>
+                  ))
                 )}
                 {news.is_hot && (
                   <span className="px-3 py-1 bg-red-500/10 text-red-600 dark:text-red-400 rounded-full text-sm font-medium">
@@ -249,13 +254,17 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
                 <span className="text-muted-foreground">发布时间</span>
                 <span>{formatDate(news.published_at)}</span>
               </div>
-              {categoryInfo && (
-                <div className="flex justify-between items-center">
+              {categories.length > 0 && (
+                <div className="flex justify-between items-start">
                   <span className="text-muted-foreground">分类</span>
-                  <span className="flex items-center gap-1.5">
-                    <span>{categoryInfo.icon}</span>
-                    <span>{categoryInfo.label}</span>
-                  </span>
+                  <div className="flex flex-wrap gap-1.5 items-center justify-end">
+                    {categories.map((cat) => (
+                      <span key={cat.label} className="flex items-center gap-1 text-sm">
+                        <span>{cat.icon}</span>
+                        <span>{cat.label}</span>
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
               {news.source && (

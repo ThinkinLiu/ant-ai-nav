@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { getCategoriesConfig, parseCategory } from './config'
 
 // 格式化时间，精确到分钟
 function formatDateTime(dateStr: string): string {
@@ -245,8 +246,10 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
             {/* News Items */}
             <div className="space-y-4">
               {items.map((item) => {
-                const categoryInfo = item.category ? categoryConfig[item.category] : undefined
-                
+                const categories = getCategoriesConfig(item.category)
+                const firstCategory = categories[0]
+                const categoryList = parseCategory(item.category)
+
                 return (
                   <Link
                     key={item.id}
@@ -266,7 +269,7 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
                     ) : (
                       <div className="w-32 h-24 flex-shrink-0 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
                         <span className="text-3xl">
-                          {categoryInfo?.icon || '📰'}
+                          {firstCategory?.icon || '📰'}
                         </span>
                       </div>
                     )}
@@ -274,10 +277,12 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-2">
-                        {categoryInfo && (
-                          <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">
-                            {categoryInfo?.icon} {categoryInfo?.label}
-                          </span>
+                        {categories.length > 0 && (
+                          categories.map((cat) => (
+                            <span key={cat.label} className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">
+                              {cat.icon} {cat.label}
+                            </span>
+                          ))
                         )}
                         {item.is_hot && (
                           <span className="text-xs px-2 py-0.5 bg-red-500/10 text-red-600 dark:text-red-400 rounded">
