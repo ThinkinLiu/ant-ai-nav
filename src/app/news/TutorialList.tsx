@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Eye, Calendar, Loader2, Search } from 'lucide-react'
 import { formatRelativeTime } from '@/lib/utils'
@@ -40,6 +39,11 @@ interface NewsItem {
   tags: string[] | null
 }
 
+interface CategoryInfo {
+  name: string
+  color: string
+}
+
 interface Props {
   hotTutorials: NewsItem[]
   category?: 'tutorial' | 'blog'
@@ -47,6 +51,7 @@ interface Props {
 
 export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
   const [tutorials, setTutorials] = useState<NewsItem[]>([])
+  const [categories, setCategories] = useState<Record<string, CategoryInfo>>({})
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
@@ -74,6 +79,7 @@ export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
       if (data.success) {
         if (pageNum === 1) {
           setTutorials(data.data.data)
+          setCategories(data.data.categories || {})
         } else {
           setTutorials(prev => [...prev, ...data.data.data])
         }
@@ -203,38 +209,47 @@ export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
                             }
                           }
 
-                          // 分类名称映射
-                          const categoryNames: Record<string, string> = {
-                            'tutorial': '教程',
-                            'blog': '博客',
-                            'industry': '行业动态',
-                            'research': '学术研究',
-                            'product': '产品发布',
-                            'policy': '政策法规',
-                            'other': '其他',
-                          }
+                          // 过滤掉"博客日志"分类
+                          const filteredCategories = categoriesList.filter(catSlug => {
+                            const catInfo = categories[catSlug]
+                            return catInfo && catInfo.name !== '博客日志'
+                          })
 
                           // 如果有分类，显示所有分类
-                          if (categoriesList.length > 0) {
-                            return categoriesList.map((catSlug, idx) => (
-                              <Badge key={idx} variant="default" className="text-xs">
-                                {categoryNames[catSlug] || catSlug}
-                              </Badge>
-                            ))
+                          if (filteredCategories.length > 0) {
+                            return filteredCategories.map((catSlug, idx) => {
+                              const catInfo = categories[catSlug]
+                              const color = catInfo?.color || '#9CA3AF'
+                              return (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium"
+                                  style={{
+                                    backgroundColor: `${color}20`,
+                                    borderColor: color,
+                                    color: color
+                                  }}
+                                >
+                                  {catInfo?.name || catSlug}
+                                </span>
+                              )
+                            })
                           }
 
                           // 否则显示默认分类
                           return (
-                            <Badge variant="default" className={`text-xs ${category === 'blog' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-amber-500 hover:bg-amber-600'}`}>
+                            <span
+                              className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium ${category === 'blog' ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-amber-500/10 border-amber-500 text-amber-500'}`}
+                            >
                               {category === 'blog' ? '博客' : '教程'}
-                            </Badge>
+                            </span>
                           )
                         })()}
                         {tutorial.tags && tutorial.tags.length > 0 && (
                           tutorial.tags.slice(0, 3).map((tag, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
+                            <span key={idx} className="inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium">
                               {tag}
-                            </Badge>
+                            </span>
                           ))
                         )}
                       </div>

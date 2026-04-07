@@ -17,6 +17,25 @@ export async function GET(request: NextRequest) {
 
     const client = getSupabaseClient()
 
+    // 获取分类配置
+    const { data: categories } = await client
+      .from('news_categories')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+
+    // 创建分类映射：slug -> { name, color }
+    // 过滤掉"博客日志"分类
+    const categoryMap: Record<string, { name: string; color: string }> = {}
+    categories?.forEach(cat => {
+      if (cat.name !== '博客日志') {
+        categoryMap[cat.slug] = {
+          name: cat.name,
+          color: cat.color
+        }
+      }
+    })
+
     let query = client
       .from('ai_news')
       .select('*', { count: 'exact' })
@@ -108,6 +127,7 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         totalPages: Math.ceil((count || 0) / limit),
+        categories: categoryMap,
       },
     })
   } catch (error) {
