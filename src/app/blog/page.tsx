@@ -6,10 +6,44 @@ interface NewsItem {
   title: string
   summary: string
   cover_image: string | null
-  category: string | null
+  category: string[] | null
   published_at: string
   view_count: number
   tags: string[] | null
+}
+
+// 分类颜色映射
+const categoryColors: Record<string, string> = {
+  'blog': 'bg-blue-100 text-blue-700',
+  'tutorial': 'bg-green-100 text-green-700',
+  'news': 'bg-orange-100 text-orange-700',
+  'case': 'bg-purple-100 text-purple-700',
+  'default': 'bg-gray-100 text-gray-700'
+}
+
+// 分类名称映射
+const categoryNames: Record<string, string> = {
+  'blog': '博客日志',
+  'tutorial': '教程',
+  'news': '资讯',
+  'case': '案例',
+  'article': '文章'
+}
+
+// 解析分类字段
+function parseCategories(category: string | string[] | null): string[] {
+  if (!category) return []
+  
+  if (Array.isArray(category)) {
+    return category
+  }
+  
+  try {
+    const parsed = JSON.parse(category)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
 }
 
 // 获取热门标签（从博客日志中统计）
@@ -184,14 +218,30 @@ export default async function BlogPage() {
                         </div>
                       )}
                       <div className={`p-6 ${blog.cover_image ? 'md:w-2/3' : ''}`}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                            博客日志
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatRelativeTime(blog.published_at)}
-                          </span>
-                        </div>
+                        {(() => {
+                          const categories = parseCategories(blog.category)
+                          const filteredCategories = categories.filter(cat => cat !== 'blog')
+                          const categoryBadges = filteredCategories.map(cat => {
+                            const colorClass = categoryColors[cat] || categoryColors['default']
+                            const displayName = categoryNames[cat] || cat
+                            return (
+                              <span key={cat} className={`text-xs px-2 py-1 rounded-full ${colorClass}`}>
+                                {displayName}
+                              </span>
+                            )
+                          })
+
+                          if (categoryBadges.length === 0) return null
+
+                          return (
+                            <div className="flex items-center gap-2 mb-3 flex-wrap">
+                              {categoryBadges}
+                              <span className="text-xs text-muted-foreground">
+                                {formatRelativeTime(blog.published_at)}
+                              </span>
+                            </div>
+                          )
+                        })()}
                         <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
                           <a href={`/news/${blog.id}`}>
                             {blog.title}
