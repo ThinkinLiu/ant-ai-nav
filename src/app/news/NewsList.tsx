@@ -169,7 +169,7 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
   return (
     <div>
       {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-6 sticky top-16 bg-background/95 backdrop-blur py-4 z-10 -mt-4">
+      <div className="flex flex-col gap-4 mb-6 sticky top-16 bg-background/95 backdrop-blur py-4 z-10 -mt-4">
         {/* Category Filter */}
         <div className="flex flex-wrap gap-2">
           <button
@@ -199,14 +199,14 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
         </div>
 
         {/* Search and Filter */}
-        <div className="flex-1 flex gap-2 lg:justify-end">
-          <form onSubmit={handleSearch} className="flex gap-2 flex-1 lg:flex-initial">
+        <div className="flex justify-end gap-2">
+          <form onSubmit={handleSearch} className="flex gap-2">
             <input
               type="text"
               placeholder="搜索资讯..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-4 py-1.5 border rounded-lg bg-background flex-1 lg:w-48 text-sm"
+              className="px-4 py-1.5 border rounded-lg bg-background w-48 text-sm"
             />
             <button
               type="submit"
@@ -215,7 +215,7 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
               搜索
             </button>
           </form>
-          
+
           <button
             onClick={() => setShowHotOnly(!showHotOnly)}
             className={`px-3 py-1.5 border rounded-lg text-sm flex items-center gap-1.5 transition-colors ${

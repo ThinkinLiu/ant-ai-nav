@@ -26,7 +26,8 @@ export async function GET(request: NextRequest) {
       query = query.eq('status', status)
     }
     if (category) {
-      query = query.eq('category', category)
+      // 使用 like 查询匹配 JSON 数组中的分类
+      query = query.like('category', `%${category}%`)
     }
     if (authorId) {
       query = query.eq('author_id', authorId)

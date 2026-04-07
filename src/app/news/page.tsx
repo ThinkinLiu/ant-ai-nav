@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 import { NewsList } from './NewsList'
 import { TutorialList } from './TutorialList'
+import { getCategoriesConfig } from './config'
 import React from 'react'
 
 // 强制动态渲染，避免构建时访问数据库
@@ -31,18 +32,18 @@ export default async function NewsPage({ searchParams }: PageProps) {
   
   // 教程页面逻辑
   if (isTutorialPage) {
-    // 获取教程总数
+    // 获取教程总数（使用 JSON 包含查询）
     const { count: tutorialCount } = await supabase
       .from('ai_news')
       .select('*', { count: 'exact', head: true })
-      .eq('category', 'tutorial')
-    
+      .contains('category', '["tutorial"]')
+
     // 获取热门教程（浏览量最高的5个）
     const { data: hotTutorials } = await supabase
       .from('ai_news')
       .select('id, title, summary, cover_image, category, published_at, view_count, tags')
       .eq('status', 'approved')
-      .eq('category', 'tutorial')
+      .contains('category', '["tutorial"]')
       .order('view_count', { ascending: false })
       .limit(5)
     
@@ -143,14 +144,14 @@ export default async function NewsPage({ searchParams }: PageProps) {
     .eq('is_hot', true)
     .order('published_at', { ascending: false })
     .limit(5)
-  
+
   // 获取精选资讯
   const { data: featuredNews } = await supabase
     .from('ai_news')
     .select('id, title, summary, cover_image, category, published_at, view_count')
     .eq('is_featured', true)
     .order('published_at', { ascending: false })
-    .limit(4)
+    .limit(8)
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -180,44 +181,51 @@ export default async function NewsPage({ searchParams }: PageProps) {
             <span>精选资讯</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {featuredNews.map((news, index) => (
-              <a
-                key={news.id}
-                href={`/news/${news.id}`}
-                className="group bg-gradient-to-br from-primary/5 to-primary/10 border rounded-xl overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300"
-              >
-                {news.cover_image ? (
-                  <div className="aspect-video overflow-hidden bg-muted">
-                    <img
-                      src={news.cover_image}
-                      alt={news.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
+            {featuredNews.map((news, index) => {
+              const categories = getCategoriesConfig(news.category)
+              return (
+                <a
+                  key={news.id}
+                  href={`/news/${news.id}`}
+                  className="group bg-gradient-to-br from-primary/5 to-primary/10 border rounded-xl overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300"
+                >
+                  {news.cover_image ? (
+                    <div className="aspect-video overflow-hidden bg-muted">
+                      <img
+                        src={news.cover_image}
+                        alt={news.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
+                      <span className="text-4xl">
+                        {categories[0]?.icon || '📰'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <div className="flex items-center gap-1 flex-wrap text-xs text-muted-foreground mb-2">
+                      {categories.length > 0 && (
+                        categories.map((cat) => (
+                          <span key={cat.label} className="bg-primary/10 text-primary px-2 py-0.5 rounded">
+                            {cat.icon} {cat.label}
+                          </span>
+                        ))
+                      )}
+                      <span>{formatDateTime(news.published_at)}</span>
+                    </div>
+                    <h3 className="font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                      {news.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                      {news.summary}
+                    </p>
                   </div>
-                ) : (
-                  <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
-                    <span className="text-4xl">
-                      {categoryConfigFromDB[news.category]?.icon || '📰'}
-                    </span>
-                  </div>
-                )}
-                <div className="p-4">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">
-                      {categoryConfigFromDB[news.category]?.label || '资讯'}
-                    </span>
-                    <span>{formatDateTime(news.published_at)}</span>
-                  </div>
-                  <h3 className="font-medium line-clamp-2 group-hover:text-primary transition-colors">
-                    {news.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                    {news.summary}
-                  </p>
-                </div>
-              </a>
-            ))}
+                </a>
+              )
+            })}
           </div>
         </div>
       )}
