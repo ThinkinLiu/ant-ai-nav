@@ -204,6 +204,15 @@ export default function SEOSettingsPage() {
     
     let result = text
     
+    // 智能年份范围判断
+    // 如果开始年份 >= 今年，年份范围只显示今年
+    let smartYearRange: string
+    if (settings.copyright_year_start >= currentYear) {
+      smartYearRange = currentYear.toString()
+    } else {
+      smartYearRange = yearRange
+    }
+    
     // 年份相关占位符
     result = result.replace(/\[年份\]/g, settings.copyright_year_start.toString())
     result = result.replace(/\[year\]/gi, settings.copyright_year_start.toString())
@@ -211,12 +220,19 @@ export default function SEOSettingsPage() {
     result = result.replace(/\[当前年份\]/g, currentYear.toString())
     result = result.replace(/\[current_year\]/gi, currentYear.toString())
     
-    result = result.replace(/\[年份范围\]/g, yearRange)
-    result = result.replace(/\[year_range\]/gi, yearRange)
+    // 年份范围占位符（智能判断）
+    result = result.replace(/\[年份范围\]/g, smartYearRange)
+    result = result.replace(/\[year_range\]/gi, smartYearRange)
     
-    // 站点名称占位符
-    result = result.replace(/\[网站名\]/g, settings.site_name || '蚂蚁AI导航')
-    result = result.replace(/\[site_name\]/gi, settings.site_name || '蚂蚁AI导航')
+    // 智能网站名占位符：如果有URL，自动添加a标签
+    let siteNameHtml: string
+    if (settings.site_url) {
+      siteNameHtml = `<a href="${settings.site_url}" target="_blank" rel="noopener noreferrer" class="hover:text-foreground transition-colors font-medium">${settings.site_name || '蚂蚁AI导航'}</a>`
+    } else {
+      siteNameHtml = `<span class="font-medium">${settings.site_name || '蚂蚁AI导航'}</span>`
+    }
+    result = result.replace(/\[网站名\]/g, siteNameHtml)
+    result = result.replace(/\[site_name\]/gi, siteNameHtml)
     
     // 公司名称占位符
     if (settings.copyright_company_name) {
@@ -224,10 +240,11 @@ export default function SEOSettingsPage() {
       result = result.replace(/\[company_name\]/gi, settings.copyright_company_name)
     }
     
-    // 联系邮箱占位符
+    // 联系邮箱占位符：自动添加mailto链接
     if (settings.copyright_company_email) {
-      result = result.replace(/\[联系邮箱\]/g, settings.copyright_company_email)
-      result = result.replace(/\[email\]/gi, settings.copyright_company_email)
+      const emailHtml = `<a href="mailto:${settings.copyright_company_email}" class="hover:text-foreground transition-colors">${settings.copyright_company_email}</a>`
+      result = result.replace(/\[联系邮箱\]/g, emailHtml)
+      result = result.replace(/\[email\]/gi, emailHtml)
     }
     
     return result
@@ -732,12 +749,12 @@ export default function SEOSettingsPage() {
                     可选的版权声明文本。支持<strong>粗体</strong>、<em>斜体</em>、<u>下划线</u>、链接等富文本格式。不填则使用默认格式。
                     <br />
                     <strong>可用占位符：</strong>
-                    <span className="ml-1">[年份]</span>、
-                    <span>[当前年份]</span>、
-                    <span>[年份范围]</span>、
-                    <span>[网站名]</span>、
+                    <span className="ml-1">[年份]</span>（起始年份）、
+                    <span>[当前年份]</span>（今年）、
+                    <span>[年份范围]</span>（智能判断，起始年份大于等于今年则只显示今年）、
+                    <span>[网站名]</span>（有URL时自动添加链接）、
                     <span>[公司名]</span>、
-                    <span>[联系邮箱]</span>
+                    <span>[联系邮箱]</span>（自动添加mailto链接）
                   </p>
                 </div>
               </CardContent>
@@ -847,7 +864,7 @@ export default function SEOSettingsPage() {
                     className="font-mono text-sm"
                   />
                   <p className="text-xs text-muted-foreground">
-                    支持HTML标签，将显示在版权信息下方。支持使用占位符：[年份]、[当前年份]、[年份范围]、[网站名]、[公司名]、[联系邮箱]
+                    支持HTML标签，将显示在版权信息下方。支持使用占位符：[年份]、[当前年份]、[年份范围]（智能判断）、[网站名]（有URL时自动添加链接）、[公司名]、[联系邮箱]（自动添加mailto链接）
                   </p>
                 </div>
               </CardContent>

@@ -50,6 +50,7 @@ function formatCopyrightYear(yearStart: number, yearEnd: string): string {
 function replaceCopyrightPlaceholders(
   text: string,
   siteName: string,
+  siteUrl?: string,
   yearStart: number,
   yearEnd: string,
   companyName?: string,
@@ -60,6 +61,15 @@ function replaceCopyrightPlaceholders(
   
   let result = text
   
+  // 智能年份范围判断
+  // 如果开始年份 >= 今年，年份范围只显示今年
+  let smartYearRange: string
+  if (yearStart >= currentYear) {
+    smartYearRange = currentYear.toString()
+  } else {
+    smartYearRange = yearRange
+  }
+  
   // 年份相关占位符
   result = result.replace(/\[年份\]/g, yearStart.toString())
   result = result.replace(/\[year\]/gi, yearStart.toString())
@@ -67,12 +77,19 @@ function replaceCopyrightPlaceholders(
   result = result.replace(/\[当前年份\]/g, currentYear.toString())
   result = result.replace(/\[current_year\]/gi, currentYear.toString())
   
-  result = result.replace(/\[年份范围\]/g, yearRange)
-  result = result.replace(/\[year_range\]/gi, yearRange)
+  // 年份范围占位符（智能判断）
+  result = result.replace(/\[年份范围\]/g, smartYearRange)
+  result = result.replace(/\[year_range\]/gi, smartYearRange)
   
-  // 站点名称占位符
-  result = result.replace(/\[网站名\]/g, siteName)
-  result = result.replace(/\[site_name\]/gi, siteName)
+  // 智能网站名占位符：如果有URL，自动添加a标签
+  let siteNameHtml: string
+  if (siteUrl) {
+    siteNameHtml = `<a href="${siteUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-foreground transition-colors font-medium">${siteName}</a>`
+  } else {
+    siteNameHtml = `<span class="font-medium">${siteName}</span>`
+  }
+  result = result.replace(/\[网站名\]/g, siteNameHtml)
+  result = result.replace(/\[site_name\]/gi, siteNameHtml)
   
   // 公司名称占位符
   if (companyName) {
@@ -80,10 +97,11 @@ function replaceCopyrightPlaceholders(
     result = result.replace(/\[company_name\]/gi, companyName)
   }
   
-  // 联系邮箱占位符
+  // 联系邮箱占位符：自动添加mailto链接
   if (companyEmail) {
-    result = result.replace(/\[联系邮箱\]/g, companyEmail)
-    result = result.replace(/\[email\]/gi, companyEmail)
+    const emailHtml = `<a href="mailto:${companyEmail}" class="hover:text-foreground transition-colors">${companyEmail}</a>`
+    result = result.replace(/\[联系邮箱\]/g, emailHtml)
+    result = result.replace(/\[email\]/gi, emailHtml)
   }
   
   return result
@@ -190,6 +208,7 @@ export async function Footer() {
                 __html: replaceCopyrightPlaceholders(
                   copyrightText,
                   siteName,
+                  siteUrl,
                   copyrightYearStart,
                   copyrightYearEnd,
                   companyName,
@@ -261,6 +280,7 @@ export async function Footer() {
                 __html: replaceCopyrightPlaceholders(
                   additional,
                   siteName,
+                  siteUrl,
                   copyrightYearStart,
                   copyrightYearEnd,
                   companyName,
