@@ -876,12 +876,12 @@ export default function SEOSettingsPage() {
                 <CardDescription>查看版权信息在底部的显示效果</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="border rounded-lg p-6 bg-muted/30 space-y-2">
+                <div className="border rounded-lg p-6 bg-muted/30 text-center text-sm text-muted-foreground space-y-2">
                   {settings.copyright_enabled ? (
                     <>
                       {/* 版权文本（包含年份和站点名称） */}
                       {settings.copyright_text ? (
-                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ 
+                        <div className="prose prose-sm max-w-none mx-auto" dangerouslySetInnerHTML={{ 
                           __html: replaceCopyrightPlaceholders(settings.copyright_text)
                         }} />
                       ) : (
@@ -956,7 +956,7 @@ export default function SEOSettingsPage() {
 
                       {/* 附加信息 */}
                       {settings.copyright_additional && (
-                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ 
+                        <div className="prose prose-sm max-w-none mx-auto" dangerouslySetInnerHTML={{ 
                           __html: replaceCopyrightPlaceholders(settings.copyright_additional)
                         }} />
                       )}
