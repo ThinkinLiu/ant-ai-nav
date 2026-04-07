@@ -171,15 +171,16 @@ export function HeaderContent() {
         <div className="flex items-center space-x-3">
           {user ? (
             <>
-              {user.role === 'publisher' || user.role === 'admin' ? (
+              {/* 在博客页面隐藏发布工具按钮 */}
+              {user && (user.role === 'publisher' || user.role === 'admin') && !pathname.startsWith('/blog') && (
                 <Button variant="outline" size="sm" asChild className="hidden md:flex">
                   <Link href="/publisher/tools/new">
                     <Plus className="mr-1 h-4 w-4" />
                     发布工具
                   </Link>
                 </Button>
-              ) : null}
-              
+              )}
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">

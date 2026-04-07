@@ -103,16 +103,7 @@ export default async function BlogPage() {
             <p className="text-xl text-white/90 max-w-2xl mx-auto">
               探索AI技术的无限可能，掌握前沿AI工具的使用技巧
             </p>
-            <div className="flex justify-center gap-4 mt-8">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
-                <div className="text-3xl font-bold text-white">{tutorials.length}</div>
-                <div className="text-sm text-white/80">精选教程</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
-                <div className="text-3xl font-bold text-white">{hotTutorials.reduce((sum, t) => sum + (t.view_count || 0), 0)}</div>
-                <div className="text-sm text-white/80">总浏览量</div>
-              </div>
-            </div>
+            {/* 统计信息区域已隐藏 */}
           </div>
         </div>
       </section>
@@ -124,7 +115,7 @@ export default async function BlogPage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-3xl font-bold flex items-center gap-2">
                 <span className="text-2xl">📚</span>
-                最新教程
+                最新博客
               </h2>
             </div>
             
@@ -189,11 +180,11 @@ export default async function BlogPage() {
 
           {/* 侧边栏 */}
           <div className="space-y-8">
-            {/* 热门教程 */}
+            {/* 热门博客 */}
             <div className="bg-card border rounded-lg p-6">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <span>🔥</span>
-                热门教程
+                热门博客
               </h3>
               {hotTutorials.length === 0 ? (
                 <p className="text-muted-foreground text-sm">暂无热门教程</p>
