@@ -419,7 +419,14 @@ export default function TagsAdminPage() {
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{tag.name}</span>
+                    <Link
+                      href={`/tags/${encodeURIComponent(tag.slug)}`}
+                      className="font-medium hover:text-primary transition-colors cursor-pointer"
+                      target="_blank"
+                      title="点击查看标签主页"
+                    >
+                      {tag.name}
+                    </Link>
                     <Badge variant="outline" className="text-xs">
                       {tag.slug}
                     </Badge>
@@ -444,6 +451,16 @@ export default function TagsAdminPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    title="查看标签主页"
+                  >
+                    <Link href={`/tags/${encodeURIComponent(tag.slug)}`} target="_blank">
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
