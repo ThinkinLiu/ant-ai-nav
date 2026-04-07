@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Search, Menu, X, Plus, Settings, LogOut, User, LayoutDashboard } from 'lucide-react'
+import { Search, Menu, X, Plus, Settings, LogOut, User, LayoutDashboard, Home, BookOpen } from 'lucide-react'
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -110,17 +110,20 @@ export function HeaderContent() {
           {isBlogPage ? (
             <>
               {/* Blog页面菜单 */}
-              <Link href="/blog" className={`text-sm font-medium transition-colors ${getActiveClass('/blog')}`}>
+              <Link href="/blog" className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`}>
+                <BookOpen className="h-4 w-4" />
                 首页
               </Link>
-              <Link href="/" className={`text-sm font-medium transition-colors ${getActiveClass('/')}`}>
+              <Link href="/" className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`}>
+                <Home className="h-4 w-4" />
                 AI导航
               </Link>
             </>
           ) : (
             <>
               {/* 默认导航菜单 */}
-              <Link href="/" className={`text-sm font-medium transition-colors ${getActiveClass('/')}`}>
+              <Link href="/" className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`}>
+                <Home className="h-4 w-4" />
                 首页
               </Link>
               <Link href="/?isFeatured=true" className={`text-sm font-medium transition-colors ${getActiveClass('/?isFeatured=true')}`}>
@@ -132,7 +135,8 @@ export function HeaderContent() {
               <Link href="/news?category=tutorial" className={`text-sm font-medium transition-colors ${getActiveClass('/news?category=tutorial')}`}>
                 AI教程
               </Link>
-              <Link href="/blog" className={`text-sm font-medium transition-colors ${getActiveClass('/blog')}`}>
+              <Link href="/blog" className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`}>
+                <BookOpen className="h-4 w-4" />
                 蚂蚁AI之家
               </Link>
               {siteSettings.ranking_enabled && (
@@ -280,17 +284,20 @@ export function HeaderContent() {
               {isBlogPage ? (
                 <>
                   {/* Blog页面移动端菜单 */}
-                  <Link href="/blog" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/blog')}`} onClick={() => setIsMenuOpen(false)}>
+                  <Link href="/blog" className={`text-sm font-medium py-2 transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`} onClick={() => setIsMenuOpen(false)}>
+                    <BookOpen className="h-4 w-4" />
                     首页
                   </Link>
-                  <Link href="/" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
+                  <Link href="/" className={`text-sm font-medium py-2 transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
+                    <Home className="h-4 w-4" />
                     AI导航
                   </Link>
                 </>
               ) : (
                 <>
                   {/* 默认移动端导航菜单 */}
-                  <Link href="/" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
+                  <Link href="/" className={`text-sm font-medium py-2 transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
+                    <Home className="h-4 w-4" />
                     首页
                   </Link>
                   <Link href="/?isFeatured=true" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/?isFeatured=true')}`} onClick={() => setIsMenuOpen(false)}>
@@ -302,7 +309,8 @@ export function HeaderContent() {
                   <Link href="/news?category=tutorial" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/news?category=tutorial')}`} onClick={() => setIsMenuOpen(false)}>
                     AI教程
                   </Link>
-                  <Link href="/blog" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/blog')}`} onClick={() => setIsMenuOpen(false)}>
+                  <Link href="/blog" className={`text-sm font-medium py-2 transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`} onClick={() => setIsMenuOpen(false)}>
+                    <BookOpen className="h-4 w-4" />
                     蚂蚁AI之家
                   </Link>
                   {siteSettings.ranking_enabled && (
