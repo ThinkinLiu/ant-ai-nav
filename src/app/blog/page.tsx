@@ -18,7 +18,7 @@ async function getTutorials() {
     const { data, error } = await client
       .from('ai_news')
       .select('*')
-      .eq('category', 'tutorial')
+      .like('category', '%tutorial%')
       .eq('status', 'approved')
       .order('published_at', { ascending: false })
       .limit(20)
@@ -42,7 +42,7 @@ async function getHotTutorials() {
     const { data, error } = await client
       .from('ai_news')
       .select('*')
-      .eq('category', 'tutorial')
+      .like('category', '%tutorial%')
       .eq('status', 'approved')
       .order('view_count', { ascending: false })
       .limit(6)
