@@ -113,9 +113,6 @@ export function HeaderContent() {
               <Link href="/blog" className={`text-sm font-medium transition-colors ${getActiveClass('/blog')}`}>
                 首页
               </Link>
-              <Link href="/news?category=blog" className={`text-sm font-medium transition-colors ${getActiveClass('/news?category=blog')}`}>
-                精选博客
-              </Link>
               <Link href="/" className={`text-sm font-medium transition-colors ${getActiveClass('/')}`}>
                 AI导航
               </Link>
@@ -285,9 +282,6 @@ export function HeaderContent() {
                   {/* Blog页面移动端菜单 */}
                   <Link href="/blog" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/blog')}`} onClick={() => setIsMenuOpen(false)}>
                     首页
-                  </Link>
-                  <Link href="/news?category=blog" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/news?category=blog')}`} onClick={() => setIsMenuOpen(false)}>
-                    精选博客
                   </Link>
                   <Link href="/" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
                     AI导航
