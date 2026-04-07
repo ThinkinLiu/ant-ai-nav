@@ -336,7 +336,14 @@ export default function NewsCategoriesManagementPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{category.name}</span>
+                        <Link
+                          href={`/news?category=${category.slug}`}
+                          className="font-medium hover:text-primary transition-colors cursor-pointer"
+                          title="点击查看该分类的资讯"
+                          target="_blank"
+                        >
+                          {category.name}
+                        </Link>
                         {category.is_default && (
                           <Badge variant="outline" className="text-xs">默认</Badge>
                         )}
@@ -380,6 +387,16 @@ export default function NewsCategoriesManagementPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                          title="查看分类主页"
+                        >
+                          <Link href={`/news?category=${category.slug}`} target="_blank">
+                            <ExternalLink className="h-4 w-4" />
+                          </Link>
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
