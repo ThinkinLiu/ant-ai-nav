@@ -136,7 +136,7 @@ export function HeaderContent() {
                 AI教程
               </Link>
               <Link href="/blog" className={`text-sm font-medium transition-colors ${getActiveClass('/blog')}`}>
-                博客日志
+                蚂蚁AI之家
               </Link>
               {siteSettings.ranking_enabled && (
                 <Link href="/ranking" className={`text-sm font-medium transition-colors ${getActiveClass('/ranking')}`}>
@@ -309,7 +309,7 @@ export function HeaderContent() {
                     AI教程
                   </Link>
                   <Link href="/blog" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/blog')}`} onClick={() => setIsMenuOpen(false)}>
-                    博客日志
+                    蚂蚁AI之家
                   </Link>
                   {siteSettings.ranking_enabled && (
                     <Link href="/ranking" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/ranking')}`} onClick={() => setIsMenuOpen(false)}>
