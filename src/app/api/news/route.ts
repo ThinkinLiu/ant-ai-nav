@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
       content,
       coverImage,
       category,
+      categories,
       tags,
       source,
       sourceUrl,
@@ -126,6 +127,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 处理分类：支持多选（JSON数组）或单选（字符串）
+    let categoryValue: string
+    if (categories && Array.isArray(categories) && categories.length > 0) {
+      categoryValue = JSON.stringify(categories)
+    } else if (category) {
+      categoryValue = JSON.stringify([category])
+    } else {
+      categoryValue = JSON.stringify([])
+    }
+
     // 创建资讯
     const { data, error } = await client
       .from('ai_news')
@@ -135,7 +146,7 @@ export async function POST(request: NextRequest) {
         summary,
         content,
         cover_image: coverImage,
-        category,
+        category: categoryValue,
         tags,
         source,
         source_url: sourceUrl,
@@ -154,9 +165,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 解析 category 字段返回
+    let parsedCategory = categoryValue
+    try {
+      if (categoryValue) {
+        const parsed = JSON.parse(categoryValue)
+        if (Array.isArray(parsed)) {
+          parsedCategory = parsed
+        }
+      }
+    } catch (e) {
+      // 如果解析失败，保持原值
+      parsedCategory = categoryValue
+    }
+
     return NextResponse.json({
       success: true,
-      data,
+      data: {
+        ...data,
+        category: parsedCategory,
+      },
     })
   } catch (error) {
     console.error('创建AI资讯错误:', error)
