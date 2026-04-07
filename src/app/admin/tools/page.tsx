@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import ImageUploader from '@/components/ui/image-uploader'
@@ -612,7 +613,14 @@ function AdminToolsContent() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium">{tool.name}</h3>
+                        <Link
+                          href={`/tools/${tool.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium hover:text-primary transition-colors"
+                        >
+                          {tool.name}
+                        </Link>
                         {tool.is_pinned && (
                           <Badge className="bg-purple-100 text-purple-700 border-purple-200">
                             <Pin className="h-3 w-3 mr-1" />

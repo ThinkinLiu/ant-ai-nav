@@ -575,9 +575,15 @@ export default function NewsManagementPage() {
                       </TableCell>
                     )}
                     <TableCell>
-                      <div className="font-medium max-w-[200px] truncate" title={item.title}>
+                      <Link
+                        href={`/news/${item.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium max-w-[200px] truncate block hover:text-primary transition-colors"
+                        title={item.title}
+                      >
                         {item.title}
-                      </div>
+                      </Link>
                       {item.status === 'rejected' && item.reject_reason && (
                         <div className="text-xs text-red-500 mt-1 flex items-center gap-1 truncate max-w-[200px]" title={item.reject_reason}>
                           <AlertTriangle className="h-3 w-3 flex-shrink-0" />
