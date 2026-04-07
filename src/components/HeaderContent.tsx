@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Search, Menu, X, Plus, Settings, LogOut, User, LayoutDashboard, Home, BookOpen } from 'lucide-react'
+import { Search, Menu, X, Plus, Settings, LogOut, User, LayoutDashboard, Home, BookOpen, Compass } from 'lucide-react'
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -115,7 +115,7 @@ export function HeaderContent() {
                 首页
               </Link>
               <Link href="/" className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`}>
-                <Home className="h-4 w-4" />
+                <Compass className="h-4 w-4" />
                 AI导航
               </Link>
             </>
