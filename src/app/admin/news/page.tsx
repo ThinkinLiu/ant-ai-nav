@@ -586,7 +586,28 @@ export default function NewsManagementPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {item.category && categories.find(c => c.slug === item.category)?.name}
+                      {item.category ? (() => {
+                        // 处理 category 字段可能是 JSON 数组或单个字符串的情况
+                        let categoriesList: string[] = []
+                        try {
+                          const parsed = JSON.parse(item.category)
+                          if (Array.isArray(parsed)) {
+                            categoriesList = parsed
+                          } else {
+                            categoriesList = [parsed]
+                          }
+                        } catch {
+                          categoriesList = [item.category]
+                        }
+
+                        // 查找分类名称并显示
+                        const categoryNames = categoriesList
+                          .map(catSlug => categories.find(c => c.slug === catSlug)?.name)
+                          .filter(Boolean)
+                          .join(', ')
+
+                        return categoryNames || '-'
+                      })() : '-'}
                     </TableCell>
                     <TableCell>
                       <Badge className={statusConfig[item.status as keyof typeof statusConfig]?.color}>
