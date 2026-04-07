@@ -635,6 +635,11 @@ function HomePageContent() {
   // 获取Tab图标
   const getTabIcon = (iconName: string | null) => {
     if (!iconName) return Star
+    // 检查是否为emoji
+    if (/\p{Emoji}/u.test(iconName)) {
+      // 返回一个特殊的标记，表示这是emoji
+      return { isEmoji: true, emoji: iconName }
+    }
     return iconMap[iconName] || Star
   }
 
@@ -740,8 +745,8 @@ function HomePageContent() {
           <div className="container mx-auto px-4">
             <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
               <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0">
-                <TabsTrigger 
-                  value="all" 
+                <TabsTrigger
+                  value="all"
                   className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   全部
@@ -750,14 +755,21 @@ function HomePageContent() {
                   </Badge>
                 </TabsTrigger>
                 {categories.map((category) => {
-                  const Icon = category.icon ? iconMap[category.icon] : Star
+                  // 判断是否为emoji图标
+                  const isEmoji = category.icon && /\p{Emoji}/u.test(category.icon)
+                  const Icon = isEmoji ? null : (category.icon && iconMap[category.icon] ? iconMap[category.icon] : Star)
+
                   return (
                     <TabsTrigger
                       key={category.id}
                       value={category.slug}
                       className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                     >
-                      <Icon className="mr-1 h-4 w-4" />
+                      {isEmoji ? (
+                        <span className="mr-1 h-4 w-4 flex items-center justify-center text-sm">{category.icon}</span>
+                      ) : (
+                        <Icon className="mr-1 h-4 w-4" />
+                      )}
                       {category.name}
                       <Badge variant="secondary" className="ml-1 text-xs">
                         {category.toolCount}
@@ -779,16 +791,23 @@ function HomePageContent() {
               <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0 mb-6">
                 {tabs.map((tab) => {
                   const Icon = getTabIcon(tab.icon)
+                  const isEmojiIcon = typeof Icon === 'object' && 'isEmoji' in Icon && Icon.isEmoji
+                  const IconComponent = isEmojiIcon ? Star : Icon
+
                   return (
                     <TabsTrigger
                       key={tab.id}
                       value={tab.slug}
                       className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                      style={tab.color ? { 
+                      style={tab.color ? {
                         '--tab-active-bg': tab.color,
                       } as React.CSSProperties : {}}
                     >
-                      <Icon className="mr-1 h-4 w-4" />
+                      {isEmojiIcon ? (
+                        <span className="mr-1 h-4 w-4 flex items-center justify-center text-sm">{(Icon as any).emoji}</span>
+                      ) : (
+                        <IconComponent className="mr-1 h-4 w-4" />
+                      )}
                       {tab.name}
                     </TabsTrigger>
                   )
@@ -1100,14 +1119,19 @@ function HomePageContent() {
                     </Badge>
                   </TabsTrigger>
                   {categories.map((category) => {
-                    const Icon = category.icon ? iconMap[category.icon] : Star
+                    const isEmoji = category.icon && /\p{Emoji}/u.test(category.icon)
+                    const Icon = isEmoji ? null : (category.icon && iconMap[category.icon] ? iconMap[category.icon] : Star)
                     return (
                       <TabsTrigger
                         key={category.id}
                         value={category.slug}
                         className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                       >
-                        <Icon className="mr-1 h-4 w-4" />
+                        {isEmoji ? (
+                          <span className="mr-1 h-4 w-4 flex items-center justify-center text-sm">{category.icon}</span>
+                        ) : (
+                          <Icon className="mr-1 h-4 w-4" />
+                        )}
                         {category.name}
                         <Badge variant="secondary" className="ml-1 text-xs">
                           {category.toolCount}
