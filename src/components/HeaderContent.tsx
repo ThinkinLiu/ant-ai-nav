@@ -30,6 +30,9 @@ export function HeaderContent() {
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({ ranking_enabled: true })
   const router = useRouter()
 
+  // 判断是否在blog页面
+  const isBlogPage = pathname.startsWith('/blog')
+
   // 判断菜单项是否激活
   const isActive = (href: string) => {
     if (href === '/') {
@@ -89,44 +92,62 @@ export function HeaderContent() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
-          <img 
-            src="/logo.png" 
-            alt="蚂蚁AI导航" 
+          <img
+            src="/logo.png"
+            alt="蚂蚁AI导航"
             className="h-8 w-8 rounded-lg object-contain"
           />
           <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            蚂蚁AI导航
+            {isBlogPage ? '蚂蚁AI之家' : '蚂蚁AI导航'}
           </span>
         </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-4">
-          <Link href="/" className={`text-sm font-medium transition-colors ${getActiveClass('/')}`}>
-            首页
-          </Link>
-          <Link href="/?isFeatured=true" className={`text-sm font-medium transition-colors ${getActiveClass('/?isFeatured=true')}`}>
-            精选推荐
-          </Link>
-          <Link href="/categories" className={`text-sm font-medium transition-colors ${getActiveClass('/categories')}`}>
-            AI分类
-          </Link>
-          <Link href="/news?category=tutorial" className={`text-sm font-medium transition-colors ${getActiveClass('/news?category=tutorial')}`}>
-            AI教程
-          </Link>
-          {siteSettings.ranking_enabled && (
-            <Link href="/ranking" className={`text-sm font-medium transition-colors ${getActiveClass('/ranking')}`}>
-              排行榜
-            </Link>
+          {isBlogPage ? (
+            <>
+              {/* Blog页面菜单 */}
+              <Link href="/blog" className={`text-sm font-medium transition-colors ${getActiveClass('/blog')}`}>
+                首页
+              </Link>
+              <Link href="/?isFeatured=true" className={`text-sm font-medium transition-colors ${getActiveClass('/?isFeatured=true')}`}>
+                精选教程
+              </Link>
+              <Link href="/" className={`text-sm font-medium transition-colors ${getActiveClass('/')}`}>
+                AI导航
+              </Link>
+            </>
+          ) : (
+            <>
+              {/* 默认导航菜单 */}
+              <Link href="/" className={`text-sm font-medium transition-colors ${getActiveClass('/')}`}>
+                首页
+              </Link>
+              <Link href="/?isFeatured=true" className={`text-sm font-medium transition-colors ${getActiveClass('/?isFeatured=true')}`}>
+                精选推荐
+              </Link>
+              <Link href="/categories" className={`text-sm font-medium transition-colors ${getActiveClass('/categories')}`}>
+                AI分类
+              </Link>
+              <Link href="/news?category=tutorial" className={`text-sm font-medium transition-colors ${getActiveClass('/news?category=tutorial')}`}>
+                AI教程
+              </Link>
+              {siteSettings.ranking_enabled && (
+                <Link href="/ranking" className={`text-sm font-medium transition-colors ${getActiveClass('/ranking')}`}>
+                  排行榜
+                </Link>
+              )}
+              <Link href="/news" className={`text-sm font-medium transition-colors ${getActiveClass('/news')}`}>
+                AI资讯
+              </Link>
+              <Link href="/hall-of-fame" className={`text-sm font-medium transition-colors ${getActiveClass('/hall-of-fame')}`}>
+                AI名人堂
+              </Link>
+              <Link href="/timeline" className={`text-sm font-medium transition-colors ${getActiveClass('/timeline')}`}>
+                AI大事纪
+              </Link>
+            </>
           )}
-          <Link href="/news" className={`text-sm font-medium transition-colors ${getActiveClass('/news')}`}>
-            AI资讯
-          </Link>
-          <Link href="/hall-of-fame" className={`text-sm font-medium transition-colors ${getActiveClass('/hall-of-fame')}`}>
-            AI名人堂
-          </Link>
-          <Link href="/timeline" className={`text-sm font-medium transition-colors ${getActiveClass('/timeline')}`}>
-            AI大事纪
-          </Link>
         </nav>
 
         {/* Search */}
@@ -252,32 +273,50 @@ export function HeaderContent() {
               </div>
             </form>
             <nav className="flex flex-col space-y-2">
-              <Link href="/" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
-                首页
-              </Link>
-              <Link href="/?isFeatured=true" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/?isFeatured=true')}`} onClick={() => setIsMenuOpen(false)}>
-                精选推荐
-              </Link>
-              <Link href="/categories" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/categories')}`} onClick={() => setIsMenuOpen(false)}>
-                AI分类
-              </Link>
-              <Link href="/news?category=tutorial" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/news?category=tutorial')}`} onClick={() => setIsMenuOpen(false)}>
-                AI教程
-              </Link>
-              {siteSettings.ranking_enabled && (
-                <Link href="/ranking" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/ranking')}`} onClick={() => setIsMenuOpen(false)}>
-                  排行榜
-                </Link>
+              {isBlogPage ? (
+                <>
+                  {/* Blog页面移动端菜单 */}
+                  <Link href="/blog" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/blog')}`} onClick={() => setIsMenuOpen(false)}>
+                    首页
+                  </Link>
+                  <Link href="/?isFeatured=true" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/?isFeatured=true')}`} onClick={() => setIsMenuOpen(false)}>
+                    精选教程
+                  </Link>
+                  <Link href="/" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
+                    AI导航
+                  </Link>
+                </>
+              ) : (
+                <>
+                  {/* 默认移动端导航菜单 */}
+                  <Link href="/" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
+                    首页
+                  </Link>
+                  <Link href="/?isFeatured=true" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/?isFeatured=true')}`} onClick={() => setIsMenuOpen(false)}>
+                    精选推荐
+                  </Link>
+                  <Link href="/categories" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/categories')}`} onClick={() => setIsMenuOpen(false)}>
+                    AI分类
+                  </Link>
+                  <Link href="/news?category=tutorial" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/news?category=tutorial')}`} onClick={() => setIsMenuOpen(false)}>
+                    AI教程
+                  </Link>
+                  {siteSettings.ranking_enabled && (
+                    <Link href="/ranking" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/ranking')}`} onClick={() => setIsMenuOpen(false)}>
+                      排行榜
+                    </Link>
+                  )}
+                  <Link href="/news" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/news')}`} onClick={() => setIsMenuOpen(false)}>
+                    AI资讯
+                  </Link>
+                  <Link href="/hall-of-fame" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/hall-of-fame')}`} onClick={() => setIsMenuOpen(false)}>
+                    AI名人堂
+                  </Link>
+                  <Link href="/timeline" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/timeline')}`} onClick={() => setIsMenuOpen(false)}>
+                    AI大事纪
+                  </Link>
+                </>
               )}
-              <Link href="/news" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/news')}`} onClick={() => setIsMenuOpen(false)}>
-                AI资讯
-              </Link>
-              <Link href="/hall-of-fame" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/hall-of-fame')}`} onClick={() => setIsMenuOpen(false)}>
-                AI名人堂
-              </Link>
-              <Link href="/timeline" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/timeline')}`} onClick={() => setIsMenuOpen(false)}>
-                AI大事纪
-              </Link>
               {user ? (
                 <>
                   <Link href="/profile" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
