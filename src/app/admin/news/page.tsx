@@ -607,12 +607,20 @@ export default function NewsManagementPage() {
                         }
 
                         // 查找分类名称并显示
-                        const categoryNames = categoriesList
-                          .map(catSlug => categories.find(c => c.slug === catSlug)?.name)
+                        const categoryItems = categoriesList
+                          .map(catSlug => categories.find(c => c.slug === catSlug))
                           .filter(Boolean)
-                          .join(', ')
+                          .map(cat => (
+                            <Badge key={cat?.slug} variant="outline" className="text-xs">
+                              {cat?.name}
+                            </Badge>
+                          ))
 
-                        return categoryNames || '-'
+                        return categoryItems.length > 0 ? (
+                          <div className="flex gap-1 flex-wrap">
+                            {categoryItems}
+                          </div>
+                        ) : '-'
                       })() : '-'}
                     </TableCell>
                     <TableCell>

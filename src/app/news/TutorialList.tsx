@@ -184,10 +184,52 @@ export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
                       </div>
                     )}
                     <div className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="default" className={`text-xs ${category === 'blog' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-amber-500 hover:bg-amber-600'}`}>
-                          {category === 'blog' ? '博客' : '教程'}
-                        </Badge>
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        {(() => {
+                          // 解析 category 字段
+                          let categoriesList: string[] = []
+                          try {
+                            if (tutorial.category) {
+                              const parsed = JSON.parse(tutorial.category)
+                              if (Array.isArray(parsed)) {
+                                categoriesList = parsed
+                              } else {
+                                categoriesList = [parsed]
+                              }
+                            }
+                          } catch {
+                            if (tutorial.category) {
+                              categoriesList = [tutorial.category]
+                            }
+                          }
+
+                          // 分类名称映射
+                          const categoryNames: Record<string, string> = {
+                            'tutorial': '教程',
+                            'blog': '博客',
+                            'industry': '行业动态',
+                            'research': '学术研究',
+                            'product': '产品发布',
+                            'policy': '政策法规',
+                            'other': '其他',
+                          }
+
+                          // 如果有分类，显示所有分类
+                          if (categoriesList.length > 0) {
+                            return categoriesList.map((catSlug, idx) => (
+                              <Badge key={idx} variant="default" className="text-xs">
+                                {categoryNames[catSlug] || catSlug}
+                              </Badge>
+                            ))
+                          }
+
+                          // 否则显示默认分类
+                          return (
+                            <Badge variant="default" className={`text-xs ${category === 'blog' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-amber-500 hover:bg-amber-600'}`}>
+                              {category === 'blog' ? '博客' : '教程'}
+                            </Badge>
+                          )
+                        })()}
                         {tutorial.tags && tutorial.tags.length > 0 && (
                           tutorial.tags.slice(0, 3).map((tag, idx) => (
                             <Badge key={idx} variant="outline" className="text-xs">
