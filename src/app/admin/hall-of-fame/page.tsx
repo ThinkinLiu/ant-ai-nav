@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, Edit, Trash2, Star, Eye } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Star, Eye, ExternalLink } from 'lucide-react'
 import { useConfirm } from '@/hooks/use-confirm'
 
 const categoryConfig = {
@@ -427,7 +427,16 @@ export default function HallOfFameManagementPage() {
               ) : (
                 people.map((person) => (
                   <TableRow key={person.id}>
-                    <TableCell className="font-medium">{person.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/hall-of-fame/${person.id}`}
+                        className="hover:text-primary transition-colors cursor-pointer"
+                        title="点击查看详情"
+                        target="_blank"
+                      >
+                        {person.name}
+                      </Link>
+                    </TableCell>
                     <TableCell>{person.name_en || '-'}</TableCell>
                     <TableCell>
                       {person.category && categoryConfig[person.category as keyof typeof categoryConfig] && (
@@ -454,6 +463,16 @@ export default function HallOfFameManagementPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          asChild
+                          title="查看详情"
+                        >
+                          <Link href={`/hall-of-fame/${person.id}`} target="_blank">
+                            <ExternalLink className="h-4 w-4" />
+                          </Link>
+                        </Button>
                         <Button 
                           size="sm" 
                           variant="outline"
