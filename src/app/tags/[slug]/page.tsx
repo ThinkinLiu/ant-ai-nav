@@ -84,30 +84,42 @@ export default function TagPage({ params }: Props) {
   // 获取教程数据（"tutorial"分类的资讯）
   const fetchTutorials = useCallback(async (name: string, page: number) => {
     const supabase = getSupabaseClient()
-    const start = (page - 1) * PAGE_SIZE
-    const end = start + PAGE_SIZE - 1
-    
-    // 获取总数（tutorial分类）
-    const { count } = await supabase
-      .from('ai_news')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'approved')
-      .eq('category', 'tutorial')
-      .filter('tags', 'cs', JSON.stringify([name]))
-    
-    setTutorialsTotal(count || 0)
 
-    // 获取分页数据
-    const { data: tutorialsData } = await supabase
+    // 先查询所有符合条件的资讯（使用 like 查询）
+    const { data: allTutorialsData } = await supabase
       .from('ai_news')
       .select('id, title, summary, cover_image, category, published_at, view_count, tags')
       .eq('status', 'approved')
-      .eq('category', 'tutorial')
+      .like('category', '%tutorial%')
       .filter('tags', 'cs', JSON.stringify([name]))
       .order('published_at', { ascending: false })
-      .range(start, end)
-    
-    setTutorials(tutorialsData || [])
+
+    // 解析 category 并过滤确保包含 tutorial
+    const filteredTutorials = (allTutorialsData || []).filter(item => {
+      let parsedCategory: string | string[] = item.category
+      if (typeof item.category === 'string') {
+        try {
+          const parsed = JSON.parse(item.category)
+          parsedCategory = parsed
+        } catch (e) {
+          // 如果解析失败，保持原值
+        }
+      }
+      if (Array.isArray(parsedCategory)) {
+        return parsedCategory.includes('tutorial')
+      }
+      return parsedCategory === 'tutorial'
+    })
+
+    // 计算总数
+    setTutorialsTotal(filteredTutorials.length)
+
+    // 分页
+    const start = (page - 1) * PAGE_SIZE
+    const end = start + PAGE_SIZE
+    const paginatedTutorials = filteredTutorials.slice(start, end)
+
+    setTutorials(paginatedTutorials)
   }, [])
 
   // 获取工具数据
@@ -177,28 +189,38 @@ export default function TagPage({ params }: Props) {
     const supabase = getSupabaseClient()
     const start = (page - 1) * PAGE_SIZE
     const end = start + PAGE_SIZE - 1
-    
-    // 获取总数（排除tutorial分类）
-    const { count } = await supabase
-      .from('ai_news')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'approved')
-      .neq('category', 'tutorial')
-      .filter('tags', 'cs', JSON.stringify([name]))
-    
-    setNewsTotal(count || 0)
 
-    // 获取分页数据
-    const { data: newsData } = await supabase
+    // 先查询所有符合条件的资讯（使用 like 查询）
+    const { data: allNewsData } = await supabase
       .from('ai_news')
       .select('id, title, summary, cover_image, category, published_at, view_count, tags')
       .eq('status', 'approved')
-      .neq('category', 'tutorial')
       .filter('tags', 'cs', JSON.stringify([name]))
       .order('published_at', { ascending: false })
-      .range(start, end)
-    
-    setNews(newsData || [])
+
+    // 在前端过滤掉包含 tutorial 分类的数据
+    const filteredNews = (allNewsData || []).filter(item => {
+      let parsedCategory: string | string[] = item.category
+      if (typeof item.category === 'string') {
+        try {
+          const parsed = JSON.parse(item.category)
+          parsedCategory = parsed
+        } catch (e) {
+          // 如果解析失败，保持原值
+        }
+      }
+      if (Array.isArray(parsedCategory)) {
+        return !parsedCategory.includes('tutorial')
+      }
+      return parsedCategory !== 'tutorial'
+    })
+
+    // 计算总数
+    setNewsTotal(filteredNews.length)
+
+    // 分页
+    const paginatedNews = filteredNews.slice(start, end + 1)
+    setNews(paginatedNews)
   }, [])
 
   // 初始化加载
@@ -260,13 +282,30 @@ export default function TagPage({ params }: Props) {
           .eq('status', 'approved')
           .filter('tags', 'cs', JSON.stringify([name]))
         
-        // 检查是否有教程（tutorial分类的资讯）
-        const { count: tutorialCount } = await supabase
+        // 检查是否有教程（tutorial分类的资讯，使用 like 查询）
+        const { data: tutorialCheckData } = await supabase
           .from('ai_news')
-          .select('id', { count: 'exact', head: true })
+          .select('id, category')
           .eq('status', 'approved')
-          .eq('category', 'tutorial')
+          .like('category', '%tutorial%')
           .filter('tags', 'cs', JSON.stringify([name]))
+
+        // 解析并过滤包含 tutorial 的数据
+        const tutorialCount = (tutorialCheckData || []).filter(item => {
+          let parsedCategory: string | string[] = item.category
+          if (typeof item.category === 'string') {
+            try {
+              const parsed = JSON.parse(item.category)
+              parsedCategory = parsed
+            } catch (e) {
+              // 如果解析失败，保持原值
+            }
+          }
+          if (Array.isArray(parsedCategory)) {
+            return parsedCategory.includes('tutorial')
+          }
+          return parsedCategory === 'tutorial'
+        }).length
         
         const hasTutorials = (tutorialCount || 0) > 0
         
