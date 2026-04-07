@@ -31,7 +31,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Plus, Search, Edit, Trash2, Sparkles, Loader2, Calendar, AlertCircle } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Sparkles, Loader2, Calendar, AlertCircle, ExternalLink } from 'lucide-react'
 import { useConfirm } from '@/hooks/use-confirm'
 
 const categoryConfig = {
@@ -356,7 +356,14 @@ export default function TimelineManagementPage() {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{event.title}</div>
+                        <Link
+                          href={`/timeline/${event.id}`}
+                          className="font-medium hover:text-primary transition-colors cursor-pointer"
+                          title="点击查看详情"
+                          target="_blank"
+                        >
+                          {event.title}
+                        </Link>
                         {event.title_en && (
                           <div className="text-sm text-muted-foreground">{event.title_en}</div>
                         )}
@@ -380,6 +387,16 @@ export default function TimelineManagementPage() {
                     <TableCell>{event.view_count || 0}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          asChild
+                          title="查看详情"
+                        >
+                          <Link href={`/timeline/${event.id}`} target="_blank">
+                            <ExternalLink className="h-4 w-4" />
+                          </Link>
+                        </Button>
                         <Button size="sm" variant="outline" asChild>
                           <Link href={`/admin/timeline/${event.id}/edit`}>
                             <Edit className="h-4 w-4" />

@@ -47,7 +47,8 @@ interface News {
   is_featured: boolean
   is_hot: boolean
   reject_reason: string | null
-  category: string
+  category: string | string[]
+  tags: string[]
   author_id: string | null
 }
 
@@ -82,6 +83,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   'research': '学术研究',
   'product': '产品发布',
   'tutorial': '教程指南',
+  'blog': '博客',
+  'policy': '政策',
   'other': '其他',
 }
 
@@ -531,10 +534,25 @@ export default function PublisherNews() {
                           <Badge variant="destructive">热门</Badge>
                         )}
                         {item.category && (
-                          <Badge variant="outline" className="text-xs">
-                            {CATEGORY_LABELS[item.category] || item.category}
-                          </Badge>
+                          <>
+                            {Array.isArray(item.category) ? (
+                              item.category.map((c, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  {CATEGORY_LABELS[c] || c}
+                                </Badge>
+                              ))
+                            ) : (
+                              <Badge variant="outline" className="text-xs">
+                                {CATEGORY_LABELS[item.category] || item.category}
+                              </Badge>
+                            )}
+                          </>
                         )}
+                        {Array.isArray(item.tags) && item.tags.length > 0 && item.tags.map((tag, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                         {item.summary}

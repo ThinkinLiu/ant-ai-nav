@@ -100,9 +100,9 @@ export default function ContactPage() {
               在GitHub上查看我们的开源项目，提交Issue或参与贡献代码。
             </p>
             <Button asChild className="w-full">
-              <a 
-                href="https://github.com/ThinkinLiu/" 
-                target="_blank" 
+              <a
+                href="https://github.com/ThinkinLiu/ant-ai-nav"
+                target="_blank"
                 rel="noopener noreferrer"
               >
                 <Github className="h-4 w-4 mr-2" />
@@ -169,20 +169,20 @@ export default function ContactPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium mb-1">商务合作</p>
-                <a href="mailto:business@itlao5.com" className="text-sm text-primary hover:underline">
-                  business@itlao5.com
+                <a href="mailto:business@mayiai.site" className="text-sm text-primary hover:underline">
+                  business@mayiai.site
                 </a>
               </div>
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium mb-1">问题反馈</p>
-                <a href="mailto:support@itlao5.com" className="text-sm text-primary hover:underline">
-                  support@itlao5.com
+                <a href="mailto:support@mayiai.site" className="text-sm text-primary hover:underline">
+                  support@mayiai.site
                 </a>
               </div>
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium mb-1">工具推荐</p>
-                <a href="mailto:submit@itlao5.com" className="text-sm text-primary hover:underline">
-                  submit@itlao5.com
+                <a href="mailto:submit@mayiai.site" className="text-sm text-primary hover:underline">
+                  submit@mayiai.site
                 </a>
               </div>
             </div>
@@ -207,9 +207,9 @@ export default function ContactPage() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button asChild variant="outline">
-              <a 
-                href="https://github.com/ThinkinLiu/ai-navigation/issues" 
-                target="_blank" 
+              <a
+                href="https://github.com/ThinkinLiu/ant-ai-nav/issues"
+                target="_blank"
                 rel="noopener noreferrer"
               >
                 <Github className="h-4 w-4 mr-2" />
@@ -217,7 +217,7 @@ export default function ContactPage() {
               </a>
             </Button>
             <Button asChild variant="outline">
-              <a href="mailto:support@itlao5.com">
+              <a href="mailto:support@mayiai.site">
                 <Mail className="h-4 w-4 mr-2" />
                 发送邮件反馈
               </a>

@@ -233,7 +233,7 @@ export async function GET(request: NextRequest) {
             .from('ai_news')
             .select('id, title, summary, cover_image, category, published_at, view_count')
             .eq('status', 'approved')
-            .eq('category', 'tutorial')
+            .like('category', '%tutorial%')
             .order('published_at', { ascending: false })
             .limit(30)
           tabNews = getRandomItems(tutorialNewsResult.data || [], 8)

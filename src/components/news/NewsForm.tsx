@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { ArrowLeft, Save, Send, Eye } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -60,12 +61,13 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
     summary: '',
     content: '',
     coverImage: '',
-    category: '',
+    categories: [] as string[],
     tags: [] as string[],
     source: '',
     sourceUrl: '',
     isFeatured: false,
     isHot: false,
+    publishedAt: '',
   })
 
   // 加载分类列表
@@ -107,18 +109,25 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
 
       if (result.success) {
         const news = result.data
+        // 将发布时间转换为 datetime-local 需要的格式 (YYYY-MM-DDTHH:mm)
+        const formatDateTimeForInput = (dateStr: string | null) => {
+          if (!dateStr) return ''
+          // ISO 格式: "2024-01-01T12:00:00Z" -> "2024-01-01T12:00"
+          return dateStr.slice(0, 16)
+        }
         setFormData({
           title: news.title || '',
           slug: news.slug || '',
           summary: news.summary || '',
           content: news.content || '',
           coverImage: news.cover_image || '',
-          category: news.category || '',
+          categories: Array.isArray(news.category) ? news.category : (news.category ? [news.category] : []),
           tags: Array.isArray(news.tags) ? news.tags : [],
           source: news.source || '',
           sourceUrl: news.source_url || '',
           isFeatured: news.is_featured || false,
           isHot: news.is_hot || false,
+          publishedAt: formatDateTimeForInput(news.published_at),
         })
       } else {
         toast.error(result.error || '加载失败')
@@ -176,12 +185,13 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
         summary: formData.summary.trim(),
         content: formData.content.trim(),
         coverImage: formData.coverImage.trim(),
-        category: formData.category,
+        categories: formData.categories,
         tags,
         source: formData.source.trim(),
         sourceUrl: formData.sourceUrl.trim(),
         isFeatured: user.role === 'admin' ? formData.isFeatured : false,
         isHot: user.role === 'admin' ? formData.isHot : false,
+        publishedAt: user.role === 'admin' && formData.publishedAt ? formData.publishedAt : new Date().toISOString(),
       }
 
       let response
@@ -317,27 +327,46 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
 
                 {/* 分类 */}
                 <div className="space-y-2">
-                  <Label htmlFor="category">分类</Label>
+                  <Label>分类（可多选）</Label>
                   {loadingCategories ? (
                     <div className="flex items-center justify-center py-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                     </div>
                   ) : (
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => setFormData({ ...formData, category: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择分类" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.slug}>
+                    <div className="space-y-2">
+                      {categories.map((category) => (
+                        <div key={category.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`category-${category.id}`}
+                            checked={formData.categories.includes(category.slug)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData({
+                                  ...formData,
+                                  categories: [...formData.categories, category.slug],
+                                })
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  categories: formData.categories.filter((c) => c !== category.slug),
+                                })
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`category-${category.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
                             {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {formData.categories.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      已选择 {formData.categories.length} 个分类
+                    </p>
                   )}
                 </div>
 
@@ -438,6 +467,21 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
               {/* 管理员选项 */}
               {user.role === 'admin' && (
                 <div className="space-y-4 pt-4 border-t">
+                  {/* 发布时间 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="publishedAt">发布时间</Label>
+                    <Input
+                      id="publishedAt"
+                      type="datetime-local"
+                      value={formData.publishedAt}
+                      onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
+                      max={new Date().toISOString().slice(0, 16)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {mode === 'create' ? '留空则使用当前时间' : '修改发布时间将影响资讯排序'}
+                    </p>
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>推荐文章</Label>
@@ -496,8 +540,13 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                         
                         {/* 元信息 */}
                         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-6">
-                          {formData.category && (
-                            <span>分类: {categories.find(c => c.slug === formData.category)?.name}</span>
+                          {formData.categories.length > 0 && (
+                            <span>
+                              分类: {formData.categories.map(c => categories.find(cat => cat.slug === c)?.name).filter(Boolean).join(', ')}
+                            </span>
+                          )}
+                          {formData.publishedAt && (
+                            <span>发布时间: {new Date(formData.publishedAt).toLocaleString('zh-CN')}</span>
                           )}
                           {formData.source && (
                             <span>来源: {formData.source}</span>

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Eye, Calendar, Loader2, Search } from 'lucide-react'
 import { formatRelativeTime } from '@/lib/utils'
@@ -40,12 +39,19 @@ interface NewsItem {
   tags: string[] | null
 }
 
-interface Props {
-  hotTutorials: NewsItem[]
+interface CategoryInfo {
+  name: string
+  color: string
 }
 
-export function TutorialList({ hotTutorials }: Props) {
+interface Props {
+  hotTutorials: NewsItem[]
+  category?: 'tutorial' | 'blog'
+}
+
+export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
   const [tutorials, setTutorials] = useState<NewsItem[]>([])
+  const [categories, setCategories] = useState<Record<string, CategoryInfo>>({})
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
@@ -59,9 +65,10 @@ export function TutorialList({ hotTutorials }: Props) {
       const params = new URLSearchParams({
         page: pageNum.toString(),
         limit: pageSize.toString(),
-        category: 'tutorial',
+        category: category,
+        status: 'approved',
       })
-      
+
       if (search) {
         params.append('search', search)
       }
@@ -72,17 +79,20 @@ export function TutorialList({ hotTutorials }: Props) {
       if (data.success) {
         if (pageNum === 1) {
           setTutorials(data.data.data)
+          setCategories(data.data.categories || {})
         } else {
           setTutorials(prev => [...prev, ...data.data.data])
         }
         setTotal(data.data.total)
+      } else {
+        console.error('API returned error:', data.error)
       }
     } catch (error) {
-      console.error('获取教程数据失败:', error)
+      console.error('获取数据失败:', error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [pageSize, category])
 
   useEffect(() => {
     fetchTutorials(1, searchQuery)
@@ -137,7 +147,7 @@ export function TutorialList({ hotTutorials }: Props) {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="搜索教程..."
+              placeholder={category === 'blog' ? '搜索博客...' : '搜索教程...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-10 w-full rounded-lg border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/50"
@@ -180,15 +190,66 @@ export function TutorialList({ hotTutorials }: Props) {
                       </div>
                     )}
                     <div className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="default" className="text-xs bg-amber-500 hover:bg-amber-600">
-                          教程
-                        </Badge>
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        {(() => {
+                          // 解析 category 字段
+                          let categoriesList: string[] = []
+                          try {
+                            if (tutorial.category) {
+                              const parsed = JSON.parse(tutorial.category)
+                              if (Array.isArray(parsed)) {
+                                categoriesList = parsed
+                              } else {
+                                categoriesList = [parsed]
+                              }
+                            }
+                          } catch {
+                            if (tutorial.category) {
+                              categoriesList = [tutorial.category]
+                            }
+                          }
+
+                          // 过滤掉"博客日志"分类
+                          const filteredCategories = categoriesList.filter(catSlug => {
+                            const catInfo = categories[catSlug]
+                            return catInfo && catInfo.name !== '博客日志'
+                          })
+
+                          // 如果有分类，显示所有分类
+                          if (filteredCategories.length > 0) {
+                            return filteredCategories.map((catSlug, idx) => {
+                              const catInfo = categories[catSlug]
+                              const color = catInfo?.color || '#9CA3AF'
+                              return (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium"
+                                  style={{
+                                    backgroundColor: `${color}20`,
+                                    borderColor: color,
+                                    color: color
+                                  }}
+                                >
+                                  {catInfo?.name || catSlug}
+                                </span>
+                              )
+                            })
+                          }
+
+                          // 否则显示默认分类
+                          return (
+                            <span
+                              className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium ${category === 'blog' ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-amber-500/10 border-amber-500 text-amber-500'}`}
+                            >
+                              {category === 'blog' ? '博客' : '教程'}
+                            </span>
+                          )
+                        })()}
                         {tutorial.tags && tutorial.tags.length > 0 && (
                           tutorial.tags.slice(0, 3).map((tag, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
+                            <span key={idx} className="inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium">
                               {tag}
-                            </Badge>
+                            </span>
                           ))
                         )}
                       </div>
@@ -225,17 +286,19 @@ export function TutorialList({ hotTutorials }: Props) {
           {/* No more data indicator */}
           {!loading && tutorials.length >= total && total > 0 && (
             <div className="text-center py-8 text-muted-foreground text-sm">
-              已加载全部教程
+              已加载全部{category === 'blog' ? '博客' : '教程'}
             </div>
           )}
 
           {/* Empty state */}
           {!loading && tutorials.length === 0 && (
             <div className="text-center py-12">
-              <div className="text-4xl mb-4">📚</div>
-              <h3 className="text-lg font-semibold mb-2">暂无教程</h3>
+              <div className="text-4xl mb-4">{category === 'blog' ? '📝' : '📚'}</div>
+              <h3 className="text-lg font-semibold mb-2">暂无{category === 'blog' ? '博客' : '教程'}</h3>
               <p className="text-muted-foreground">
-                {searchQuery ? '没有找到相关教程，请尝试其他关键词' : '暂时还没有教程内容'}
+                {searchQuery
+                  ? `没有找到相关${category === 'blog' ? '博客' : '教程'}，请尝试其他关键词`
+                  : `暂时还没有${category === 'blog' ? '博客' : '教程'}内容`}
               </p>
             </div>
           )}

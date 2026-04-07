@@ -28,8 +28,26 @@ export async function GET(request: NextRequest) {
     if (newsData) {
       for (const news of newsData) {
         if (news.category) {
-          const count = countMap.get(news.category) || 0
-          countMap.set(news.category, count + 1)
+          // 处理 category 字段可能是 JSON 数组或单个字符串的情况
+          let categories: string[] = []
+          try {
+            // 尝试解析为 JSON 数组
+            const parsed = JSON.parse(news.category as string)
+            if (Array.isArray(parsed)) {
+              categories = parsed
+            } else {
+              categories = [parsed]
+            }
+          } catch {
+            // 解析失败，当作单个字符串处理
+            categories = [news.category as string]
+          }
+
+          // 统计每个分类的数量
+          for (const cat of categories) {
+            const count = countMap.get(cat) || 0
+            countMap.set(cat, count + 1)
+          }
         }
       }
     }

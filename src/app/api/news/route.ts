@@ -17,6 +17,25 @@ export async function GET(request: NextRequest) {
 
     const client = getSupabaseClient()
 
+    // 获取分类配置
+    const { data: categories } = await client
+      .from('news_categories')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+
+    // 创建分类映射：slug -> { name, color }
+    // 过滤掉"博客日志"分类
+    const categoryMap: Record<string, { name: string; color: string }> = {}
+    categories?.forEach(cat => {
+      if (cat.name !== '博客日志') {
+        categoryMap[cat.slug] = {
+          name: cat.name,
+          color: cat.color
+        }
+      }
+    })
+
     let query = client
       .from('ai_news')
       .select('*', { count: 'exact' })
@@ -26,7 +45,8 @@ export async function GET(request: NextRequest) {
       query = query.eq('status', status)
     }
     if (category) {
-      query = query.eq('category', category)
+      // 使用 like 查询匹配 JSON 数组中的分类
+      query = query.like('category', `%${category}%`)
     }
     if (authorId) {
       query = query.eq('author_id', authorId)
@@ -65,14 +85,49 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // 解析 category 字段为数组
+    const parsedData = data.map(item => {
+      let parsedCategory = item.category
+      try {
+        if (item.category && typeof item.category === 'string') {
+          const parsed = JSON.parse(item.category)
+          if (Array.isArray(parsed)) {
+            parsedCategory = parsed
+          }
+        }
+      } catch (e) {
+        // 如果解析失败，保持原值
+        parsedCategory = item.category
+      }
+
+      // 确保 tags 是数组
+      let parsedTags = item.tags
+      if (!parsedTags) {
+        parsedTags = []
+      } else if (typeof parsedTags === 'string') {
+        try {
+          parsedTags = JSON.parse(parsedTags)
+        } catch (e) {
+          parsedTags = []
+        }
+      }
+
+      return {
+        ...item,
+        category: parsedCategory,
+        tags: parsedTags,
+      }
+    })
+
     return NextResponse.json({
       success: true,
       data: {
-        data,
+        data: parsedData,
         total: count || 0,
         page,
         limit,
         totalPages: Math.ceil((count || 0) / limit),
+        categories: categoryMap,
       },
     })
   } catch (error) {
@@ -95,10 +150,12 @@ export async function POST(request: NextRequest) {
       content,
       coverImage,
       category,
+      categories,
       tags,
       source,
       sourceUrl,
       authorId,
+      publishedAt,
     } = body
 
     // 验证必填字段
@@ -125,6 +182,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 处理分类：支持多选（JSON数组）或单选（字符串）
+    let categoryValue: string
+    if (categories && Array.isArray(categories) && categories.length > 0) {
+      categoryValue = JSON.stringify(categories)
+    } else if (category) {
+      categoryValue = JSON.stringify([category])
+    } else {
+      categoryValue = JSON.stringify([])
+    }
+
     // 创建资讯
     const { data, error } = await client
       .from('ai_news')
@@ -134,14 +201,14 @@ export async function POST(request: NextRequest) {
         summary,
         content,
         cover_image: coverImage,
-        category,
+        category: categoryValue,
         tags,
         source,
         source_url: sourceUrl,
         author_id: authorId,
         status: 'draft',
-        // 设置发布时间为当前时间（草稿状态）
-        published_at: new Date().toISOString(),
+        // 使用自定义发布时间或当前时间
+        published_at: publishedAt || new Date().toISOString(),
       })
       .select()
       .single()
@@ -153,9 +220,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 解析 category 字段返回
+    let parsedCategory: string | string[] = categoryValue
+    try {
+      if (categoryValue) {
+        const parsed = JSON.parse(categoryValue)
+        if (Array.isArray(parsed)) {
+          parsedCategory = parsed
+        }
+      }
+    } catch (e) {
+      // 如果解析失败，保持原值
+      parsedCategory = categoryValue
+    }
+
     return NextResponse.json({
       success: true,
-      data,
+      data: {
+        ...data,
+        category: parsedCategory,
+      },
     })
   } catch (error) {
     console.error('创建AI资讯错误:', error)

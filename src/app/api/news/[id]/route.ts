@@ -29,10 +29,25 @@ export async function GET(
       .update({ view_count: (news.view_count || 0) + 1 })
       .eq('id', news.id)
 
+    // 解析 category 字段（可能为 JSON 数组或字符串）
+    let parsedCategory = news.category
+    try {
+      if (news.category && typeof news.category === 'string') {
+        const parsed = JSON.parse(news.category)
+        if (Array.isArray(parsed)) {
+          parsedCategory = parsed
+        }
+      }
+    } catch (e) {
+      // 如果解析失败，保持原值
+      parsedCategory = news.category
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         ...news,
+        category: parsedCategory,
         view_count: (news.view_count || 0) + 1,
       },
     })
@@ -90,14 +105,27 @@ export async function PUT(
     const updateData: any = {}
     const allowedFields = [
       'title', 'slug', 'summary', 'content', 'coverImage', 'category',
-      'tags', 'source', 'sourceUrl', 'isFeatured', 'isHot'
+      'categories', 'tags', 'source', 'sourceUrl', 'isFeatured', 'isHot', 'publishedAt'
     ]
 
     allowedFields.forEach(field => {
       if (body[field] !== undefined) {
-        // 转换字段名为下划线格式
-        const dbField = field.replace(/([A-Z])/g, '_$1').toLowerCase()
-        updateData[dbField] = body[field]
+        // 特殊处理 categories 字段
+        if (field === 'categories') {
+          // 将 categories 数组转为 JSON 字符串存储
+          if (Array.isArray(body.categories) && body.categories.length > 0) {
+            updateData.category = JSON.stringify(body.categories)
+          } else {
+            updateData.category = JSON.stringify([])
+          }
+        } else if (field === 'category') {
+          // 兼容旧的 category 字段，转为数组格式
+          updateData.category = JSON.stringify([body.category])
+        } else {
+          // 转换字段名为下划线格式
+          const dbField = field.replace(/([A-Z])/g, '_$1').toLowerCase()
+          updateData[dbField] = body[field]
+        }
       }
     })
 
@@ -118,9 +146,26 @@ export async function PUT(
       )
     }
 
+    // 解析 category 字段返回
+    let parsedCategory = data.category
+    try {
+      if (data.category && typeof data.category === 'string') {
+        const parsed = JSON.parse(data.category)
+        if (Array.isArray(parsed)) {
+          parsedCategory = parsed
+        }
+      }
+    } catch (e) {
+      // 如果解析失败，保持原值
+      parsedCategory = data.category
+    }
+
     return NextResponse.json({
       success: true,
-      data,
+      data: {
+        ...data,
+        category: parsedCategory,
+      },
     })
   } catch (error) {
     console.error('更新AI资讯错误:', error)

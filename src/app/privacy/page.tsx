@@ -178,20 +178,20 @@ export default function PrivacyPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium mb-1">隐私相关咨询</p>
-                <a href="mailto:privacy@itlao5.com" className="text-sm text-primary hover:underline">
-                  privacy@itlao5.com
+                <a href="mailto:privacy@mayiai.site" className="text-sm text-primary hover:underline">
+                  privacy@mayiai.site
                 </a>
               </div>
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium mb-1">数据删除请求</p>
-                <a href="mailto:data@itlao5.com" className="text-sm text-primary hover:underline">
-                  data@itlao5.com
+                <a href="mailto:data@mayiai.site" className="text-sm text-primary hover:underline">
+                  data@mayiai.site
                 </a>
               </div>
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium mb-1">一般问题反馈</p>
-                <a href="mailto:support@itlao5.com" className="text-sm text-primary hover:underline">
-                  support@itlao5.com
+                <a href="mailto:support@mayiai.site" className="text-sm text-primary hover:underline">
+                  support@mayiai.site
                 </a>
               </div>
             </div>

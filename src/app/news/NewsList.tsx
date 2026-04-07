@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { getCategoriesConfig, parseCategory } from './config'
 
 // 格式化时间，精确到分钟
 function formatDateTime(dateStr: string): string {
@@ -168,7 +169,7 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
   return (
     <div>
       {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-6 sticky top-16 bg-background/95 backdrop-blur py-4 z-10 -mt-4">
+      <div className="flex flex-col gap-4 mb-6 sticky top-16 bg-background/95 backdrop-blur py-4 z-10 -mt-4">
         {/* Category Filter */}
         <div className="flex flex-wrap gap-2">
           <button
@@ -198,14 +199,14 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
         </div>
 
         {/* Search and Filter */}
-        <div className="flex-1 flex gap-2 lg:justify-end">
-          <form onSubmit={handleSearch} className="flex gap-2 flex-1 lg:flex-initial">
+        <div className="flex justify-end gap-2">
+          <form onSubmit={handleSearch} className="flex gap-2">
             <input
               type="text"
               placeholder="搜索资讯..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-4 py-1.5 border rounded-lg bg-background flex-1 lg:w-48 text-sm"
+              className="px-4 py-1.5 border rounded-lg bg-background w-48 text-sm"
             />
             <button
               type="submit"
@@ -214,7 +215,7 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
               搜索
             </button>
           </form>
-          
+
           <button
             onClick={() => setShowHotOnly(!showHotOnly)}
             className={`px-3 py-1.5 border rounded-lg text-sm flex items-center gap-1.5 transition-colors ${
@@ -245,8 +246,10 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
             {/* News Items */}
             <div className="space-y-4">
               {items.map((item) => {
-                const categoryInfo = item.category ? categoryConfig[item.category] : undefined
-                
+                const categories = getCategoriesConfig(item.category)
+                const firstCategory = categories[0]
+                const categoryList = parseCategory(item.category)
+
                 return (
                   <Link
                     key={item.id}
@@ -266,7 +269,7 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
                     ) : (
                       <div className="w-32 h-24 flex-shrink-0 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
                         <span className="text-3xl">
-                          {categoryInfo?.icon || '📰'}
+                          {firstCategory?.icon || '📰'}
                         </span>
                       </div>
                     )}
@@ -274,10 +277,12 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-2">
-                        {categoryInfo && (
-                          <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">
-                            {categoryInfo?.icon} {categoryInfo?.label}
-                          </span>
+                        {categories.length > 0 && (
+                          categories.map((cat) => (
+                            <span key={cat.label} className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">
+                              {cat.icon} {cat.label}
+                            </span>
+                          ))
                         )}
                         {item.is_hot && (
                           <span className="text-xs px-2 py-0.5 bg-red-500/10 text-red-600 dark:text-red-400 rounded">
