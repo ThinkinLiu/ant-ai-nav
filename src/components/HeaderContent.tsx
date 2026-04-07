@@ -47,8 +47,11 @@ export function HeaderContent() {
     if (href === '/news?category=tutorial') {
       return pathname === '/news' && searchParams.get('category') === 'tutorial'
     }
+    if (href === '/news?category=blog') {
+      return pathname === '/news' && searchParams.get('category') === 'blog'
+    }
     if (href === '/news') {
-      return pathname === '/news' && searchParams.get('category') !== 'tutorial'
+      return pathname === '/news' && searchParams.get('category') !== 'tutorial' && searchParams.get('category') !== 'blog'
     }
     // 对于其他路径，直接匹配 pathname
     return pathname === href || pathname.startsWith(href + '/')
@@ -110,8 +113,8 @@ export function HeaderContent() {
               <Link href="/blog" className={`text-sm font-medium transition-colors ${getActiveClass('/blog')}`}>
                 首页
               </Link>
-              <Link href="/?isFeatured=true" className={`text-sm font-medium transition-colors ${getActiveClass('/?isFeatured=true')}`}>
-                精选教程
+              <Link href="/news?category=blog" className={`text-sm font-medium transition-colors ${getActiveClass('/news?category=blog')}`}>
+                精选博客
               </Link>
               <Link href="/" className={`text-sm font-medium transition-colors ${getActiveClass('/')}`}>
                 AI导航
@@ -283,8 +286,8 @@ export function HeaderContent() {
                   <Link href="/blog" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/blog')}`} onClick={() => setIsMenuOpen(false)}>
                     首页
                   </Link>
-                  <Link href="/?isFeatured=true" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/?isFeatured=true')}`} onClick={() => setIsMenuOpen(false)}>
-                    精选教程
+                  <Link href="/news?category=blog" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/news?category=blog')}`} onClick={() => setIsMenuOpen(false)}>
+                    精选博客
                   </Link>
                   <Link href="/" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
                     AI导航
