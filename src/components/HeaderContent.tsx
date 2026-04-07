@@ -132,6 +132,9 @@ export function HeaderContent() {
               <Link href="/news?category=tutorial" className={`text-sm font-medium transition-colors ${getActiveClass('/news?category=tutorial')}`}>
                 AI教程
               </Link>
+              <Link href="/blog" className={`text-sm font-medium transition-colors ${getActiveClass('/blog')}`}>
+                博客日志
+              </Link>
               {siteSettings.ranking_enabled && (
                 <Link href="/ranking" className={`text-sm font-medium transition-colors ${getActiveClass('/ranking')}`}>
                   排行榜
@@ -300,6 +303,9 @@ export function HeaderContent() {
                   </Link>
                   <Link href="/news?category=tutorial" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/news?category=tutorial')}`} onClick={() => setIsMenuOpen(false)}>
                     AI教程
+                  </Link>
+                  <Link href="/blog" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/blog')}`} onClick={() => setIsMenuOpen(false)}>
+                    博客日志
                   </Link>
                   {siteSettings.ranking_enabled && (
                     <Link href="/ranking" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/ranking')}`} onClick={() => setIsMenuOpen(false)}>
