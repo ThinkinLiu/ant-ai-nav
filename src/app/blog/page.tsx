@@ -19,15 +19,15 @@ async function getTutorials() {
       .from('ai_news')
       .select('*')
       .eq('category', 'tutorial')
-      .eq('status', 'published')
+      .eq('status', 'approved')
       .order('published_at', { ascending: false })
       .limit(20)
-    
+
     if (error) {
       console.error('获取教程数据失败:', error)
       return []
     }
-    
+
     return data || []
   } catch (error) {
     console.error('获取教程数据失败:', error)
@@ -43,15 +43,15 @@ async function getHotTutorials() {
       .from('ai_news')
       .select('*')
       .eq('category', 'tutorial')
-      .eq('status', 'published')
+      .eq('status', 'approved')
       .order('view_count', { ascending: false })
       .limit(6)
-    
+
     if (error) {
       console.error('获取热门教程失败:', error)
       return []
     }
-    
+
     return data || []
   } catch (error) {
     console.error('获取热门教程失败:', error)
