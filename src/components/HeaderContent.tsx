@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation'
 
 interface SiteSettings {
   ranking_enabled: boolean
+  site_url?: string | null
 }
 
 export function HeaderContent() {
@@ -70,7 +71,8 @@ export function HeaderContent() {
       .then(res => res.json())
       .then(data => {
         setSiteSettings({
-          ranking_enabled: data.ranking_enabled ?? true
+          ranking_enabled: data.ranking_enabled ?? true,
+          site_url: data.site_url || null
         })
       })
       .catch(() => {
@@ -114,7 +116,7 @@ export function HeaderContent() {
                 <BookOpen className="h-4 w-4" />
                 首页
               </Link>
-              <Link href="/" className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`}>
+              <Link href={siteSettings.site_url || '/'} className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`}>
                 <Compass className="h-4 w-4" />
                 AI导航
               </Link>
@@ -288,8 +290,8 @@ export function HeaderContent() {
                     <BookOpen className="h-4 w-4" />
                     首页
                   </Link>
-                  <Link href="/" className={`text-sm font-medium py-2 transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
-                    <Home className="h-4 w-4" />
+                  <Link href={siteSettings.site_url || '/'} className={`text-sm font-medium py-2 transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`} onClick={() => setIsMenuOpen(false)}>
+                    <Compass className="h-4 w-4" />
                     AI导航
                   </Link>
                 </>
