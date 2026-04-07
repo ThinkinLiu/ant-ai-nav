@@ -109,6 +109,12 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
 
       if (result.success) {
         const news = result.data
+        // 将发布时间转换为 datetime-local 需要的格式 (YYYY-MM-DDTHH:mm)
+        const formatDateTimeForInput = (dateStr: string | null) => {
+          if (!dateStr) return ''
+          // ISO 格式: "2024-01-01T12:00:00Z" -> "2024-01-01T12:00"
+          return dateStr.slice(0, 16)
+        }
         setFormData({
           title: news.title || '',
           slug: news.slug || '',
@@ -121,7 +127,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
           sourceUrl: news.source_url || '',
           isFeatured: news.is_featured || false,
           isHot: news.is_hot || false,
-          publishedAt: news.published_at || '',
+          publishedAt: formatDateTimeForInput(news.published_at),
         })
       } else {
         toast.error(result.error || '加载失败')
