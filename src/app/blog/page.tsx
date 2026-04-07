@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '@/storage/database/supabase-client'
+import Link from 'next/link'
 
 interface NewsItem {
   id: number
@@ -9,6 +10,47 @@ interface NewsItem {
   published_at: string
   view_count: number
   tags: string[] | null
+}
+
+// 获取热门标签（从博客日志中统计）
+async function getPopularTags() {
+  try {
+    const client = getSupabaseClient()
+    const { data, error } = await client
+      .from('ai_news')
+      .select('tags')
+      .like('category', '%blog%')
+      .eq('status', 'approved')
+      .not('tags', 'is', null)
+
+    if (error) {
+      console.error('获取标签数据失败:', error)
+      return []
+    }
+
+    // 统计标签出现频率
+    const tagCount: Record<string, number> = {}
+    data?.forEach(item => {
+      if (item.tags && Array.isArray(item.tags)) {
+        item.tags.forEach(tag => {
+          if (tag) {
+            tagCount[tag] = (tagCount[tag] || 0) + 1
+          }
+        })
+      }
+    })
+
+    // 按频率排序并取前15个
+    const sortedTags = Object.entries(tagCount)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 15)
+      .map(([tag]) => tag)
+
+    return sortedTags
+  } catch (error) {
+    console.error('获取标签数据失败:', error)
+    return []
+  }
 }
 
 // 获取教程指南数据
@@ -89,7 +131,8 @@ function formatRelativeTime(dateStr: string): string {
 export default async function BlogPage() {
   const tutorials = await getTutorials()
   const hotTutorials = await getHotTutorials()
-  
+  const popularTags = await getPopularTags()
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       {/* Hero Section */}
@@ -219,16 +262,21 @@ export default async function BlogPage() {
                 <span>🏷️</span>
                 热门标签
               </h3>
-              <div className="flex flex-wrap gap-2">
-                {['ChatGPT', 'Midjourney', 'AI绘画', 'AI写作', 'AI工具', 'Prompt', 'AI教程'].map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-xs bg-muted px-3 py-1.5 rounded-full hover:bg-primary hover:text-white transition-colors cursor-pointer"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
+              {popularTags.length === 0 ? (
+                <p className="text-muted-foreground text-sm">暂无标签</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {popularTags.map((tag) => (
+                    <Link
+                      key={tag}
+                      href={`/tags/${encodeURIComponent(tag)}`}
+                      className="text-xs bg-muted px-3 py-1.5 rounded-full hover:bg-primary hover:text-white transition-colors cursor-pointer"
+                    >
+                      {tag}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 关于 */}
