@@ -37,5 +37,5 @@ export function getCategoriesConfig(category: string | null | undefined): Catego
   const categoryList = parseCategory(category)
   return categoryList
     .map(cat => getCategoryConfig(cat))
-    .filter((cat): cat is CategoryConfig => cat !== undefined)
+    .filter((cat): cat is CategoryConfig => cat !== undefined && cat.label !== '博客日志')
 }
