@@ -12,32 +12,50 @@ interface NewsItem {
   tags: string[] | null
 }
 
-// 分类颜色映射
-const categoryColors: Record<string, string> = {
-  'blog': 'bg-blue-100 text-blue-700',
-  'tutorial': 'bg-green-100 text-green-700',
-  'news': 'bg-orange-100 text-orange-700',
-  'case': 'bg-purple-100 text-purple-700',
-  'default': 'bg-gray-100 text-gray-700'
+interface NewsCategory {
+  id: number
+  name: string
+  slug: string
+  description: string
+  icon: string
+  color: string
+  sort_order: number
+  is_active: boolean
+  is_default: boolean
+  created_at: string
+  updated_at: string
 }
 
-// 分类名称映射
-const categoryNames: Record<string, string> = {
-  'blog': '博客日志',
-  'tutorial': '教程',
-  'news': '资讯',
-  'case': '案例',
-  'article': '文章'
+// 获取所有分类
+async function getAllCategories() {
+  try {
+    const client = getSupabaseClient()
+    const { data, error } = await client
+      .from('news_categories')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+
+    if (error) {
+      console.error('获取分类数据失败:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('获取分类数据失败:', error)
+    return []
+  }
 }
 
 // 解析分类字段
 function parseCategories(category: string | string[] | null): string[] {
   if (!category) return []
-  
+
   if (Array.isArray(category)) {
     return category
   }
-  
+
   try {
     const parsed = JSON.parse(category)
     return Array.isArray(parsed) ? parsed : []
@@ -166,6 +184,16 @@ export default async function BlogPage() {
   const blogs = await getBlogs()
   const hotBlogs = await getHotBlogs()
   const popularTags = await getPopularTags()
+  const categories = await getAllCategories()
+
+  // 创建分类映射：slug -> { name, color }
+  const categoryMap: Record<string, { name: string; color: string }> = {}
+  categories.forEach(cat => {
+    categoryMap[cat.slug] = {
+      name: cat.name,
+      color: cat.color
+    }
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -219,13 +247,18 @@ export default async function BlogPage() {
                       )}
                       <div className={`p-6 ${blog.cover_image ? 'md:w-2/3' : ''}`}>
                         {(() => {
-                          const categories = parseCategories(blog.category)
-                          const filteredCategories = categories.filter(cat => cat !== 'blog')
+                          const blogCategories = parseCategories(blog.category)
+                          const filteredCategories = blogCategories.filter(cat => cat !== 'blog')
                           const categoryBadges = filteredCategories.map(cat => {
-                            const colorClass = categoryColors[cat] || categoryColors['default']
-                            const displayName = categoryNames[cat] || cat
+                            const categoryInfo = categoryMap[cat]
+                            const colorClass = categoryInfo?.color || '#9CA3AF'
+                            const displayName = categoryInfo?.name || cat
                             return (
-                              <span key={cat} className={`text-xs px-2 py-1 rounded-full ${colorClass}`}>
+                              <span
+                                key={cat}
+                                className="text-xs px-2 py-1 rounded-full"
+                                style={{ backgroundColor: `${colorClass}20`, color: colorClass }}
+                              >
                                 {displayName}
                               </span>
                             )
