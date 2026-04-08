@@ -1,5 +1,51 @@
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 import Link from 'next/link'
+import { Metadata } from 'next'
+
+// 生成动态 metadata
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const client = getSupabaseClient()
+    const { data } = await client
+      .from('seo_settings')
+      .select('blog_name, blog_description, blog_url')
+      .limit(1)
+      .single()
+
+    const blogName = data?.blog_name || '蚂蚁AI之家'
+    const blogDescription = data?.blog_description || '探索AI技术的无限可能，掌握前沿AI工具的使用技巧'
+    const blogUrl = data?.blog_url || 'https://abc123.dev.coze.site/blog'
+
+    return {
+      title: blogName,
+      description: blogDescription,
+      alternates: {
+        canonical: blogUrl,
+      },
+      openGraph: {
+        title: blogName,
+        description: blogDescription,
+        url: blogUrl,
+        siteName: blogName,
+        type: 'website',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: blogName,
+        description: blogDescription,
+      },
+    }
+  } catch (error) {
+    // 返回默认值
+    return {
+      title: '蚂蚁AI之家',
+      description: '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+      alternates: {
+        canonical: 'https://abc123.dev.coze.site/blog',
+      },
+    }
+  }
+}
 
 interface NewsItem {
   id: number
@@ -180,11 +226,49 @@ function formatRelativeTime(dateStr: string): string {
   }
 }
 
+// 获取博客设置
+async function getBlogSettings() {
+  try {
+    const client = getSupabaseClient()
+    const { data, error } = await client
+      .from('seo_settings')
+      .select('blog_logo, blog_name, blog_description, blog_url')
+      .limit(1)
+      .single()
+
+    if (error) {
+      console.error('获取博客设置失败:', error)
+      return {
+        blog_logo: null,
+        blog_name: '蚂蚁AI之家',
+        blog_description: '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+        blog_url: null
+      }
+    }
+
+    return {
+      blog_logo: data.blog_logo || null,
+      blog_name: data.blog_name || '蚂蚁AI之家',
+      blog_description: data.blog_description || '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+      blog_url: data.blog_url || null
+    }
+  } catch (error) {
+    console.error('获取博客设置失败:', error)
+    return {
+      blog_logo: null,
+      blog_name: '蚂蚁AI之家',
+      blog_description: '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+      blog_url: null
+    }
+  }
+}
+
 export default async function BlogPage() {
   const blogs = await getBlogs()
   const hotBlogs = await getHotBlogs()
   const popularTags = await getPopularTags()
   const categories = await getAllCategories()
+  const blogSettings = await getBlogSettings()
 
   // 创建分类映射：slug -> { name, color }
   const categoryMap: Record<string, { name: string; color: string }> = {}
@@ -203,10 +287,10 @@ export default async function BlogPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center">
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-              蚂蚁AI之家
+              {blogSettings.blog_name}
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto">
-              探索AI技术的无限可能，掌握前沿AI工具的使用技巧
+              {blogSettings.blog_description}
             </p>
             {/* 统计信息区域已隐藏 */}
           </div>

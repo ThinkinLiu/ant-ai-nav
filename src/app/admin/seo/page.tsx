@@ -8,13 +8,19 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import RichTextEditor from '@/components/ui/rich-text-editor'
-import { Save, Globe, Share2, Search, Code, BarChart3, Loader2, Map, Copyright } from 'lucide-react'
+import ImageUploader from '@/components/ui/image-uploader'
+import { Save, Globe, Share2, Search, Code, BarChart3, Loader2, Map, Copyright, BookOpen } from 'lucide-react'
+import { MenuConfig } from '@/components/admin/MenuConfig'
 
 interface SEOSettings {
   site_name: string
   site_description: string
   site_keywords: string
   site_url: string
+  blog_logo: string
+  blog_name: string
+  blog_description: string
+  blog_url: string
   og_title: string
   og_description: string
   og_image: string
@@ -58,6 +64,10 @@ export default function SEOSettingsPage() {
     site_description: '',
     site_keywords: '',
     site_url: '',
+    blog_logo: '',
+    blog_name: '蚂蚁AI之家',
+    blog_description: '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+    blog_url: '',
     og_title: '',
     og_description: '',
     og_image: '',
@@ -114,6 +124,10 @@ export default function SEOSettingsPage() {
           site_description: data.data.site_description || '',
           site_keywords: data.data.site_keywords || '',
           site_url: data.data.site_url || '',
+          blog_logo: data.data.blog_logo || '',
+          blog_name: data.data.blog_name || '蚂蚁AI之家',
+          blog_description: data.data.blog_description || '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+          blog_url: data.data.blog_url || '',
           og_title: data.data.og_title || '',
           og_description: data.data.og_description || '',
           og_image: data.data.og_image || '',
@@ -292,6 +306,10 @@ export default function SEOSettingsPage() {
             <Globe className="mr-2 h-4 w-4" />
             基本信息
           </TabsTrigger>
+          <TabsTrigger value="blog">
+            <BookOpen className="mr-2 h-4 w-4" />
+            博客设置
+          </TabsTrigger>
           <TabsTrigger value="social">
             <Share2 className="mr-2 h-4 w-4" />
             社交分享
@@ -369,6 +387,83 @@ export default function SEOSettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          <MenuConfig
+            menuType="site"
+            title="网站首页菜单配置"
+            description="配置网站首页的导航菜单，支持添加、编辑、排序和显示/隐藏菜单项"
+          />
+        </TabsContent>
+
+        {/* 博客设置 */}
+        <TabsContent value="blog">
+          <Card>
+            <CardHeader>
+              <CardTitle>博客首页设置</CardTitle>
+              <CardDescription>配置博客首页的基本信息，包括 logo、名称、介绍和网站 URL</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="blog_name">博客名称</Label>
+                  <Input
+                    id="blog_name"
+                    value={settings.blog_name}
+                    onChange={(e) => updateField('blog_name', e.target.value)}
+                    placeholder="蚂蚁AI之家"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="blog_url">博客URL</Label>
+                  <Input
+                    id="blog_url"
+                    value={settings.blog_url}
+                    onChange={(e) => updateField('blog_url', e.target.value)}
+                    placeholder="https://blog.example.com"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="blog_logo">博客 Logo</Label>
+                <div className="space-y-4">
+                  <ImageUploader
+                    value={settings.blog_logo}
+                    onChange={(value) => updateField('blog_logo', value)}
+                    folder="blog-logo"
+                    maxSize={2}
+                    placeholder="上传博客 Logo"
+                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="blog_logo_url" className="text-sm text-muted-foreground">或输入图片 URL</Label>
+                    <Input
+                      id="blog_logo_url"
+                      value={settings.blog_logo}
+                      onChange={(e) => updateField('blog_logo', e.target.value)}
+                      placeholder="https://example.com/blog-logo.png"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">博客首页显示的 Logo 图片，建议尺寸 200x200 像素</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="blog_description">博客介绍</Label>
+                <Textarea
+                  id="blog_description"
+                  value={settings.blog_description}
+                  onChange={(e) => updateField('blog_description', e.target.value)}
+                  placeholder="描述博客的主要内容和服务..."
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">将显示在博客首页的标题下方</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <MenuConfig
+            menuType="blog"
+            title="博客首页菜单配置"
+            description="配置博客首页的导航菜单，支持添加、编辑、排序和显示/隐藏菜单项"
+          />
         </TabsContent>
 
         {/* 社交分享 */}

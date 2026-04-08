@@ -51,9 +51,9 @@ function formatCopyrightYear(yearStart: number, yearEnd: string): string {
 function replaceCopyrightPlaceholders(
   text: string,
   siteName: string,
-  siteUrl?: string,
   yearStart: number,
   yearEnd: string,
+  siteUrl?: string,
   companyName?: string,
   companyEmail?: string
 ): string {
@@ -113,8 +113,25 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
   const copyrightSettings = await getCopyrightSettings()
 
   const copyrightEnabled = copyrightSettings?.copyright_enabled !== false
-  const siteName = copyrightSettings?.site_name || '蚂蚁AI导航'
-  const siteUrl = copyrightSettings?.site_url
+
+  // 判断当前是否在博客首页
+  let isBlogPage = false
+  try {
+    const headersList = await headers()
+    const pathname = headersList.get('x-pathname') || ''
+    isBlogPage = pathname === '/blog'
+  } catch {
+    isBlogPage = false
+  }
+
+  // 根据页面类型选择网站名和URL
+  const siteName = isBlogPage
+    ? (copyrightSettings?.blog_name || '蚂蚁AI之家')
+    : (copyrightSettings?.site_name || '蚂蚁AI导航')
+  const siteUrl = isBlogPage
+    ? copyrightSettings?.blog_url
+    : copyrightSettings?.site_url
+
   const copyrightText = copyrightSettings?.copyright_text
   const copyrightYearStart = copyrightSettings?.copyright_year_start || 2024
   const copyrightYearEnd = copyrightSettings?.copyright_year_end || 'current'
@@ -131,13 +148,7 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
   // 如果没有传递 showLinks 参数，从 header 中获取 pathname 来判断
   let shouldShowLinks = showLinks
   if (showLinks === undefined) {
-    try {
-      const headersList = await headers()
-      const pathname = headersList.get('x-pathname') || ''
-      shouldShowLinks = !pathname.startsWith('/blog')
-    } catch {
-      shouldShowLinks = true
-    }
+    shouldShowLinks = !isBlogPage
   }
 
   return (
@@ -223,9 +234,9 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
                 __html: replaceCopyrightPlaceholders(
                   copyrightText,
                   siteName,
-                  siteUrl,
                   copyrightYearStart,
                   copyrightYearEnd,
+                  siteUrl,
                   companyName,
                   companyEmail
                 )
@@ -295,9 +306,9 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
                 __html: replaceCopyrightPlaceholders(
                   additional,
                   siteName,
-                  siteUrl,
                   copyrightYearStart,
                   copyrightYearEnd,
+                  siteUrl,
                   companyName,
                   companyEmail
                 )
