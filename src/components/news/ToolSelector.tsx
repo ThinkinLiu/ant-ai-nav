@@ -51,8 +51,10 @@ export default function ToolSelector({
       const result = await response.json()
 
       if (result.success && result.data) {
-        setTools(result.data)
-        setFilteredTools(result.data)
+        // API 返回的数据结构是 { data: { data: [...], total: ... } }
+        const toolsData = Array.isArray(result.data.data) ? result.data.data : []
+        setTools(toolsData)
+        setFilteredTools(toolsData)
       }
     } catch (error) {
       console.error('获取工具列表失败:', error)
@@ -73,7 +75,9 @@ export default function ToolSelector({
       const result = await response.json()
 
       if (result.success && result.data) {
-        setSelectedToolDetails(result.data)
+        // API 返回的数据结构是 { data: { data: [...], total: ... } }
+        const toolsData = Array.isArray(result.data.data) ? result.data.data : []
+        setSelectedToolDetails(toolsData)
       }
     } catch (error) {
       console.error('获取已选工具详情失败:', error)
