@@ -31,17 +31,15 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { 
-  Search, 
   Check, 
   X, 
   ExternalLink, 
   Trash2, 
   Eye,
-  Clock,
   ArrowUp,
   ArrowDown,
-  GripVertical,
-  Pencil
+  Pencil,
+  Plus
 } from 'lucide-react'
 import { useConfirm } from '@/hooks/use-confirm'
 
@@ -95,9 +93,17 @@ export default function FriendLinksManagementPage() {
   })
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    fetchLinks()
-  }, [page, statusFilter])
+  // 新增对话框
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [addForm, setAddForm] = useState({
+    name: '',
+    url: '',
+    description: '',
+    logo: '',
+    contact_name: '',
+    contact_email: '',
+  })
+  const [adding, setAdding] = useState(false)
 
   const fetchLinks = async () => {
     setLoading(true)
@@ -121,6 +127,10 @@ export default function FriendLinksManagementPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchLinks()
+  }, [page, statusFilter])
 
   // 审核通过
   const handleApprove = async (id: number) => {
@@ -318,6 +328,64 @@ export default function FriendLinksManagementPage() {
     setDetailDialogOpen(true)
   }
 
+  // 打开新增对话框
+  const openAddDialog = () => {
+    setAddForm({
+      name: '',
+      url: '',
+      description: '',
+      logo: '',
+      contact_name: '',
+      contact_email: '',
+    })
+    setAddDialogOpen(true)
+  }
+
+  // 新增友情链接
+  const handleAdd = async () => {
+    if (!addForm.name.trim()) {
+      toast.error('网站名称不能为空')
+      return
+    }
+
+    if (!addForm.url.trim()) {
+      toast.error('网站地址不能为空')
+      return
+    }
+
+    // 验证 URL 格式
+    try {
+      new URL(addForm.url)
+    } catch {
+      toast.error('网站地址格式不正确')
+      return
+    }
+
+    setAdding(true)
+    try {
+      const response = await fetch('/api/admin/friend-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addForm),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success('添加成功')
+        setAddDialogOpen(false)
+        fetchLinks()
+      } else {
+        toast.error(result.error || '添加失败')
+      }
+    } catch (error) {
+      console.error('添加失败:', error)
+      toast.error('添加失败')
+    } finally {
+      setAdding(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {ConfirmDialog}
@@ -331,8 +399,8 @@ export default function FriendLinksManagementPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {/* 筛选器 */}
-          <div className="flex gap-4 mb-6">
+          {/* 筛选器和新增按钮 */}
+          <div className="flex items-center justify-between mb-6">
             <Select
               value={statusFilter}
               onValueChange={setStatusFilter}
@@ -347,6 +415,10 @@ export default function FriendLinksManagementPage() {
                 <SelectItem value="rejected">已拒绝</SelectItem>
               </SelectContent>
             </Select>
+            <Button onClick={openAddDialog}>
+              <Plus className="h-4 w-4 mr-2" />
+              新增
+            </Button>
           </div>
 
           {/* 表格 */}
@@ -717,6 +789,102 @@ export default function FriendLinksManagementPage() {
             </Button>
             <Button onClick={handleSaveEdit} disabled={saving}>
               {saving ? '保存中...' : '保存'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 新增对话框 */}
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>新增友情链接</DialogTitle>
+            <DialogDescription>
+              添加新的友情链接，默认状态为已通过
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="add-name">网站名称 *</Label>
+              <Input
+                id="add-name"
+                value={addForm.name}
+                onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                placeholder="网站名称"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="add-url">网站地址 *</Label>
+              <Input
+                id="add-url"
+                value={addForm.url}
+                onChange={(e) => setAddForm({ ...addForm, url: e.target.value })}
+                placeholder="https://example.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="add-logo">网站Logo</Label>
+              <Input
+                id="add-logo"
+                value={addForm.logo}
+                onChange={(e) => setAddForm({ ...addForm, logo: e.target.value })}
+                placeholder="https://example.com/logo.png"
+              />
+              {addForm.logo && (
+                <div className="mt-2">
+                  <img
+                    src={addForm.logo}
+                    alt="Logo预览"
+                    className="w-10 h-10 rounded object-contain border"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="add-description">网站描述</Label>
+              <Textarea
+                id="add-description"
+                value={addForm.description}
+                onChange={(e) => setAddForm({ ...addForm, description: e.target.value })}
+                placeholder="网站简介"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="add-contact-name">联系人</Label>
+                <Input
+                  id="add-contact-name"
+                  value={addForm.contact_name}
+                  onChange={(e) => setAddForm({ ...addForm, contact_name: e.target.value })}
+                  placeholder="联系人姓名"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="add-contact-email">联系邮箱</Label>
+                <Input
+                  id="add-contact-email"
+                  type="email"
+                  value={addForm.contact_email}
+                  onChange={(e) => setAddForm({ ...addForm, contact_email: e.target.value })}
+                  placeholder="contact@example.com"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={handleAdd} disabled={adding}>
+              {adding ? '添加中...' : '添加'}
             </Button>
           </div>
         </DialogContent>

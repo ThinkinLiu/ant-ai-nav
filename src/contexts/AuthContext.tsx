@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { toast } from 'sonner'
+import { useCrossDomainAuth } from '@/hooks/use-cross-domain-auth'
 
 // 会话超时时间：30分钟（毫秒）
 const SESSION_TIMEOUT = 30 * 60 * 1000
@@ -38,6 +39,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [lastActivityTime, setLastActivityTime] = useState<number | null>(null)
 
+  // 跨域认证
+  const { syncLogin: crossDomainSyncLogin, syncLogout: crossDomainSyncLogout } = useCrossDomainAuth({
+    onLogin: (authToken) => {
+      // 从其他域名收到登录消息，刷新用户信息
+      fetchUser(authToken)
+    },
+    onLogout: () => {
+      // 从其他域名收到登出消息
+      setUser(null)
+      setToken(null)
+      setLastActivityTime(null)
+      setIsLoading(false)
+    },
+  })
+
   // 更新用户活动时间
   const updateActivity = useCallback(() => {
     if (user && token) {
@@ -72,8 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(async () => {
+    // 先同步到其他域名
+    await crossDomainSyncLogout()
+    // 然后执行登出
     await performLogout(token)
-  }, [token, performLogout])
+  }, [token, performLogout, crossDomainSyncLogout])
 
   // 从 localStorage 恢复登录状态
   const fetchUser = useCallback(async (authToken: string) => {
@@ -223,20 +242,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       })
       const data = await response.json()
-      
+
       if (data.success && data.data) {
+        const accessToken = data.data.session.access_token
         setUser(data.data.user)
-        setToken(data.data.session.access_token)
-        localStorage.setItem('auth_token', data.data.session.access_token)
-        
+        setToken(accessToken)
+        localStorage.setItem('auth_token', accessToken)
+
         // 初始化活动时间
         const now = Date.now()
         setLastActivityTime(now)
         localStorage.setItem(LAST_ACTIVITY_KEY, now.toString())
-        
+
+        // 同步到其他域名
+        await crossDomainSyncLogin(accessToken)
+
         return { success: true }
       }
-      
+
       return { success: false, error: data.error || '登录失败' }
     } catch {
       return { success: false, error: '网络错误' }
