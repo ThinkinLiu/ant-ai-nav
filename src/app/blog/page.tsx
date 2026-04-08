@@ -286,15 +286,6 @@ export default async function BlogPage() {
         <div className="absolute inset-0 bg-grid-white/[0.05]" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center">
-            {blogSettings.blog_logo && (
-              <a href={blogSettings.blog_url || '/'} className="mb-6 flex justify-center inline-block hover:opacity-80 transition-opacity">
-                <img
-                  src={blogSettings.blog_logo}
-                  alt={blogSettings.blog_name}
-                  className="h-20 w-auto rounded-lg"
-                />
-              </a>
-            )}
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
               {blogSettings.blog_name}
             </h1>
