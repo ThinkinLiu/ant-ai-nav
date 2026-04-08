@@ -1,5 +1,51 @@
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 import Link from 'next/link'
+import { Metadata } from 'next'
+
+// 生成动态 metadata
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const client = getSupabaseClient()
+    const { data } = await client
+      .from('seo_settings')
+      .select('blog_name, blog_description, blog_url')
+      .limit(1)
+      .single()
+
+    const blogName = data?.blog_name || '蚂蚁AI之家'
+    const blogDescription = data?.blog_description || '探索AI技术的无限可能，掌握前沿AI工具的使用技巧'
+    const blogUrl = data?.blog_url || 'https://abc123.dev.coze.site/blog'
+
+    return {
+      title: blogName,
+      description: blogDescription,
+      alternates: {
+        canonical: blogUrl,
+      },
+      openGraph: {
+        title: blogName,
+        description: blogDescription,
+        url: blogUrl,
+        siteName: blogName,
+        type: 'website',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: blogName,
+        description: blogDescription,
+      },
+    }
+  } catch (error) {
+    // 返回默认值
+    return {
+      title: '蚂蚁AI之家',
+      description: '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+      alternates: {
+        canonical: 'https://abc123.dev.coze.site/blog',
+      },
+    }
+  }
+}
 
 interface NewsItem {
   id: number
@@ -241,13 +287,13 @@ export default async function BlogPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center">
             {blogSettings.blog_logo && (
-              <div className="mb-6 flex justify-center">
+              <a href={blogSettings.blog_url || '/'} className="mb-6 flex justify-center inline-block hover:opacity-80 transition-opacity">
                 <img
                   src={blogSettings.blog_logo}
                   alt={blogSettings.blog_name}
                   className="h-20 w-auto rounded-lg"
                 />
-              </div>
+              </a>
             )}
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
               {blogSettings.blog_name}
