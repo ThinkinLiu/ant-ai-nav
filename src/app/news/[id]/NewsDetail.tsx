@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { categoryConfig, getCategoryConfig, getCategoriesConfig } from '../config'
 import { MarkdownViewer } from '@/components/ui/markdown-editor'
 import { Edit } from 'lucide-react'
+import { ToolLogoNext } from '@/components/tools/ToolLogo'
 
 interface NewsItem {
   id: number
@@ -40,10 +41,11 @@ interface RelatedNews {
 interface RelatedTool {
   id: number
   name: string
+  slug: string | null
   name_en: string | null
   description: string | null
-  icon: string | null
-  url: string | null
+  logo: string | null
+  website: string | null
 }
 
 interface NavNews {
@@ -299,20 +301,16 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews, relatedTools
                 {relatedTools.map((tool) => (
                   <Link
                     key={tool.id}
-                    href={`/tool/${tool.id}`}
+                    href={`/tools/${tool.id}`}
                     className="group flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
                   >
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
-                      {tool.icon ? (
-                        <img
-                          src={tool.icon}
-                          alt={tool.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-lg">🔧</span>
-                      )}
-                    </div>
+                    <ToolLogoNext
+                      logo={tool.logo}
+                      name={tool.name}
+                      website={tool.website}
+                      size={40}
+                      className="h-10 w-10 rounded-lg shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium line-clamp-1 group-hover:text-primary transition-colors">
                         {tool.name}
