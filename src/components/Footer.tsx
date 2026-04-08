@@ -243,7 +243,7 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
               申请收录
             </Link>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
+          <div className="mt-3 text-xs text-muted-foreground">
             关注微信公众号
             <span className="group relative inline-block cursor-help mx-1 text-primary hover:text-primary/80 transition-colors">
               「IT老五」
@@ -262,7 +262,7 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
               </div>
             </span>
             获取更多AI工具资讯和教程
-          </p>
+          </div>
         </div>
 
         {/* 版权信息 */}
