@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { useActualPath } from '@/contexts/ActualPathContext'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -29,15 +28,14 @@ interface SiteSettings {
 export function HeaderContent() {
   const { user, logout } = useAuth()
   const pathname = usePathname()
-  const actualPath = useActualPath()
   const searchParams = useSearchParams()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({ ranking_enabled: true })
   const router = useRouter()
 
-  // 使用实际路径判断是否在blog页面（支持 nginx 反向代理）
-  const isBlogPage = (actualPath || pathname).startsWith('/blog')
+  // 判断是否在blog页面
+  const isBlogPage = pathname.startsWith('/blog')
 
   // 判断菜单项是否激活
   const isActive = (href: string) => {

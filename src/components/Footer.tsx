@@ -51,9 +51,9 @@ function formatCopyrightYear(yearStart: number, yearEnd: string): string {
 function replaceCopyrightPlaceholders(
   text: string,
   siteName: string,
+  siteUrl?: string,
   yearStart: number,
   yearEnd: string,
-  siteUrl?: string,
   companyName?: string,
   companyEmail?: string
 ): string {
@@ -133,8 +133,7 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
   if (showLinks === undefined) {
     try {
       const headersList = await headers()
-      // 优先使用 x-actual-path（支持 nginx 反向代理），如果没有则使用 x-pathname
-      const pathname = headersList.get('x-actual-path') || headersList.get('x-pathname') || ''
+      const pathname = headersList.get('x-pathname') || ''
       shouldShowLinks = !pathname.startsWith('/blog')
     } catch {
       shouldShowLinks = true
@@ -224,9 +223,9 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
                 __html: replaceCopyrightPlaceholders(
                   copyrightText,
                   siteName,
+                  siteUrl,
                   copyrightYearStart,
                   copyrightYearEnd,
-                  siteUrl,
                   companyName,
                   companyEmail
                 )
@@ -296,9 +295,9 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
                 __html: replaceCopyrightPlaceholders(
                   additional,
                   siteName,
+                  siteUrl,
                   copyrightYearStart,
                   copyrightYearEnd,
-                  siteUrl,
                   companyName,
                   companyEmail
                 )

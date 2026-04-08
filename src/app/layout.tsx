@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inspector } from 'react-dev-inspector'
-import { headers } from 'next/headers'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { ActualPathProvider } from '@/contexts/ActualPathContext'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { AnalyticsScript } from '@/components/AnalyticsScript'
@@ -92,16 +90,12 @@ export const metadata: Metadata = {
   category: 'technology',
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   const isDev = process.env.NODE_ENV === 'development'
-
-  // 读取实际路径（支持 nginx 反向代理）
-  const headersList = await headers()
-  const actualPath = headersList.get('x-actual-path') || headersList.get('x-pathname') || null
 
   return (
     <html lang="zh-CN" suppressHydrationWarning>
@@ -109,13 +103,11 @@ export default async function RootLayout({
         {isDev && <Inspector />}
         <AnalyticsScript />
         <AuthProvider>
-          <ActualPathProvider actualPath={actualPath}>
-            <Header />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </ActualPathProvider>
+          <Header />
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
         </AuthProvider>
         <Toaster />
       </body>
