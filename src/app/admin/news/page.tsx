@@ -592,18 +592,18 @@ export default function NewsManagementPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {item.category ? (() => {
-                        // 处理 category 字段可能是 JSON 数组或单个字符串的情况
+                      {item.category && item.category.length > 0 ? (() => {
+                        // 处理 category 字段：可能是数组或字符串
                         let categoriesList: string[] = []
-                        try {
-                          const parsed = JSON.parse(item.category)
-                          if (Array.isArray(parsed)) {
-                            categoriesList = parsed
-                          } else {
-                            categoriesList = [parsed]
+                        if (Array.isArray(item.category)) {
+                          categoriesList = item.category
+                        } else if (typeof item.category === 'string') {
+                          try {
+                            const parsed = JSON.parse(item.category)
+                            categoriesList = Array.isArray(parsed) ? parsed : [parsed]
+                          } catch {
+                            categoriesList = [item.category]
                           }
-                        } catch {
-                          categoriesList = [item.category]
                         }
 
                         // 查找分类名称并显示
@@ -620,7 +620,9 @@ export default function NewsManagementPage() {
                           <div className="flex gap-1 flex-wrap">
                             {categoryItems}
                           </div>
-                        ) : '-'
+                        ) : (
+                          <span className="text-muted-foreground text-xs">{categoriesList.join(', ')}</span>
+                        )
                       })() : '-'}
                     </TableCell>
                     <TableCell>
