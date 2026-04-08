@@ -20,6 +20,8 @@ import { useRouter } from 'next/navigation'
 interface SiteSettings {
   ranking_enabled: boolean
   site_url?: string | null
+  blog_name?: string
+  blog_logo?: string | null
 }
 
 export function HeaderContent() {
@@ -72,7 +74,9 @@ export function HeaderContent() {
       .then(data => {
         setSiteSettings({
           ranking_enabled: data.ranking_enabled ?? true,
-          site_url: data.site_url || null
+          site_url: data.site_url || null,
+          blog_name: data.blog_name || '蚂蚁AI之家',
+          blog_logo: data.blog_logo || null
         })
       })
       .catch(() => {
@@ -97,13 +101,21 @@ export function HeaderContent() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
-          <img
-            src="/logo.png"
-            alt="蚂蚁AI导航"
-            className="h-8 w-8 rounded-lg object-contain"
-          />
+          {isBlogPage && siteSettings.blog_logo ? (
+            <img
+              src={siteSettings.blog_logo}
+              alt={siteSettings.blog_name || '蚂蚁AI之家'}
+              className="h-8 w-auto rounded-lg object-contain max-h-8"
+            />
+          ) : (
+            <img
+              src="/logo.png"
+              alt={isBlogPage ? '蚂蚁AI之家' : '蚂蚁AI导航'}
+              className="h-8 w-8 rounded-lg object-contain"
+            />
+          )}
           <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            {isBlogPage ? '蚂蚁AI之家' : '蚂蚁AI导航'}
+            {isBlogPage ? (siteSettings.blog_name || '蚂蚁AI之家') : '蚂蚁AI导航'}
           </span>
         </Link>
 

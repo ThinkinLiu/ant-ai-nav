@@ -180,11 +180,49 @@ function formatRelativeTime(dateStr: string): string {
   }
 }
 
+// 获取博客设置
+async function getBlogSettings() {
+  try {
+    const client = getSupabaseClient()
+    const { data, error } = await client
+      .from('seo_settings')
+      .select('blog_logo, blog_name, blog_description, blog_url')
+      .limit(1)
+      .single()
+
+    if (error) {
+      console.error('获取博客设置失败:', error)
+      return {
+        blog_logo: null,
+        blog_name: '蚂蚁AI之家',
+        blog_description: '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+        blog_url: null
+      }
+    }
+
+    return {
+      blog_logo: data.blog_logo || null,
+      blog_name: data.blog_name || '蚂蚁AI之家',
+      blog_description: data.blog_description || '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+      blog_url: data.blog_url || null
+    }
+  } catch (error) {
+    console.error('获取博客设置失败:', error)
+    return {
+      blog_logo: null,
+      blog_name: '蚂蚁AI之家',
+      blog_description: '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+      blog_url: null
+    }
+  }
+}
+
 export default async function BlogPage() {
   const blogs = await getBlogs()
   const hotBlogs = await getHotBlogs()
   const popularTags = await getPopularTags()
   const categories = await getAllCategories()
+  const blogSettings = await getBlogSettings()
 
   // 创建分类映射：slug -> { name, color }
   const categoryMap: Record<string, { name: string; color: string }> = {}
@@ -202,11 +240,20 @@ export default async function BlogPage() {
         <div className="absolute inset-0 bg-grid-white/[0.05]" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center">
+            {blogSettings.blog_logo && (
+              <div className="mb-6 flex justify-center">
+                <img
+                  src={blogSettings.blog_logo}
+                  alt={blogSettings.blog_name}
+                  className="h-20 w-auto rounded-lg"
+                />
+              </div>
+            )}
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-              蚂蚁AI之家
+              {blogSettings.blog_name}
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto">
-              探索AI技术的无限可能，掌握前沿AI工具的使用技巧
+              {blogSettings.blog_description}
             </p>
             {/* 统计信息区域已隐藏 */}
           </div>

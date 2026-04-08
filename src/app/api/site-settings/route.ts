@@ -12,10 +12,10 @@ export async function GET() {
     .limit(1)
     .single()
 
-  // 获取 seo_settings 中的 siteUrl
+  // 获取 seo_settings 中的 site_url 和博客相关设置
   const { data: seoSettings } = await supabase
     .from('seo_settings')
-    .select('site_url')
+    .select('site_url, blog_logo, blog_name, blog_description, blog_url')
     .limit(1)
     .single()
 
@@ -27,12 +27,20 @@ export async function GET() {
       ranking_description: null,
       comments_enabled: true,
       favorites_enabled: true,
-      site_url: seoSettings?.site_url || null
+      site_url: seoSettings?.site_url || null,
+      blog_logo: seoSettings?.blog_logo || null,
+      blog_name: seoSettings?.blog_name || '蚂蚁AI之家',
+      blog_description: seoSettings?.blog_description || '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+      blog_url: seoSettings?.blog_url || null
     })
   }
 
   return NextResponse.json({
     ...siteSettings,
-    site_url: seoSettings?.site_url || null
+    site_url: seoSettings?.site_url || null,
+    blog_logo: seoSettings?.blog_logo || null,
+    blog_name: seoSettings?.blog_name || '蚂蚁AI之家',
+    blog_description: seoSettings?.blog_description || '探索AI技术的无限可能，掌握前沿AI工具的使用技巧',
+    blog_url: seoSettings?.blog_url || null
   })
 }
