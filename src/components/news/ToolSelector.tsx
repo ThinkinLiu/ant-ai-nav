@@ -34,7 +34,6 @@ export default function ToolSelector({
 }: ToolSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [tools, setTools] = useState<Tool[]>([])
   const [filteredTools, setFilteredTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedToolDetails, setSelectedToolDetails] = useState<Tool[]>([])
@@ -53,7 +52,6 @@ export default function ToolSelector({
       if (result.success && result.data) {
         // API 返回的数据结构是 { data: { data: [...], total: ... } }
         const toolsData = Array.isArray(result.data.data) ? result.data.data : []
-        setTools(toolsData)
         setFilteredTools(toolsData)
       }
     } catch (error) {
@@ -89,23 +87,20 @@ export default function ToolSelector({
     fetchTools()
   }, [])
 
-  // 搜索
+  // 搜索 - 从所有工具中搜索
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (searchQuery.trim()) {
-        const filtered = tools.filter(
-          (tool) =>
-            tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            tool.slug.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        setFilteredTools(filtered)
+        // 有搜索词时，从所有工具中搜索
+        fetchTools(searchQuery.trim())
       } else {
-        setFilteredTools(tools)
+        // 搜索框为空时，显示默认工具列表
+        fetchTools()
       }
     }, 300)
 
     return () => clearTimeout(delayDebounce)
-  }, [searchQuery, tools])
+  }, [searchQuery])
 
   // 获取已选工具详情
   useEffect(() => {
@@ -139,11 +134,6 @@ export default function ToolSelector({
 
   const handleRemoveTool = (toolId: number) => {
     onChange(selectedTools.filter((id) => id !== toolId))
-  }
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    fetchTools(searchQuery)
   }
 
   return (
