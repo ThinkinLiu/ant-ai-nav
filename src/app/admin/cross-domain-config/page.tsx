@@ -248,12 +248,20 @@ export default function CrossDomainConfigPage() {
             {config.sharedDomains.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {config.sharedDomains.map((domain) => (
-                  <Badge key={domain} variant="secondary" className="gap-1">
+                  <Badge key={domain} variant="secondary" className="gap-1 pr-1">
                     {domain}
-                    <X
-                      className="h-3 w-3 cursor-pointer hover:text-destructive"
-                      onClick={() => removeDomain(domain)}
-                    />
+                    <button
+                      type="button"
+                      className="h-3 w-3 cursor-pointer hover:text-destructive rounded-sm flex items-center justify-center"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        removeDomain(domain)
+                      }}
+                      title="删除域名"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </Badge>
                 ))}
               </div>
