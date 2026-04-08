@@ -7,7 +7,7 @@ async function getFriendLinks() {
     const client = getSupabaseClient()
     const { data } = await client
       .from('friend_links')
-      .select('id, name, url')
+      .select('id, name, url, logo')
       .eq('status', 'approved')
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true })
@@ -199,19 +199,31 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
 
         {/* 友情链接 */}
         <div className="mt-8 pt-6 border-t">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3 text-sm">
             <span className="font-medium text-foreground">友情链接：</span>
-            {friendLinks.map((link) => (
-              <a
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-primary transition-colors"
-              >
-                {link.name}
-              </a>
-            ))}
+            <div className="flex flex-wrap items-center gap-3">
+              {friendLinks.map((link) => {
+                // 如果有 logo 就使用 logo，否则使用 Google 的 favicon 服务
+                const faviconUrl = link.logo || `https://www.google.com/s2/favicons?domain=${new URL(link.url).hostname}&sz=32`
+
+                return (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative flex items-center justify-center"
+                    title={link.name}
+                  >
+                    <img
+                      src={faviconUrl}
+                      alt={link.name}
+                      className="w-6 h-6 rounded object-contain opacity-70 group-hover:opacity-100 transition-all group-hover:scale-110"
+                    />
+                  </a>
+                )
+              })}
+            </div>
             <Link
               href="/link-submit"
               className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
