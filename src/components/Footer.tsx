@@ -51,9 +51,9 @@ function formatCopyrightYear(yearStart: number, yearEnd: string): string {
 function replaceCopyrightPlaceholders(
   text: string,
   siteName: string,
-  siteUrl?: string,
   yearStart: number,
   yearEnd: string,
+  siteUrl?: string,
   companyName?: string,
   companyEmail?: string
 ): string {
