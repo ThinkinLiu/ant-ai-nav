@@ -250,7 +250,7 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
               {/* 二维码 tooltip */}
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-popover rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <img
-                  src="/itlao5.png"
+                  src="/itlao5.jpg"
                   alt="IT老五微信公众号二维码"
                   className="w-32 h-32 object-contain rounded"
                 />
