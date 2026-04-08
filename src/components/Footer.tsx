@@ -248,7 +248,21 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
             </Link>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            关注微信公众号「IT老五」获取更多AI工具资讯和教程
+            关注微信公众号
+            <span className="group relative inline-block cursor-help mx-1 text-primary hover:text-primary/80 transition-colors">
+              「IT老五」
+              {/* 二维码 tooltip */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-popover rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <img
+                  src="/itlao5.png"
+                  alt="IT老五微信公众号二维码"
+                  className="w-32 h-32 object-contain rounded"
+                />
+                {/* 小箭头 */}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-popover" />
+              </div>
+            </span>
+            获取更多AI工具资讯和教程
           </p>
         </div>
 
