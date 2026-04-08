@@ -22,6 +22,7 @@ interface SiteSettings {
   site_url?: string | null
   blog_name?: string
   blog_logo?: string | null
+  blog_url?: string | null
 }
 
 export function HeaderContent() {
@@ -76,7 +77,8 @@ export function HeaderContent() {
           ranking_enabled: data.ranking_enabled ?? true,
           site_url: data.site_url || null,
           blog_name: data.blog_name || '蚂蚁AI之家',
-          blog_logo: data.blog_logo || null
+          blog_logo: data.blog_logo || null,
+          blog_url: data.blog_url || null
         })
       })
       .catch(() => {
@@ -149,7 +151,7 @@ export function HeaderContent() {
               <Link href="/news?category=tutorial" className={`text-sm font-medium transition-colors ${getActiveClass('/news?category=tutorial')}`}>
                 AI教程
               </Link>
-              <Link href="/blog" className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`}>
+              <Link href={siteSettings.blog_url || '/blog'} className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`}>
                 <BookOpen className="h-4 w-4" />
                 蚂蚁AI之家
               </Link>
@@ -323,7 +325,7 @@ export function HeaderContent() {
                   <Link href="/news?category=tutorial" className={`text-sm font-medium py-2 transition-colors ${getActiveClass('/news?category=tutorial')}`} onClick={() => setIsMenuOpen(false)}>
                     AI教程
                   </Link>
-                  <Link href="/blog" className={`text-sm font-medium py-2 transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`} onClick={() => setIsMenuOpen(false)}>
+                  <Link href={siteSettings.blog_url || '/blog'} className={`text-sm font-medium py-2 transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`} onClick={() => setIsMenuOpen(false)}>
                     <BookOpen className="h-4 w-4" />
                     蚂蚁AI之家
                   </Link>
