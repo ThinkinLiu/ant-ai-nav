@@ -146,7 +146,7 @@ export default function ToolSelector({
           {selectedToolDetails.map((tool) => (
             <div
               key={tool.id}
-              className="flex items-center gap-2 px-3 py-1.5 bg-background border rounded-lg group hover:border-primary transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-background border rounded-lg hover:border-primary transition-colors"
             >
               {tool.logo && (
                 <img
@@ -160,8 +160,13 @@ export default function ToolSelector({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-auto p-0.5 w-auto opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => handleRemoveTool(tool.id)}
+                className="h-auto p-0.5 w-auto hover:bg-destructive/10 hover:text-destructive"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleRemoveTool(tool.id)
+                }}
+                title="删除"
               >
                 <X className="h-3.5 w-3.5" />
               </Button>
