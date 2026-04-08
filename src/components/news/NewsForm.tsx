@@ -558,7 +558,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                             </span>
                           )}
                           {formData.publishedAt && (
-                            <span>发布时间: {new Date(formData.publishedAt).toLocaleString('zh-CN')}</span>
+                            <span>发布时间: {formData.publishedAt}</span>
                           )}
                           {formData.source && (
                             <span>来源: {formData.source}</span>

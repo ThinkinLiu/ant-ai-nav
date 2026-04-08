@@ -69,13 +69,14 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews, relatedTools
   const canEdit = user?.role === 'admin' || user?.id === news.author_id?.toString()
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    const date = new Date(dateStr)
+    // 使用固定格式避免 hydration 错误
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${year}年${month}月${day}日 ${hours}:${minutes}`
   }
 
   return (
