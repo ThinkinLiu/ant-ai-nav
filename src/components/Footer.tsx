@@ -7,7 +7,7 @@ async function getFriendLinks() {
     const client = getSupabaseClient()
     const { data } = await client
       .from('friend_links')
-      .select('id, name, url, logo')
+      .select('id, name, url, logo, description')
       .eq('status', 'approved')
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true })
@@ -207,20 +207,35 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
                 const faviconUrl = link.logo || `https://www.google.com/s2/favicons?domain=${new URL(link.url).hostname}&sz=32`
 
                 return (
-                  <a
+                  <div
                     key={link.id}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="group relative flex items-center justify-center"
-                    title={link.name}
                   >
-                    <img
-                      src={faviconUrl}
-                      alt={link.name}
-                      className="w-6 h-6 rounded object-contain opacity-70 group-hover:opacity-100 transition-all group-hover:scale-110"
-                    />
-                  </a>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center"
+                      title={link.name}
+                    >
+                      <img
+                        src={faviconUrl}
+                        alt={link.name}
+                        className="w-6 h-6 rounded object-contain opacity-70 group-hover:opacity-100 transition-all group-hover:scale-110"
+                      />
+                    </a>
+                    {/* Tooltip - 显示描述 */}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 max-w-xs">
+                      <div className="font-semibold mb-1">{link.name}</div>
+                      {link.description && (
+                        <div className="text-muted-foreground leading-relaxed">
+                          {link.description}
+                        </div>
+                      )}
+                      {/* 小箭头 */}
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-popover" />
+                    </div>
+                  </div>
                 )
               })}
             </div>
