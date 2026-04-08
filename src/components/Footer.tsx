@@ -248,12 +248,15 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
             <span className="group relative inline-block cursor-help mx-1 text-primary hover:text-primary/80 transition-colors">
               「IT老五」
               {/* 二维码 tooltip */}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-popover rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 p-3 bg-popover rounded-lg shadow-xl border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <img
                   src="/itlao5.jpg"
                   alt="IT老五微信公众号二维码"
-                  className="w-32 h-32 object-contain rounded"
+                  className="w-48 h-48 object-contain rounded"
                 />
+                <div className="text-xs text-center mt-2 text-muted-foreground">
+                  扫码关注「IT老五」
+                </div>
                 {/* 小箭头 */}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-popover" />
               </div>
