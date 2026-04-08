@@ -199,49 +199,45 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
 
         {/* 友情链接 */}
         <div className="mt-8 pt-6 border-t">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-3 text-sm">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
             <span className="font-medium text-foreground">友情链接：</span>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-4">
               {friendLinks.map((link) => {
-                // 如果有 logo 就使用 logo，否则使用 Google 的 favicon 服务
-                const faviconUrl = link.logo || `https://www.google.com/s2/favicons?domain=${new URL(link.url).hostname}&sz=32`
-
                 return (
-                  <div
+                  <a
                     key={link.id}
-                    className="group relative flex items-center justify-center"
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                    title={link.description || link.name}
                   >
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center"
-                      title={link.name}
-                    >
+                    {link.logo && (
                       <img
-                        src={faviconUrl}
+                        src={link.logo}
                         alt={link.name}
-                        className="w-6 h-6 rounded object-contain opacity-70 group-hover:opacity-100 transition-all group-hover:scale-110"
+                        className="w-5 h-5 rounded object-contain opacity-70 group-hover:opacity-100 transition-all group-hover:scale-110"
                       />
-                    </a>
+                    )}
+                    <span className="text-xs">{link.name}</span>
                     {/* Tooltip - 显示描述 */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 max-w-xs">
-                      <div className="font-semibold mb-1">{link.name}</div>
-                      {link.description && (
+                    {link.description && (
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 max-w-xs">
+                        <div className="font-semibold mb-1">{link.name}</div>
                         <div className="text-muted-foreground leading-relaxed">
                           {link.description}
                         </div>
-                      )}
-                      {/* 小箭头 */}
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-popover" />
-                    </div>
-                  </div>
+                        {/* 小箭头 */}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-popover" />
+                      </div>
+                    )}
+                  </a>
                 )
               })}
             </div>
             <Link
               href="/link-submit"
-              className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+              className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1 text-xs"
             >
               <span className="text-xs">+</span>
               申请收录
