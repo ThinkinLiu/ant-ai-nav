@@ -156,6 +156,9 @@ export async function POST(request: NextRequest) {
       sourceUrl,
       authorId,
       publishedAt,
+      relatedTools,
+      isFeatured,
+      isHot,
     } = body
 
     // 验证必填字段
@@ -207,6 +210,9 @@ export async function POST(request: NextRequest) {
         source_url: sourceUrl,
         author_id: authorId,
         status: 'draft',
+        is_featured: isFeatured || false,
+        is_hot: isHot || false,
+        related_tools: relatedTools || [],
         // 使用自定义发布时间或当前时间
         published_at: publishedAt || new Date().toISOString(),
       })

@@ -37,6 +37,15 @@ interface RelatedNews {
   view_count: number
 }
 
+interface RelatedTool {
+  id: number
+  name: string
+  name_en: string | null
+  description: string | null
+  icon: string | null
+  url: string | null
+}
+
 interface NavNews {
   id: number
   title: string
@@ -47,9 +56,10 @@ interface Props {
   relatedNews: RelatedNews[]
   prevNews: NavNews | null
   nextNews: NavNews | null
+  relatedTools?: RelatedTool[]
 }
 
-export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
+export function NewsDetail({ news, relatedNews, prevNews, nextNews, relatedTools = [] }: Props) {
   const { user } = useAuth()
   const categories = getCategoriesConfig(news.category)
   const firstCategory = categories[0]
@@ -276,6 +286,47 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
               </div>
             </div>
           </div>
+
+          {/* Related Tools */}
+          {relatedTools.length > 0 && (
+            <div className="bg-card border rounded-xl p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <span>🔧</span>
+                <span>相关工具</span>
+              </h3>
+              <div className="space-y-3">
+                {relatedTools.map((tool) => (
+                  <Link
+                    key={tool.id}
+                    href={`/tool/${tool.id}`}
+                    className="group flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
+                      {tool.icon ? (
+                        <img
+                          src={tool.icon}
+                          alt={tool.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-lg">🔧</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium line-clamp-1 group-hover:text-primary transition-colors">
+                        {tool.name}
+                      </p>
+                      {tool.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                          {tool.description}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Related News */}
           {relatedNews.length > 0 && (
