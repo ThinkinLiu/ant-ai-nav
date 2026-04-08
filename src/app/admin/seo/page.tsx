@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import RichTextEditor from '@/components/ui/rich-text-editor'
+import ImageUploader from '@/components/ui/image-uploader'
 import { Save, Globe, Share2, Search, Code, BarChart3, Loader2, Map, Copyright, BookOpen } from 'lucide-react'
 
 interface SEOSettings {
@@ -417,13 +418,25 @@ export default function SEOSettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="blog_logo">博客 Logo</Label>
-                <Input
-                  id="blog_logo"
-                  value={settings.blog_logo}
-                  onChange={(e) => updateField('blog_logo', e.target.value)}
-                  placeholder="https://example.com/blog-logo.png"
-                />
-                <p className="text-xs text-muted-foreground">博客首页显示的 Logo 图片地址</p>
+                <div className="space-y-4">
+                  <ImageUploader
+                    value={settings.blog_logo}
+                    onChange={(value) => updateField('blog_logo', value)}
+                    folder="blog-logo"
+                    maxSize={2}
+                    placeholder="上传博客 Logo"
+                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="blog_logo_url" className="text-sm text-muted-foreground">或输入图片 URL</Label>
+                    <Input
+                      id="blog_logo_url"
+                      value={settings.blog_logo}
+                      onChange={(e) => updateField('blog_logo', e.target.value)}
+                      placeholder="https://example.com/blog-logo.png"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">博客首页显示的 Logo 图片，建议尺寸 200x200 像素</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="blog_description">博客介绍</Label>
