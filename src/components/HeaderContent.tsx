@@ -25,6 +25,17 @@ interface SiteSettings {
   blog_url?: string | null
 }
 
+interface MenuItem {
+  id: number
+  menu_type: 'site' | 'blog'
+  label: string
+  url: string
+  icon: string | null
+  sort_order: number
+  is_active: boolean
+  is_default: boolean
+}
+
 export function HeaderContent() {
   const { user, logout } = useAuth()
   const pathname = usePathname()
@@ -32,6 +43,7 @@ export function HeaderContent() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({ ranking_enabled: true })
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const router = useRouter()
 
   // 判断是否在blog页面
@@ -84,7 +96,21 @@ export function HeaderContent() {
       .catch(() => {
         // 使用默认值
       })
-  }, [])
+
+    // 获取菜单配置
+    const menuType = isBlogPage ? 'blog' : 'site'
+    fetch(`/api/admin/menu-items?menuType=${menuType}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.data) {
+          setMenuItems(data.data.filter((item: MenuItem) => item.is_active))
+        }
+      })
+      .catch(() => {
+        // 使用默认菜单
+        setMenuItems([])
+      })
+  }, [isBlogPage])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,6 +122,21 @@ export function HeaderContent() {
   const handleLogout = async () => {
     await logout()
     router.push('/')
+  }
+
+  // 渲染菜单图标
+  const renderIcon = (iconName: string | null) => {
+    const iconProps = { className: 'h-4 w-4' }
+    switch (iconName) {
+      case 'home':
+        return <Home {...iconProps} />
+      case 'book':
+        return <BookOpen {...iconProps} />
+      case 'compass':
+        return <Compass {...iconProps} />
+      default:
+        return null
+    }
   }
 
   return (
@@ -123,52 +164,69 @@ export function HeaderContent() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-4">
-          {isBlogPage ? (
-            <>
-              {/* Blog页面菜单 */}
-              <Link href="/blog" className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`}>
-                <BookOpen className="h-4 w-4" />
-                首页
+          {menuItems.length > 0 ? (
+            // 使用动态菜单配置
+            menuItems.map((item) => (
+              <Link
+                key={item.id}
+                href={item.url}
+                className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass(item.url)}`}
+              >
+                {renderIcon(item.icon)}
+                {item.label}
               </Link>
-              <Link href={siteSettings.site_url || '/'} className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`}>
-                <Compass className="h-4 w-4" />
-                AI导航
-              </Link>
-            </>
+            ))
           ) : (
+            // 降级到默认菜单（如果 API 失败）
             <>
-              {/* 默认导航菜单 */}
-              <Link href="/" className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`}>
-                <Home className="h-4 w-4" />
-                首页
-              </Link>
-              <Link href="/?isFeatured=true" className={`text-sm font-medium transition-colors ${getActiveClass('/?isFeatured=true')}`}>
-                精选推荐
-              </Link>
-              <Link href="/categories" className={`text-sm font-medium transition-colors ${getActiveClass('/categories')}`}>
-                AI分类
-              </Link>
-              <Link href="/news?category=tutorial" className={`text-sm font-medium transition-colors ${getActiveClass('/news?category=tutorial')}`}>
-                AI教程
-              </Link>
-              <Link href={siteSettings.blog_url || '/blog'} className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`}>
-                <BookOpen className="h-4 w-4" />
-                蚂蚁AI之家
-              </Link>
-              {siteSettings.ranking_enabled && (
-                <Link href="/ranking" className={`text-sm font-medium transition-colors ${getActiveClass('/ranking')}`}>
-                  排行榜
-                </Link>
+              {isBlogPage ? (
+                <>
+                  {/* Blog页面菜单 */}
+                  <Link href="/blog" className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`}>
+                    <BookOpen className="h-4 w-4" />
+                    首页
+                  </Link>
+                  <Link href={siteSettings.site_url || '/'} className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`}>
+                    <Compass className="h-4 w-4" />
+                    AI导航
+                  </Link>
+                </>
+              ) : (
+                <>
+                  {/* 默认导航菜单 */}
+                  <Link href="/" className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/')}`}>
+                    <Home className="h-4 w-4" />
+                    首页
+                  </Link>
+                  <Link href="/?isFeatured=true" className={`text-sm font-medium transition-colors ${getActiveClass('/?isFeatured=true')}`}>
+                    精选推荐
+                  </Link>
+                  <Link href="/categories" className={`text-sm font-medium transition-colors ${getActiveClass('/categories')}`}>
+                    AI分类
+                  </Link>
+                  <Link href="/news?category=tutorial" className={`text-sm font-medium transition-colors ${getActiveClass('/news?category=tutorial')}`}>
+                    AI教程
+                  </Link>
+                  <Link href={siteSettings.blog_url || '/blog'} className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${getActiveClass('/blog')}`}>
+                    <BookOpen className="h-4 w-4" />
+                    蚂蚁AI之家
+                  </Link>
+                  {siteSettings.ranking_enabled && (
+                    <Link href="/ranking" className={`text-sm font-medium transition-colors ${getActiveClass('/ranking')}`}>
+                      排行榜
+                    </Link>
+                  )}
+                  <Link href="/news" className={`text-sm font-medium transition-colors ${getActiveClass('/news')}`}>
+                    AI资讯
+                  </Link>
+                  <Link href="/hall-of-fame" className={`text-sm font-medium transition-colors ${getActiveClass('/hall-of-fame')}`}>
+                    AI名人堂
+                  </Link>
+                  <Link href="/timeline" className={`text-sm font-medium transition-colors ${getActiveClass('/timeline')}`}>
+                    AI大事纪
+                  </Link>
+                </>
               )}
-              <Link href="/news" className={`text-sm font-medium transition-colors ${getActiveClass('/news')}`}>
-                AI资讯
-              </Link>
-              <Link href="/hall-of-fame" className={`text-sm font-medium transition-colors ${getActiveClass('/hall-of-fame')}`}>
-                AI名人堂
-              </Link>
-              <Link href="/timeline" className={`text-sm font-medium transition-colors ${getActiveClass('/timeline')}`}>
-                AI大事纪
-              </Link>
             </>
           )}
         </nav>

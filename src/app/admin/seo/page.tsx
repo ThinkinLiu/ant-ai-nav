@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import RichTextEditor from '@/components/ui/rich-text-editor'
 import ImageUploader from '@/components/ui/image-uploader'
 import { Save, Globe, Share2, Search, Code, BarChart3, Loader2, Map, Copyright, BookOpen } from 'lucide-react'
+import { MenuConfig } from '@/components/admin/MenuConfig'
 
 interface SEOSettings {
   site_name: string
@@ -386,6 +387,12 @@ export default function SEOSettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          <MenuConfig
+            menuType="site"
+            title="网站首页菜单配置"
+            description="配置网站首页的导航菜单，支持添加、编辑、排序和显示/隐藏菜单项"
+          />
         </TabsContent>
 
         {/* 博客设置 */}
@@ -451,6 +458,12 @@ export default function SEOSettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          <MenuConfig
+            menuType="blog"
+            title="博客首页菜单配置"
+            description="配置博客首页的导航菜单，支持添加、编辑、排序和显示/隐藏菜单项"
+          />
         </TabsContent>
 
         {/* 社交分享 */}
