@@ -57,7 +57,7 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [oauthProviders, setOauthProviders] = useState<OAuthProviders>({ wechat: false, qq: false })
   const [smsEnabled, setSmsEnabled] = useState(false)
   
@@ -67,11 +67,18 @@ function LoginForm() {
   const [countdown, setCountdown] = useState(0)
   const [sendingCode, setSendingCode] = useState(false)
   
-  const { login } = useAuth()
+  const { login, user, isLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/'
   const isExpired = searchParams.get('expired') === 'true'
+
+  // 如果用户已登录，自动跳转到首页
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace('/')
+    }
+  }, [isLoading, user, router])
 
   // 显示会话过期提示
   useEffect(() => {
@@ -130,7 +137,7 @@ function LoginForm() {
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setIsLoading(true)
+    setIsSubmitting(true)
 
     try {
       const result = await login(email, password)
@@ -142,7 +149,7 @@ function LoginForm() {
     } catch {
       setError('登录失败，请稍后重试')
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -184,7 +191,7 @@ function LoginForm() {
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setIsLoading(true)
+    setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/auth/phone-login', {
@@ -218,7 +225,7 @@ function LoginForm() {
     } catch {
       setError('登录失败，请稍后重试')
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -311,8 +318,8 @@ function LoginForm() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4 pt-6">
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 登录
               </Button>
               
@@ -414,8 +421,8 @@ function LoginForm() {
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-4 pt-6">
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   登录
                 </Button>
                 
