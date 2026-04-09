@@ -4,6 +4,7 @@
 let configCache: {
   enabled: boolean
   mainDomain: string | null
+  mainDomains: string[]  // 支持多个主域名
   sharedDomains: string[]
   authSyncTimeout: number
   timestamp: number
@@ -11,20 +12,24 @@ let configCache: {
 
 const CACHE_TTL = 5 * 60 * 1000 // 5分钟缓存
 
+interface CrossDomainConfig {
+  enabled: boolean
+  mainDomain: string | null
+  mainDomains: string[]
+  sharedDomains: string[]
+  authSyncTimeout: number
+}
+
 /**
  * 从 API 获取跨域配置
  */
-async function fetchCrossDomainConfig(): Promise<{
-  enabled: boolean
-  mainDomain: string | null
-  sharedDomains: string[]
-  authSyncTimeout: number
-}> {
+async function fetchCrossDomainConfig(): Promise<CrossDomainConfig> {
   // 检查缓存
   if (configCache && Date.now() - configCache.timestamp < CACHE_TTL) {
     return {
       enabled: configCache.enabled,
       mainDomain: configCache.mainDomain,
+      mainDomains: configCache.mainDomains,
       sharedDomains: configCache.sharedDomains,
       authSyncTimeout: configCache.authSyncTimeout,
     }
@@ -41,6 +46,7 @@ async function fetchCrossDomainConfig(): Promise<{
       configCache = {
         enabled: result.data.enabled,
         mainDomain: result.data.mainDomain,
+        mainDomains: result.data.mainDomains || [], // 支持多个主域名
         sharedDomains: result.data.sharedDomains || [],
         authSyncTimeout: result.data.authSyncTimeout || 5000,
         timestamp: Date.now(),
@@ -49,6 +55,7 @@ async function fetchCrossDomainConfig(): Promise<{
       return {
         enabled: configCache.enabled,
         mainDomain: configCache.mainDomain,
+        mainDomains: configCache.mainDomains,
         sharedDomains: configCache.sharedDomains,
         authSyncTimeout: configCache.authSyncTimeout,
       }
@@ -61,6 +68,7 @@ async function fetchCrossDomainConfig(): Promise<{
   return {
     enabled: false,
     mainDomain: null,
+    mainDomains: [],
     sharedDomains: [],
     authSyncTimeout: 5000,
   }
@@ -75,7 +83,7 @@ export function clearCrossDomainConfigCache(): void {
 
 /**
  * 获取主域名（用于子域名共享）
- * 例如：www.example.com -> example.com
+ * 例如：www.example.com -> .example.com
  */
 export function getMainDomain(hostname: string): string {
   const parts = hostname.split('.')
@@ -90,12 +98,92 @@ export function getMainDomain(hostname: string): string {
     return hostname
   }
   
-  // 如果是域名，返回主域名（最后两部分）
+  // 如果是域名，返回主域名（最后两部分，带点前缀）
   if (parts.length >= 2) {
     return `.${parts.slice(-2).join('.')}`
   }
   
   return hostname
+}
+
+/**
+ * 检查当前域名是否在配置的主域名列表中
+ * 返回匹配的主域名（如 .mayiai.site），否则返回当前解析的主域名
+ */
+export async function getMatchedMainDomain(hostname: string): Promise<string | null> {
+  const config = await fetchCrossDomainConfig()
+  
+  if (!config.enabled) {
+    return null
+  }
+
+  // 获取当前解析的主域名
+  const currentMainDomain = getMainDomain(hostname)
+
+  // 检查是否在配置的主域名列表中
+  const allMainDomains = config.mainDomains || (config.mainDomain ? [config.mainDomain] : [])
+  
+  for (const domain of allMainDomains) {
+    // 确保带点前缀
+    const normalizedDomain = domain.startsWith('.') ? domain : `.${domain}`
+    if (currentMainDomain === normalizedDomain) {
+      return normalizedDomain
+    }
+    // 也检查不带点的前缀匹配
+    const domainWithoutDot = domain.replace(/^\./, '')
+    if (hostname.endsWith(domainWithoutDot) || currentMainDomain === `.${domainWithoutDot}`) {
+      return normalizedDomain.startsWith('.') ? normalizedDomain : `.${normalizedDomain}`
+    }
+  }
+
+  // 如果没有匹配，返回当前主域名
+  return currentMainDomain !== hostname ? currentMainDomain : null
+}
+
+/**
+ * 获取所有配置的主域名列表
+ */
+export async function getAllMainDomains(): Promise<string[]> {
+  const config = await fetchCrossDomainConfig()
+  const domains = config.mainDomains || (config.mainDomain ? [config.mainDomain] : [])
+  // 标准化：确保都带点前缀
+  return domains.map((d: string) => d.startsWith('.') ? d : `.${d}`)
+}
+
+/**
+ * 获取当前域名需要设置的主域名
+ * 如果当前域名匹配配置的主域名，返回该主域名；否则返回 null
+ */
+export function getCurrentMainDomainForCookie(): string | null {
+  if (typeof window === 'undefined') return null
+  
+  const hostname = window.location.hostname.split(':')[0]
+  
+  // 优先使用环境变量
+  const envMainDomains = process.env.NEXT_PUBLIC_MAIN_DOMAINS
+  if (envMainDomains) {
+    const domains = envMainDomains.split(',').map(d => d.trim())
+    const currentMainDomain = getMainDomain(hostname)
+    
+    for (const domain of domains) {
+      const normalizedDomain = domain.startsWith('.') ? domain : `.${domain}`
+      if (currentMainDomain === normalizedDomain) {
+        return normalizedDomain
+      }
+    }
+  }
+  
+  // 使用单个主域名环境变量（兼容）
+  const envMainDomain = process.env.NEXT_PUBLIC_MAIN_DOMAIN
+  if (envMainDomain) {
+    const currentMainDomain = getMainDomain(hostname)
+    const normalizedEnvDomain = envMainDomain.startsWith('.') ? envMainDomain : `.${envMainDomain}`
+    if (currentMainDomain === normalizedEnvDomain) {
+      return normalizedEnvDomain
+    }
+  }
+  
+  return null
 }
 
 /**

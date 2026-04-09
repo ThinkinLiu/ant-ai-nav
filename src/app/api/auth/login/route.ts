@@ -3,14 +3,24 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { getEnv } from '@/lib/env-config'
 
 /**
- * 获取主域名配置（同步版本）
+ * 获取所有主域名配置（支持多个）
  */
-function getMainDomain(): string | null {
-  // 优先使用环境变量
-  if (process.env.NEXT_PUBLIC_MAIN_DOMAIN) {
-    return process.env.NEXT_PUBLIC_MAIN_DOMAIN
+function getMainDomains(): string[] {
+  const domains: string[] = []
+  
+  // 优先使用环境变量（多个域名）
+  if (process.env.NEXT_PUBLIC_MAIN_DOMAINS) {
+    domains.push(...process.env.NEXT_PUBLIC_MAIN_DOMAINS.split(',').map(d => d.trim()))
   }
-  return null
+  
+  // 兼容单个域名
+  if (process.env.NEXT_PUBLIC_MAIN_DOMAIN) {
+    if (!domains.includes(process.env.NEXT_PUBLIC_MAIN_DOMAIN)) {
+      domains.push(process.env.NEXT_PUBLIC_MAIN_DOMAIN)
+    }
+  }
+  
+  return domains
 }
 
 /**
@@ -19,22 +29,61 @@ function getMainDomain(): string | null {
 function extractMainDomain(hostname: string): string {
   const parts = hostname.split('.')
   
-  // 如果是 localhost，返回 localhost
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return hostname
   }
   
-  // 如果是 IP 地址，返回原值
   if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
     return hostname
   }
   
-  // 如果是域名，返回主域名（最后两部分，带点前缀）
   if (parts.length >= 2) {
     return `.${parts.slice(-2).join('.')}`
   }
   
   return hostname
+}
+
+/**
+ * 标准化域名（确保带点前缀）
+ */
+function normalizeDomain(domain: string): string {
+  return domain.startsWith('.') ? domain : `.${domain}`
+}
+
+/**
+ * 检查域名是否匹配
+ */
+function isDomainMatch(hostname: string, mainDomain: string): boolean {
+  const normalizedMainDomain = normalizeDomain(mainDomain)
+  const currentMainDomain = extractMainDomain(hostname)
+  
+  if (currentMainDomain === normalizedMainDomain) {
+    return true
+  }
+  
+  // 也检查不带点的前缀
+  const mainDomainWithoutDot = normalizedMainDomain.replace(/^\./, '')
+  return hostname.endsWith(mainDomainWithoutDot)
+}
+
+/**
+ * 获取当前域名对应的主域名（如果匹配配置）
+ */
+function getMatchedMainDomain(hostname: string): string | null {
+  const mainDomains = getMainDomains()
+  
+  if (mainDomains.length === 0) {
+    return null
+  }
+  
+  for (const domain of mainDomains) {
+    if (isDomainMatch(hostname, domain)) {
+      return normalizeDomain(domain)
+    }
+  }
+  
+  return null
 }
 
 export async function POST(request: NextRequest) {
@@ -69,15 +118,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 获取主域名
-    const configuredMainDomain = getMainDomain()
+    // 获取请求的主机信息
     const requestHostname = request.headers.get('host')?.split(':')[0] || 'localhost'
-    const mainDomain = configuredMainDomain || extractMainDomain(requestHostname)
+    const matchedMainDomain = getMatchedMainDomain(requestHostname)
+    const configuredMainDomains = getMainDomains()
 
     console.log('[登录] 主域名配置:', {
-      configuredMainDomain,
       requestHostname,
-      mainDomain,
+      matchedMainDomain,
+      configuredMainDomains,
     })
 
     // 创建 Supabase SSR Server Client
@@ -121,7 +170,7 @@ export async function POST(request: NextRequest) {
       .eq('id', authData.user.id)
       .single()
 
-    // 构建响应，并设置 cookie
+    // 构建响应
     const response = NextResponse.json({
       success: true,
       data: {
@@ -132,8 +181,8 @@ export async function POST(request: NextRequest) {
           role: 'user',
         },
         session: authData.session,
-        // 返回主域名信息，用于前端跨域设置
-        mainDomain: mainDomain,
+        mainDomain: matchedMainDomain,
+        mainDomains: configuredMainDomains,
       },
     })
 
@@ -143,43 +192,65 @@ export async function POST(request: NextRequest) {
       const isProduction = process.env.NODE_ENV === 'production'
       const cookieMaxAge = 60 * 60 * 24 * 7 // 7 天
 
-      // 设置访问令牌 cookie
-      response.cookies.set('sb-access-token', access_token, {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
-        maxAge: cookieMaxAge,
-        path: '/',
-        // 设置主域名（用于子域名共享）
-        domain: mainDomain !== 'localhost' && mainDomain !== requestHostname ? mainDomain : undefined,
-      })
+      // 如果匹配到配置的主域名，设置带 domain 的 cookie
+      if (matchedMainDomain && matchedMainDomain !== 'localhost') {
+        // 设置访问令牌 cookie
+        response.cookies.set('sb-access-token', access_token, {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: 'lax',
+          maxAge: cookieMaxAge,
+          path: '/',
+          domain: matchedMainDomain,
+        })
 
-      // 设置刷新令牌 cookie
-      response.cookies.set('sb-refresh-token', refresh_token, {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
-        maxAge: cookieMaxAge,
-        path: '/',
-        // 设置主域名（用于子域名共享）
-        domain: mainDomain !== 'localhost' && mainDomain !== requestHostname ? mainDomain : undefined,
-      })
+        // 设置刷新令牌 cookie
+        response.cookies.set('sb-refresh-token', refresh_token, {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: 'lax',
+          maxAge: cookieMaxAge,
+          path: '/',
+          domain: matchedMainDomain,
+        })
 
-      // 同时设置 auth_token cookie（用于自定义认证逻辑）
-      response.cookies.set('auth_token', access_token, {
-        httpOnly: false, // 前端需要读取
-        secure: isProduction,
-        sameSite: 'lax',
-        maxAge: cookieMaxAge,
-        path: '/',
-        // 设置主域名（用于子域名共享）
-        domain: mainDomain !== 'localhost' && mainDomain !== requestHostname ? mainDomain : undefined,
-      })
+        // 设置 auth_token cookie（用于自定义认证逻辑）
+        response.cookies.set('auth_token', access_token, {
+          httpOnly: false,
+          secure: isProduction,
+          sameSite: 'lax',
+          maxAge: cookieMaxAge,
+          path: '/',
+          domain: matchedMainDomain,
+        })
 
-      console.log('[登录] Cookie 设置完成:', {
-        mainDomain,
-        isSubdomain: mainDomain !== 'localhost' && mainDomain !== requestHostname,
-      })
+        console.log('[登录] Cookie 已设置主域名:', matchedMainDomain)
+      } else {
+        // 没有匹配的主域名，设置不带 domain 的 cookie（当前域名）
+        response.cookies.set('sb-access-token', access_token, {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: 'lax',
+          maxAge: cookieMaxAge,
+          path: '/',
+        })
+
+        response.cookies.set('sb-refresh-token', refresh_token, {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: 'lax',
+          maxAge: cookieMaxAge,
+          path: '/',
+        })
+
+        response.cookies.set('auth_token', access_token, {
+          httpOnly: false,
+          secure: isProduction,
+          sameSite: 'lax',
+          maxAge: cookieMaxAge,
+          path: '/',
+        })
+      }
     }
 
     return response
