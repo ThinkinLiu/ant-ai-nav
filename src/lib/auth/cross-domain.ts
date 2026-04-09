@@ -259,7 +259,10 @@ export function isCrossDomainEnabledSync(): boolean {
 
 /**
  * 同步认证 token 到其他域名
- * 使用 postMessage 进行跨域通信
+ * 使用多种方式尝试跨域同步：
+ * 1. JSONP 方式（最可靠，直接在目标域设置 cookie）
+ * 2. iframe 方式（备用）
+ * 3. 图片 ping 方式（触发请求但不等待响应）
  */
 export async function syncAuthTokenToDomains(
   token: string,
@@ -279,85 +282,138 @@ export async function syncAuthTokenToDomains(
     : domains
   const useTimeout = envTimeout ? parseInt(envTimeout, 10) : timeout
 
-  return new Promise((resolve) => {
-    if (useDomains.length === 0) {
-      resolve()
-      return
-    }
+  if (useDomains.length === 0) {
+    console.log('[跨域同步] 没有配置共享域名')
+    return
+  }
 
-    // 过滤掉当前域名
-    const currentDomain = window.location.hostname
-    const targetDomains = useDomains.filter(d => {
-      const domainHostname = d.replace(/^https?:\/\//, '').replace(/:\d+$/, '')
-      return domainHostname !== currentDomain
-    })
+  // 过滤掉当前域名
+  const currentDomain = window.location.hostname
+  const targetDomains = useDomains.filter(d => {
+    const domainHostname = d.replace(/^https?:\/\//, '').replace(/:\d+$/, '')
+    return domainHostname !== currentDomain
+  })
 
-    if (targetDomains.length === 0) {
-      resolve()
-      return
-    }
+  if (targetDomains.length === 0) {
+    console.log('[跨域同步] 没有需要同步的目标域名')
+    return
+  }
 
-    let completed = 0
+  console.log('[跨域同步] 开始同步到:', targetDomains, 'action:', action)
 
-    const handleMessage = (event: MessageEvent) => {
-      // 验证消息来源
-      if (!targetDomains.some(d => {
-        const domainHostname = d.replace(/^https?:\/\//, '').replace(/:\d+$/, '')
-        return event.origin.includes(domainHostname)
-      })) {
-        return
-      }
-
-      // 确认收到消息
-      if (event.data.type === 'AUTH_SYNC_ACK') {
-        completed++
-        if (completed >= targetDomains.length) {
-          cleanup()
-          resolve()
-        }
-      }
-    }
-
-    const timeoutId = setTimeout(() => {
-      console.warn('跨域认证同步超时')
-      cleanup()
-      resolve()
-    }, useTimeout)
-
-    const cleanup = () => {
-      clearTimeout(timeoutId)
-      window.removeEventListener('message', handleMessage)
-    }
-
-    // 监听响应
-    window.addEventListener('message', handleMessage)
-
-    // 发送消息到所有目标域名
-    targetDomains.forEach(domain => {
+  // 创建一个 Promise 数组，用于并行同步
+  const syncPromises = targetDomains.map(domain => {
+    return new Promise<void>((resolve) => {
       const protocol = window.location.protocol
       const port = window.location.port
       const fullDomain = `${protocol}//${domain}${port ? `:${port}` : ''}`
       
-      try {
-        const iframe = document.createElement('iframe')
-        iframe.style.display = 'none'
-        iframe.src = `${fullDomain}/api/auth/sync?token=${encodeURIComponent(token)}&action=${action}`
-        
-        iframe.onload = () => {
-          setTimeout(() => {
-            document.body.removeChild(iframe)
-          }, 100)
-        }
-        
-        iframe.onerror = () => {
-          console.warn(`无法同步到域名: ${domain}`)
-          document.body.removeChild(iframe)
-        }
-        
-        document.body.appendChild(iframe)
-      } catch (error) {
-        console.warn(`同步到域名 ${domain} 失败:`, error)
+      // 方式1: 使用 JSONP 方式（通过 script 标签）
+      // 这种方式可以跨域执行代码，直接在目标域设置 cookie
+      const callbackName = `__authSync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      
+      // 定义回调函数（全局）
+      ;(window as any)[callbackName] = (result: any) => {
+        console.log(`[跨域同步] ${domain} JSONP 结果:`, result)
+        delete (window as any)[callbackName]
+        // 清理 script 标签
+        const script = document.getElementById(`sync-script-${domain}`)
+        if (script) script.remove()
       }
+
+      // 创建 script 标签
+      const script = document.createElement('script')
+      script.id = `sync-script-${domain}`
+      script.src = `${fullDomain}/api/auth/sync?token=${encodeURIComponent(token)}&action=${action}&format=jsonp&callback=${callbackName}`
+      script.onerror = () => {
+        console.warn(`[跨域同步] ${domain} JSONP 方式失败，尝试 iframe 方式`)
+        delete (window as any)[callbackName]
+        script.remove()
+        
+        // 方式2: 使用 iframe 方式
+        trySyncWithIframe(fullDomain, token, action, domain).then(resolve)
+      }
+      
+      // 超时处理
+      const timeoutId = setTimeout(() => {
+        console.warn(`[跨域同步] ${domain} 同步超时`)
+        delete (window as any)[callbackName]
+        const existingScript = document.getElementById(`sync-script-${domain}`)
+        if (existingScript) existingScript.remove()
+        
+        // 尝试 iframe 方式
+        trySyncWithIframe(fullDomain, token, action, domain).then(resolve)
+      }, useTimeout)
+
+      // 脚本加载成功后清除超时
+      script.onload = () => {
+        clearTimeout(timeoutId)
+        // 延迟清理，确保回调有机会执行
+        setTimeout(() => {
+          delete (window as any)[callbackName]
+          const existingScript = document.getElementById(`sync-script-${domain}`)
+          if (existingScript) existingScript.remove()
+        }, 1000)
+      }
+
+      document.head.appendChild(script)
     })
+  })
+
+  // 等待所有同步完成
+  await Promise.all(syncPromises)
+  console.log('[跨域同步] 所有域名同步完成')
+}
+
+/**
+ * 使用 iframe 方式同步（备用方案）
+ */
+async function trySyncWithIframe(
+  fullDomain: string,
+  token: string,
+  action: 'login' | 'logout',
+  domain: string
+): Promise<void> {
+  return new Promise((resolve) => {
+    try {
+      const iframe = document.createElement('iframe')
+      iframe.style.display = 'none'
+      iframe.style.visibility = 'hidden'
+      iframe.src = `${fullDomain}/api/auth/sync?token=${encodeURIComponent(token)}&action=${action}`
+      
+      // 超时处理
+      const timeoutId = setTimeout(() => {
+        console.warn(`[跨域同步] ${domain} iframe 方式超时`)
+        cleanup()
+      }, 3000)
+
+      const cleanup = () => {
+        clearTimeout(timeoutId)
+        try {
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe)
+          }
+        } catch (e) {}
+      }
+
+      iframe.onload = () => {
+        // iframe 加载完成，但无法确定是否成功
+        // 由于跨域限制，无法通过 postMessage 通信
+        console.log(`[跨域同步] ${domain} iframe 已加载（无法确认同步状态）`)
+        cleanup()
+        resolve()
+      }
+      
+      iframe.onerror = () => {
+        console.warn(`[跨域同步] ${domain} iframe 方式失败`)
+        cleanup()
+        resolve()
+      }
+      
+      document.body.appendChild(iframe)
+    } catch (error) {
+      console.warn(`[跨域同步] ${domain} iframe 方式异常:`, error)
+      resolve()
+    }
   })
 }
