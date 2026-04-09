@@ -361,6 +361,10 @@ function HomePageContent() {
 
   // 合并加载逻辑：一次性获取所有数据（首页第一页）
   useEffect(() => {
+    // 使用 AbortController 取消之前的请求
+    const controller = new AbortController()
+    const signal = controller.signal
+
     const fetchAllData = async () => {
       setLoading(true)
       setPage(1)
@@ -371,10 +375,14 @@ function HomePageContent() {
       const retryDelay = 1000 // 1秒
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
+        // 检查是否已取消
+        if (signal.aborted) return
+
         try {
           // 使用 /api/tools 端点，支持分页
           const response = await fetch(`/api/tools?page=1&limit=16&sortBy=created_at&sortOrder=desc&t=${Date.now()}`, {
-            cache: 'no-store'
+            cache: 'no-store',
+            signal
           })
 
           // 检查响应状态
@@ -390,11 +398,18 @@ function HomePageContent() {
 
           const data = await response.json()
 
+          // 检查是否已取消
+          if (signal.aborted) return
+
           if (data.success) {
             // 获取首页所需的分类和Tab数据
             const homeResponse = await fetch(`/api/home?t=${Date.now()}`, {
-              cache: 'no-store'
+              cache: 'no-store',
+              signal
             })
+
+            // 检查是否已取消
+            if (signal.aborted) return
 
             if (homeResponse.ok) {
               const homeData = await homeResponse.json()
@@ -425,7 +440,10 @@ function HomePageContent() {
               setError(data.error || '未知错误')
             }
           }
-        } catch (error) {
+        } catch (error: any) {
+          // 如果是中止错误，直接返回不重试
+          if (error.name === 'AbortError' || signal.aborted) return
+
           console.error(`获取首页数据失败 (尝试 ${attempt + 1}/${maxRetries}):`, error)
 
           // 如果不是最后一次尝试，等待后重试
@@ -446,6 +464,11 @@ function HomePageContent() {
     // 只有在没有筛选条件时才加载首页默认数据
     if (!searchQuery && !categoryId && !isFeatured && activeCategory === 'all') {
       fetchAllData()
+    }
+
+    // 组件卸载时取消请求
+    return () => {
+      controller.abort()
     }
   }, [searchQuery, categoryId, isFeatured, activeCategory])
 
