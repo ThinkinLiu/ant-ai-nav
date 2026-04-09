@@ -108,7 +108,9 @@ function AdminToolsContent() {
   const searchParams = useSearchParams()
   const [tools, setTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
-  
+  const [initializing, setInitializing] = useState(true)
+  const [pendingToolsCount, setPendingToolsCount] = useState(0)
+
   // 筛选状态 - 支持URL参数
   const [statusFilter, setStatusFilter] = useState(() => {
     const status = searchParams.get('status')
@@ -197,12 +199,12 @@ function AdminToolsContent() {
         sortBy,
         sortOrder,
       })
-      
+
       if (statusFilter) params.append('status', statusFilter)
       if (categoryId) params.append('categoryId', categoryId)
       if (publisherId) params.append('publisherId', publisherId)
       if (keyword) params.append('keyword', keyword)
-      
+
       const response = await fetch(`/api/admin/tools?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -227,9 +229,46 @@ function AdminToolsContent() {
     }
   }, [token, pagination.page, pagination.pageSize, statusFilter, categoryId, publisherId, keyword, sortBy, sortOrder])
 
+  // 检查待审核工具数量
+  const checkPendingToolsCount = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/tools?status=pending&pageSize=1', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await response.json()
+      if (data.success) {
+        setPendingToolsCount(data.data.pagination.total || 0)
+      }
+    } catch (error) {
+      console.error('检查待审核工具数量失败:', error)
+    }
+  }, [token])
+
+  // 初始化时检查待审核工具数量并设置默认筛选
   useEffect(() => {
-    fetchTools()
-  }, [fetchTools])
+    const initializeFilters = async () => {
+      setInitializing(true)
+      await checkPendingToolsCount()
+      setInitializing(false)
+    }
+    initializeFilters()
+  }, [checkPendingToolsCount])
+
+  // 当待审核工具数量检查完成后，如果URL中没有指定status且没有待审核工具，则显示全部
+  useEffect(() => {
+    if (!initializing) {
+      const urlStatus = searchParams.get('status')
+      if (!urlStatus && pendingToolsCount === 0 && statusFilter === 'pending') {
+        setStatusFilter('')
+      }
+    }
+  }, [initializing, pendingToolsCount, searchParams, statusFilter])
+
+  useEffect(() => {
+    if (!initializing) {
+      fetchTools()
+    }
+  }, [fetchTools, initializing])
 
   const handleSearch = () => {
     setKeyword(searchInput)
