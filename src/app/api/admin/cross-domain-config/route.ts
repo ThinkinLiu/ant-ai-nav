@@ -25,7 +25,6 @@ export async function GET() {
       success: true,
       data: {
         enabled: data?.enabled || false,
-        mainDomain: data?.main_domain || null,
         mainDomains: data?.main_domains || [], // 支持多个主域名
         sharedDomains: data?.shared_domains || [],
         authSyncTimeout: data?.auth_sync_timeout || 5000,
@@ -66,8 +65,7 @@ export async function PUT(request: NextRequest) {
       .from('cross_domain_config')
       .update({
         enabled: enabled ?? false,
-        main_domain: mainDomain || null, // 保留旧字段（兼容）
-        main_domains: domainsToSave, // 新字段：多个主域名
+        main_domains: domainsToSave, // 多个主域名
         shared_domains: sharedDomains || [],
         auth_sync_timeout: authSyncTimeout || 5000,
         updated_at: new Date().toISOString(),
@@ -87,7 +85,6 @@ export async function PUT(request: NextRequest) {
       success: true,
       data: {
         enabled: data?.enabled || false,
-        mainDomain: data?.main_domain || null,
         mainDomains: data?.main_domains || [],
         sharedDomains: data?.shared_domains || [],
         authSyncTimeout: data?.auth_sync_timeout || 5000,
