@@ -123,10 +123,23 @@ export async function POST(request: NextRequest) {
     const matchedMainDomain = getMatchedMainDomain(requestHostname)
     const configuredMainDomains = getMainDomains()
 
+    // 如果没有匹配到配置的主域名，自动计算当前请求的主域名
+    let cookieDomain = matchedMainDomain
+    if (!matchedMainDomain && requestHostname !== 'localhost') {
+      // 自动从请求域名提取主域名（如 xxx.dev.coze.site -> .dev.coze.site）
+      const parts = requestHostname.split('.')
+      if (parts.length >= 3) {
+        cookieDomain = `.${parts.slice(-3).join('.')}`
+      } else if (parts.length === 2) {
+        cookieDomain = `.${requestHostname}`
+      }
+    }
+
     console.log('[登录] 主域名配置:', {
       requestHostname,
       matchedMainDomain,
       configuredMainDomains,
+      cookieDomain,
     })
 
     // 创建 Supabase SSR Server Client
@@ -181,7 +194,7 @@ export async function POST(request: NextRequest) {
           role: 'user',
         },
         session: authData.session,
-        mainDomain: matchedMainDomain,
+        mainDomain: cookieDomain,
         mainDomains: configuredMainDomains,
       },
     })
@@ -192,65 +205,46 @@ export async function POST(request: NextRequest) {
       const isProduction = process.env.NODE_ENV === 'production'
       const cookieMaxAge = 60 * 60 * 24 * 7 // 7 天
 
-      // 如果匹配到配置的主域名，设置带 domain 的 cookie
-      if (matchedMainDomain && matchedMainDomain !== 'localhost') {
-        // 设置访问令牌 cookie
-        response.cookies.set('sb-access-token', access_token, {
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: 'lax',
-          maxAge: cookieMaxAge,
-          path: '/',
-          domain: matchedMainDomain,
-        })
-
-        // 设置刷新令牌 cookie
-        response.cookies.set('sb-refresh-token', refresh_token, {
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: 'lax',
-          maxAge: cookieMaxAge,
-          path: '/',
-          domain: matchedMainDomain,
-        })
-
-        // 设置 auth_token cookie（用于自定义认证逻辑）
-        response.cookies.set('auth_token', access_token, {
-          httpOnly: false,
-          secure: isProduction,
-          sameSite: 'lax',
-          maxAge: cookieMaxAge,
-          path: '/',
-          domain: matchedMainDomain,
-        })
-
-        console.log('[登录] Cookie 已设置主域名:', matchedMainDomain)
-      } else {
-        // 没有匹配的主域名，设置不带 domain 的 cookie（当前域名）
-        response.cookies.set('sb-access-token', access_token, {
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: 'lax',
-          maxAge: cookieMaxAge,
-          path: '/',
-        })
-
-        response.cookies.set('sb-refresh-token', refresh_token, {
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: 'lax',
-          maxAge: cookieMaxAge,
-          path: '/',
-        })
-
-        response.cookies.set('auth_token', access_token, {
-          httpOnly: false,
-          secure: isProduction,
-          sameSite: 'lax',
-          maxAge: cookieMaxAge,
-          path: '/',
-        })
+      // 设置 cookie 的域名
+      const setCookieDomain = (domain: string | null | undefined) => {
+        // localhost 或没有域名时不设置 domain
+        if (domain === 'localhost' || !domain) {
+          return undefined
+        }
+        return domain
       }
+
+      // 设置访问令牌 cookie
+      response.cookies.set('sb-access-token', access_token, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: cookieMaxAge,
+        path: '/',
+        domain: setCookieDomain(cookieDomain),
+      })
+
+      // 设置刷新令牌 cookie
+      response.cookies.set('sb-refresh-token', refresh_token, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: cookieMaxAge,
+        path: '/',
+        domain: setCookieDomain(cookieDomain),
+      })
+
+      // 设置 auth_token cookie（用于自定义认证逻辑）
+      response.cookies.set('auth_token', access_token, {
+        httpOnly: false,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: cookieMaxAge,
+        path: '/',
+        domain: setCookieDomain(cookieDomain),
+      })
+
+      console.log('[登录] Cookie 已设置域名:', cookieDomain || '当前域名')
     }
 
     return response
