@@ -208,7 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // 使用节流来避免频繁更新
-    let throttleTimer: NodeJS.Timeout | null = null
+    let throttleTimer: ReturnType<typeof setTimeout> | null = null
     const throttledHandleActivity = () => {
       if (throttleTimer) return
       throttleTimer = setTimeout(() => {
@@ -251,17 +251,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.success && data.data) {
         const accessToken = data.data.session.access_token
-        setUser(data.data.user)
-        setToken(accessToken)
+        
+        // 先保存到 localStorage（持久化）
         localStorage.setItem('auth_token', accessToken)
-
+        
         // 初始化活动时间
         const now = Date.now()
-        setLastActivityTime(now)
         localStorage.setItem(LAST_ACTIVITY_KEY, now.toString())
-
-        // 同步到其他域名
-        await crossDomainSyncLogin(accessToken)
+        setLastActivityTime(now)
+        
+        // 然后设置状态（React 状态）
+        setToken(accessToken)
+        setUser(data.data.user)
+        
+        // 同步到其他域名（异步，不阻塞）
+        crossDomainSyncLogin(accessToken).catch(err => {
+          console.warn('跨域同步失败:', err)
+        })
 
         return { success: true }
       }
