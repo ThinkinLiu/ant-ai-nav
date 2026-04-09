@@ -96,11 +96,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 从 localStorage 恢复登录状态
   const fetchUser = useCallback(async (authToken: string) => {
+    console.log('[AuthContext] fetchUser 开始，token:', authToken.substring(0, 20) + '...')
     try {
       const response = await fetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${authToken}` },
       })
+      console.log('[AuthContext] /api/auth/me 响应状态:', response.status)
       const data = await response.json()
+      console.log('[AuthContext] /api/auth/me 响应数据:', data)
+      
       if (data.success && data.data) {
         setUser(data.data)
         // 恢复或初始化活动时间
@@ -128,11 +132,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(LAST_ACTIVITY_KEY, now.toString())
         }
       } else {
+        console.log('[AuthContext] /api/auth/me 返回失败，清除 token')
         localStorage.removeItem('auth_token')
         localStorage.removeItem(LAST_ACTIVITY_KEY)
         setToken(null)
       }
-    } catch {
+    } catch (error) {
+      console.error('[AuthContext] fetchUser 异常:', error)
       localStorage.removeItem('auth_token')
       localStorage.removeItem(LAST_ACTIVITY_KEY)
       setToken(null)
