@@ -37,8 +37,8 @@ export function AnnouncementBar() {
           setAnnouncements(data.data)
         }
       } catch (error: any) {
-        // 如果是中止错误，不显示错误
-        if (error.name === 'AbortError') return
+        // 如果是中止错误或请求已中止，不显示错误
+        if (error?.name === 'AbortError' || signal?.aborted) return
         console.error('获取公告失败:', error)
       }
     }

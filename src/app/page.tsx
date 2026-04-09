@@ -340,8 +340,10 @@ function HomePageContent() {
         setError(data.error || '未知错误')
       }
     } catch (error: any) {
-      // 如果是中止错误，不显示错误
-      if (error.name === 'AbortError') return
+      // 如果是中止错误或请求已中止，不显示错误
+      if (error?.name === 'AbortError' || signal?.aborted) {
+        return
+      }
       console.error('获取分类数据失败:', error)
       setError(error instanceof Error ? error.message : '网络错误')
       // 不设置空数据，保留现有数据
