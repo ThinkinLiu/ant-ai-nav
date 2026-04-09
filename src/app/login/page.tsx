@@ -142,7 +142,13 @@ function LoginForm() {
     try {
       const result = await login(email, password)
       if (result.success) {
-        router.push(redirect)
+        // 使用 window.location.href 进行硬刷新，确保 middleware 重新验证
+        // 因为 router.push() 不会触发 middleware
+        if (redirect === '/' || redirect === '/login') {
+          window.location.href = '/'
+        } else {
+          window.location.href = redirect
+        }
       } else {
         setError(translateError(result.error || ''))
       }
