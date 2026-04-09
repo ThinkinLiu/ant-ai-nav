@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import ToolSelector from './ToolSelector'
 
 interface NewsCategory {
   id: number
@@ -68,6 +69,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
     isFeatured: false,
     isHot: false,
     publishedAt: '',
+    relatedTools: [] as number[],
   })
 
   // 加载分类列表
@@ -128,6 +130,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
           isFeatured: news.is_featured || false,
           isHot: news.is_hot || false,
           publishedAt: formatDateTimeForInput(news.published_at),
+          relatedTools: Array.isArray(news.related_tools) ? news.related_tools : [],
         })
       } else {
         toast.error(result.error || '加载失败')
@@ -192,6 +195,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
         isFeatured: user.role === 'admin' ? formData.isFeatured : false,
         isHot: user.role === 'admin' ? formData.isHot : false,
         publishedAt: user.role === 'admin' && formData.publishedAt ? formData.publishedAt : new Date().toISOString(),
+        relatedTools: formData.relatedTools,
       }
 
       let response
@@ -514,6 +518,14 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                 </div>
               )}
 
+              {/* 关联工具选择器 */}
+              <div className="space-y-2">
+                <ToolSelector
+                  selectedTools={formData.relatedTools}
+                  onChange={(tools) => setFormData({ ...formData, relatedTools: tools })}
+                />
+              </div>
+
               {/* 操作按钮 */}
               <div className="space-y-3 pt-4 border-t">
                 <Dialog>
@@ -546,7 +558,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                             </span>
                           )}
                           {formData.publishedAt && (
-                            <span>发布时间: {new Date(formData.publishedAt).toLocaleString('zh-CN')}</span>
+                            <span>发布时间: {formData.publishedAt}</span>
                           )}
                           {formData.source && (
                             <span>来源: {formData.source}</span>

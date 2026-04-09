@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { categoryConfig, getCategoryConfig, getCategoriesConfig } from '../config'
 import { MarkdownViewer } from '@/components/ui/markdown-editor'
 import { Edit } from 'lucide-react'
+import { ToolLogoNext } from '@/components/tools/ToolLogo'
 
 interface NewsItem {
   id: number
@@ -37,6 +38,16 @@ interface RelatedNews {
   view_count: number
 }
 
+interface RelatedTool {
+  id: number
+  name: string
+  slug: string | null
+  name_en: string | null
+  description: string | null
+  logo: string | null
+  website: string | null
+}
+
 interface NavNews {
   id: number
   title: string
@@ -47,9 +58,10 @@ interface Props {
   relatedNews: RelatedNews[]
   prevNews: NavNews | null
   nextNews: NavNews | null
+  relatedTools?: RelatedTool[]
 }
 
-export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
+export function NewsDetail({ news, relatedNews, prevNews, nextNews, relatedTools = [] }: Props) {
   const { user } = useAuth()
   const categories = getCategoriesConfig(news.category)
   const firstCategory = categories[0]
@@ -59,13 +71,14 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
   const canEdit = user?.role === 'admin' || user?.id === news.author_id?.toString()
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    const date = new Date(dateStr)
+    // 使用固定格式避免 hydration 错误
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${year}年${month}月${day}日 ${hours}:${minutes}`
   }
 
   return (
@@ -276,6 +289,43 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews }: Props) {
               </div>
             </div>
           </div>
+
+          {/* Related Tools */}
+          {relatedTools.length > 0 && (
+            <div className="bg-card border rounded-xl p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <span>🔧</span>
+                <span>相关工具</span>
+              </h3>
+              <div className="space-y-3">
+                {relatedTools.map((tool) => (
+                  <Link
+                    key={tool.id}
+                    href={`/tools/${tool.id}`}
+                    className="group flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <ToolLogoNext
+                      logo={tool.logo}
+                      name={tool.name}
+                      website={tool.website}
+                      size={40}
+                      className="h-10 w-10 rounded-lg shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium line-clamp-1 group-hover:text-primary transition-colors">
+                        {tool.name}
+                      </p>
+                      {tool.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                          {tool.description}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Related News */}
           {relatedNews.length > 0 && (

@@ -48,6 +48,7 @@ export async function GET(
       data: {
         ...news,
         category: parsedCategory,
+        related_tools: news.related_tools || [],
         view_count: (news.view_count || 0) + 1,
       },
     })
@@ -105,7 +106,7 @@ export async function PUT(
     const updateData: any = {}
     const allowedFields = [
       'title', 'slug', 'summary', 'content', 'coverImage', 'category',
-      'categories', 'tags', 'source', 'sourceUrl', 'isFeatured', 'isHot', 'publishedAt'
+      'categories', 'tags', 'source', 'sourceUrl', 'isFeatured', 'isHot', 'publishedAt', 'relatedTools'
     ]
 
     allowedFields.forEach(field => {
@@ -121,6 +122,9 @@ export async function PUT(
         } else if (field === 'category') {
           // 兼容旧的 category 字段，转为数组格式
           updateData.category = JSON.stringify([body.category])
+        } else if (field === 'relatedTools') {
+          // 保存关联工具数组
+          updateData.related_tools = body.relatedTools
         } else {
           // 转换字段名为下划线格式
           const dbField = field.replace(/([A-Z])/g, '_$1').toLowerCase()
@@ -165,6 +169,7 @@ export async function PUT(
       data: {
         ...data,
         category: parsedCategory,
+        related_tools: data.related_tools || [],
       },
     })
   } catch (error) {

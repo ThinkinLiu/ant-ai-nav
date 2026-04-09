@@ -137,7 +137,21 @@ export async function GET(request: NextRequest) {
     })).toString('base64')
 
     // 重定向到前端，携带token
-    const redirectUrl = new URL(state, request.url)
+    // 使用环境变量中的正确域名，而不是使用 request.url 中的地址
+    const domain = process.env.COZE_PROJECT_DOMAIN_DEFAULT || request.headers.get('host')
+    const protocol = request.headers.get('x-forwarded-proto') || 'https'
+    const baseUrl = `${protocol}://${domain}`
+
+    // 构建正确的重定向URL
+    let redirectUrl: URL
+    if (state.startsWith('http://') || state.startsWith('https://')) {
+      // 如果state已经是完整URL，直接使用
+      redirectUrl = new URL(state)
+    } else {
+      // 如果state是相对路径，基于正确的域名构建
+      redirectUrl = new URL(state, baseUrl)
+    }
+
     redirectUrl.searchParams.set('token', sessionToken)
     redirectUrl.searchParams.set('userId', userId)
     

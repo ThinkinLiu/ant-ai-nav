@@ -164,7 +164,16 @@ export async function GET(request: NextRequest) {
     })).toString('base64')
 
     // 重定向到前端，携带token
-    const redirectUrl = new URL(state, request.url)
+    // 构建正确的重定向URL
+    let redirectUrl: URL
+    if (state.startsWith('http://') || state.startsWith('https://')) {
+      // 如果state已经是完整URL，直接使用
+      redirectUrl = new URL(state)
+    } else {
+      // 如果state是相对路径，基于正确的域名构建
+      redirectUrl = new URL(state, `${protocol}://${baseUrl}`)
+    }
+
     redirectUrl.searchParams.set('token', sessionToken)
     redirectUrl.searchParams.set('userId', userId)
     

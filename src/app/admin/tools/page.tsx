@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import ImageUploader from '@/components/ui/image-uploader'
 import { ToolLogo } from '@/components/tools/ToolLogo'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,10 +30,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { formatRelativeTime } from '@/lib/utils'
-import { 
-  Check, X, Eye, ExternalLink, Search, EyeOff, ChevronLeft, 
+import {
+  Check, X, Eye, ExternalLink, Search, EyeOff, ChevronLeft,
   ChevronRight, ChevronsLeft, ChevronsRight, RotateCcw, ArrowUpDown,
-  Pin, PinOff, Edit, Loader2, Sparkles, Trash2, Upload, Link2
+  Pin, PinOff, Edit, Loader2, Sparkles, Trash2, Upload, Link2,
+  CheckSquare, Square, AlertTriangle
 } from 'lucide-react'
 
 interface Tool {
@@ -106,7 +108,9 @@ function AdminToolsContent() {
   const searchParams = useSearchParams()
   const [tools, setTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
-  
+  const [initializing, setInitializing] = useState(true)
+  const [pendingToolsCount, setPendingToolsCount] = useState(0)
+
   // 筛选状态 - 支持URL参数
   const [statusFilter, setStatusFilter] = useState(() => {
     const status = searchParams.get('status')
@@ -174,6 +178,18 @@ function AdminToolsContent() {
   })
   const [deleteLoading, setDeleteLoading] = useState(false)
 
+  // 批量操作状态
+  const [selectedToolIds, setSelectedToolIds] = useState<number[]>([])
+  const [batchActionDialog, setBatchActionDialog] = useState<{
+    open: boolean
+    action: 'approve' | 'reject' | 'delete' | null
+  }>({
+    open: false,
+    action: null,
+  })
+  const [batchRejectReason, setBatchRejectReason] = useState('')
+  const [batchActionLoading, setBatchActionLoading] = useState(false)
+
   const fetchTools = useCallback(async () => {
     setLoading(true)
     try {
@@ -183,12 +199,12 @@ function AdminToolsContent() {
         sortBy,
         sortOrder,
       })
-      
+
       if (statusFilter) params.append('status', statusFilter)
       if (categoryId) params.append('categoryId', categoryId)
       if (publisherId) params.append('publisherId', publisherId)
       if (keyword) params.append('keyword', keyword)
-      
+
       const response = await fetch(`/api/admin/tools?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -213,9 +229,46 @@ function AdminToolsContent() {
     }
   }, [token, pagination.page, pagination.pageSize, statusFilter, categoryId, publisherId, keyword, sortBy, sortOrder])
 
+  // 检查待审核工具数量
+  const checkPendingToolsCount = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/tools?status=pending&pageSize=1', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await response.json()
+      if (data.success) {
+        setPendingToolsCount(data.data.pagination.total || 0)
+      }
+    } catch (error) {
+      console.error('检查待审核工具数量失败:', error)
+    }
+  }, [token])
+
+  // 初始化时检查待审核工具数量并设置默认筛选
   useEffect(() => {
-    fetchTools()
-  }, [fetchTools])
+    const initializeFilters = async () => {
+      setInitializing(true)
+      await checkPendingToolsCount()
+      setInitializing(false)
+    }
+    initializeFilters()
+  }, [checkPendingToolsCount])
+
+  // 当待审核工具数量检查完成后，如果URL中没有指定status且没有待审核工具，则显示全部
+  useEffect(() => {
+    if (!initializing) {
+      const urlStatus = searchParams.get('status')
+      if (!urlStatus && pendingToolsCount === 0 && statusFilter === 'pending') {
+        setStatusFilter('')
+      }
+    }
+  }, [initializing, pendingToolsCount, searchParams, statusFilter])
+
+  useEffect(() => {
+    if (!initializing) {
+      fetchTools()
+    }
+  }, [fetchTools, initializing])
 
   const handleSearch = () => {
     setKeyword(searchInput)
@@ -262,6 +315,100 @@ function AdminToolsContent() {
 
   const handlePageSizeChange = (size: string) => {
     setPagination(prev => ({ ...prev, page: 1, pageSize: parseInt(size) }))
+  }
+
+  // 批量选择相关函数
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedToolIds(tools.map(tool => tool.id))
+    } else {
+      setSelectedToolIds([])
+    }
+  }
+
+  const handleSelectTool = (toolId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedToolIds(prev => [...prev, toolId])
+    } else {
+      setSelectedToolIds(prev => prev.filter(id => id !== toolId))
+    }
+  }
+
+  const isAllSelected = tools.length > 0 && selectedToolIds.length === tools.length
+  const isSomeSelected = selectedToolIds.length > 0 && selectedToolIds.length < tools.length
+
+  // 批量操作函数
+  const handleBatchApprove = () => {
+    if (selectedToolIds.length === 0) return
+    setBatchActionDialog({ open: true, action: 'approve' })
+  }
+
+  const handleBatchReject = () => {
+    if (selectedToolIds.length === 0) return
+    setBatchRejectReason('')
+    setBatchActionDialog({ open: true, action: 'reject' })
+  }
+
+  const handleBatchDelete = () => {
+    if (selectedToolIds.length === 0) return
+    setBatchActionDialog({ open: true, action: 'delete' })
+  }
+
+  const handleBatchAction = async () => {
+    if (selectedToolIds.length === 0) return
+
+    setBatchActionLoading(true)
+    try {
+      const action = batchActionDialog.action
+      if (action === 'approve') {
+        await fetch('/api/admin/tools/batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ids: selectedToolIds,
+            action: 'approve',
+          }),
+        })
+      } else if (action === 'reject') {
+        await fetch('/api/admin/tools/batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ids: selectedToolIds,
+            action: 'reject',
+            reason: batchRejectReason,
+          }),
+        })
+      } else if (action === 'delete') {
+        await fetch('/api/admin/tools/batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ids: selectedToolIds,
+            action: 'delete',
+          }),
+        })
+      }
+
+      // 操作成功
+      setBatchActionDialog({ open: false, action: null })
+      setBatchRejectReason('')
+      setSelectedToolIds([])
+      fetchTools()
+    } catch (error) {
+      console.error('批量操作失败:', error)
+    } finally {
+      setBatchActionLoading(false)
+    }
   }
 
   const handleApprove = async (id: number) => {
@@ -593,6 +740,50 @@ function AdminToolsContent() {
             </div>
           </div>
 
+          {/* 批量操作栏 */}
+          {tools.length > 0 && (
+            <div className="flex items-center gap-4 mb-4 p-3 bg-muted/50 rounded-lg">
+              <Checkbox
+                checked={isAllSelected}
+                onCheckedChange={handleSelectAll}
+                className="data-[state=checked]:bg-primary"
+              />
+              <span className="text-sm text-muted-foreground">
+                {isAllSelected ? '全选' : selectedToolIds.length > 0 ? `已选 ${selectedToolIds.length} 项` : '全选'}
+              </span>
+              {selectedToolIds.length > 0 && (
+                <>
+                  <div className="h-4 w-px bg-border" />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBatchApprove}
+                  >
+                    <Check className="h-4 w-4 mr-1" />
+                    批量通过
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBatchReject}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    批量拒绝
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBatchDelete}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    批量删除
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
           {/* 工具列表 */}
           {loading ? (
             <div className="flex justify-center py-12">
@@ -608,9 +799,17 @@ function AdminToolsContent() {
               {tools.map((tool) => (
                 <div
                   key={tool.id}
-                  className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
+                  className={`border rounded-lg p-4 hover:bg-muted/50 transition-colors ${
+                    selectedToolIds.includes(tool.id) ? 'bg-muted/50 border-primary' : ''
+                  }`}
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="pt-1">
+                      <Checkbox
+                        checked={selectedToolIds.includes(tool.id)}
+                        onCheckedChange={(checked) => handleSelectTool(tool.id, !!checked)}
+                      />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <Link
@@ -1090,6 +1289,70 @@ function AdminToolsContent() {
             <Button variant="destructive" onClick={handleDelete} disabled={deleteLoading}>
               {deleteLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               确认删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 批量操作确认弹窗 */}
+      <Dialog open={batchActionDialog.open} onOpenChange={(open) => setBatchActionDialog({ open, action: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {batchActionDialog.action === 'approve' && '批量通过'}
+              {batchActionDialog.action === 'reject' && '批量拒绝'}
+              {batchActionDialog.action === 'delete' && '批量删除'}
+            </DialogTitle>
+            <DialogDescription>
+              {batchActionDialog.action === 'approve' && `您确定要通过选中的 ${selectedToolIds.length} 个工具吗？`}
+              {batchActionDialog.action === 'reject' && `您确定要拒绝选中的 ${selectedToolIds.length} 个工具吗？`}
+              {batchActionDialog.action === 'delete' && `您确定要删除选中的 ${selectedToolIds.length} 个工具吗？此操作无法撤销。`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {batchActionDialog.action === 'reject' && (
+            <div className="py-4 space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">拒绝理由</label>
+                <Textarea
+                  placeholder="请输入拒绝理由，将反馈给发布者"
+                  value={batchRejectReason}
+                  onChange={(e) => setBatchRejectReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+
+          {batchActionDialog.action === 'delete' && (
+            <div className="py-4">
+              <AlertTriangle className="h-8 w-8 text-destructive mb-2" />
+              <p className="text-sm text-muted-foreground">
+                此操作将永久删除选中的 {selectedToolIds.length} 个工具，无法恢复。
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setBatchActionDialog({ open: false, action: null })
+                setBatchRejectReason('')
+              }}
+              disabled={batchActionLoading}
+            >
+              取消
+            </Button>
+            <Button
+              variant={batchActionDialog.action === 'delete' ? 'destructive' : 'default'}
+              onClick={handleBatchAction}
+              disabled={batchActionLoading || (batchActionDialog.action === 'reject' && !batchRejectReason.trim())}
+            >
+              {batchActionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {batchActionDialog.action === 'approve' && '确认通过'}
+              {batchActionDialog.action === 'reject' && '确认拒绝'}
+              {batchActionDialog.action === 'delete' && '确认删除'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -7,7 +7,7 @@ async function getFriendLinks() {
     const client = getSupabaseClient()
     const { data } = await client
       .from('friend_links')
-      .select('id, name, url')
+      .select('id, name, url, logo, description')
       .eq('status', 'approved')
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true })
@@ -199,30 +199,70 @@ export async function Footer({ showLinks }: { showLinks?: boolean }) {
 
         {/* 友情链接 */}
         <div className="mt-8 pt-6 border-t">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
             <span className="font-medium text-foreground">友情链接：</span>
-            {friendLinks.map((link) => (
-              <a
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-primary transition-colors"
-              >
-                {link.name}
-              </a>
-            ))}
+            <div className="flex flex-wrap items-center gap-4">
+              {friendLinks.map((link) => {
+                return (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                    title={link.description || link.name}
+                  >
+                    {link.logo && (
+                      <img
+                        src={link.logo}
+                        alt={link.name}
+                        className="w-5 h-5 rounded object-contain opacity-70 group-hover:opacity-100 transition-all group-hover:scale-110"
+                      />
+                    )}
+                    <span className="text-xs">{link.name}</span>
+                    {/* Tooltip - 显示描述 */}
+                    {link.description && (
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 max-w-xs">
+                        <div className="font-semibold mb-1">{link.name}</div>
+                        <div className="text-muted-foreground leading-relaxed">
+                          {link.description}
+                        </div>
+                        {/* 小箭头 */}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-popover" />
+                      </div>
+                    )}
+                  </a>
+                )
+              })}
+            </div>
             <Link
               href="/link-submit"
-              className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+              className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1 text-xs"
             >
               <span className="text-xs">+</span>
               申请收录
             </Link>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            关注微信公众号「IT老五」获取更多AI工具资讯和教程
-          </p>
+          <div className="mt-3 text-xs text-muted-foreground">
+            关注微信公众号
+            <span className="group relative inline-block cursor-help mx-1 text-primary hover:text-primary/80 transition-colors">
+              「IT老五」
+              {/* 二维码 tooltip */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 p-3 bg-popover rounded-lg shadow-xl border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50" style={{minWidth: '220px'}}>
+                <img
+                  src="/itlao5.jpg"
+                  alt="IT老五微信公众号二维码"
+                  className="w-[192px] h-[192px] object-contain rounded"
+                />
+                <div className="text-xs text-center mt-2 text-muted-foreground">
+                  扫码关注「IT老五」
+                </div>
+                {/* 小箭头 */}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-popover" />
+              </div>
+            </span>
+            获取更多AI工具资讯和教程
+          </div>
         </div>
 
         {/* 版权信息 */}

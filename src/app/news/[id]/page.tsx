@@ -125,8 +125,19 @@ export default async function NewsDetailPage({ params }: Props) {
     .limit(1)
     .single()
 
+  // 获取关联的工具
+  let relatedTools: any[] = []
+  if (news.related_tools && Array.isArray(news.related_tools) && news.related_tools.length > 0) {
+    const { data: tools } = await supabase
+      .from('ai_tools')
+      .select('*')
+      .in('id', news.related_tools)
+
+    relatedTools = tools || []
+  }
+
   return (
-    <NewsDetail 
+    <NewsDetail
       news={{
         ...news,
         view_count: (news.view_count || 0) + 1,
@@ -134,6 +145,7 @@ export default async function NewsDetailPage({ params }: Props) {
       relatedNews={relatedNews}
       prevNews={prevNews}
       nextNews={nextNews}
+      relatedTools={relatedTools}
     />
   )
 }

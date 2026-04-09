@@ -34,9 +34,58 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'created_at'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
     const filter = searchParams.get('filter') // 新增：domestic 或 foreign
+    const ids = searchParams.get('ids') // 新增：支持通过ID列表查询
 
     const client = getSupabaseClient()
-    
+
+    // 如果传入了ids参数，优先通过ID列表查询
+    if (ids) {
+      const idArray = ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id))
+
+      if (idArray.length > 0) {
+        const { data: toolsData, error: toolsError } = await client
+          .from('ai_tools')
+          .select('id, name, slug, description, website, logo, is_featured, is_free, is_pinned, view_count, favorite_count, created_at, category_id, status, reject_reason')
+          .in('id', idArray)
+          .order('is_pinned', { ascending: false })
+          .order('created_at', { ascending: false })
+
+        if (toolsError) {
+          return NextResponse.json(
+            { success: false, error: toolsError.message },
+            { status: 400 }
+          )
+        }
+
+        // 查询分类信息
+        const { data: categoriesData } = await client
+          .from('categories')
+          .select('id, name, slug, description, icon, color')
+
+        const categoryMap = new Map(
+          (categoriesData || []).map(c => [c.id, c])
+        )
+
+        // 组装工具数据
+        const toolsWithCategory = (toolsData || []).map(tool => ({
+          ...tool,
+          category: categoryMap.get(tool.category_id) || null,
+          comment_count: 0,
+        }))
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            data: toolsWithCategory,
+            total: toolsWithCategory.length,
+            page: 1,
+            limit: idArray.length,
+            totalPages: 1,
+          },
+        })
+      }
+    }
+
     // 如果传入的是 categorySlug，先转换为 categoryId
     if (categorySlug && !categoryId) {
       const { data: categoryData } = await client
