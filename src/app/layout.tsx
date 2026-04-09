@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from 'next'
 import { Inspector } from 'react-dev-inspector'
+import { Suspense } from 'react'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { AnalyticsScript } from '@/components/AnalyticsScript'
 import { Toaster } from '@/components/ui/sonner'
+import { OAuthCallbackHandler } from '@/components/OAuthCallbackHandler'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -103,6 +105,9 @@ export default function RootLayout({
         {isDev && <Inspector />}
         <AnalyticsScript />
         <AuthProvider>
+          <Suspense fallback={null}>
+            <OAuthCallbackHandler />
+          </Suspense>
           <Header />
           <main className="flex-1">
             {children}
