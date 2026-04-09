@@ -303,21 +303,22 @@ function HomePageContent() {
   const { user } = useAuth()
 
   // 获取原始分类数据（所有工具统计）
-  const fetchCategoriesData = useCallback(async () => {
+  const fetchCategoriesData = useCallback(async (signal?: AbortSignal) => {
     try {
       const response = await fetch(`/api/home?t=${Date.now()}`, {
-        cache: 'no-store'
+        cache: 'no-store',
+        signal
       })
 
-      // 检查响应状态
+      // 如果请求被取消，直接返回
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        return
       }
 
       // 检查 Content-Type
       const contentType = response.headers.get('content-type')
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Invalid content type: ${contentType}`)
+        return
       }
 
       const data = await response.json()
@@ -338,7 +339,9 @@ function HomePageContent() {
         console.error('API 返回错误:', data.error)
         setError(data.error || '未知错误')
       }
-    } catch (error) {
+    } catch (error: any) {
+      // 如果是中止错误，不显示错误
+      if (error.name === 'AbortError') return
       console.error('获取分类数据失败:', error)
       setError(error instanceof Error ? error.message : '网络错误')
       // 不设置空数据，保留现有数据
@@ -347,15 +350,27 @@ function HomePageContent() {
 
   // 初始加载：获取分类数据
   useEffect(() => {
-    fetchCategoriesData()
+    const controller = new AbortController()
+    const signal = controller.signal
+
+    fetchCategoriesData(signal)
+
+    return () => {
+      controller.abort()
+    }
   }, [fetchCategoriesData])
 
   // 退出筛选模式时重置页码
   useEffect(() => {
     if (isFeatured !== 'true' && !searchQuery && !categoryId && activeCategory === 'all') {
-      setPage(1)
-      setHasMore(true)
-      fetchCategoriesData()
+      const controller = new AbortController()
+      const signal = controller.signal
+
+      fetchCategoriesData(signal)
+
+      return () => {
+        controller.abort()
+      }
     }
   }, [isFeatured, searchQuery, categoryId, activeCategory, fetchCategoriesData])
 
