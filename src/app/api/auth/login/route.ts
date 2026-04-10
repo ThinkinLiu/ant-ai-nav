@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { getEnv } from '@/lib/env-config'
+import { getEnv, getEnvWithFallback, isPlaceholderUrl } from '@/lib/env-config'
 
 /**
  * 获取所有主域名配置（支持多个）
@@ -98,16 +98,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 获取 Supabase 配置
-    const supabaseUrl = getEnv([
-      'NEXT_PUBLIC_SUPABASE_URL',
+    // 获取 Supabase 配置（自动跳过占位符）
+    const supabaseUrl = getEnvWithFallback([
       'COZE_SUPABASE_URL',
+      'NEXT_PUBLIC_SUPABASE_URL',
       'SUPABASE_URL',
     ])
 
-    const supabaseAnonKey = getEnv([
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    const supabaseAnonKey = getEnvWithFallback([
       'COZE_SUPABASE_ANON_KEY',
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
       'SUPABASE_ANON_KEY',
     ])
 
@@ -119,6 +119,8 @@ export async function POST(request: NextRequest) {
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
         COZE_SUPABASE_URL: process.env.COZE_SUPABASE_URL,
         SUPABASE_URL: process.env.SUPABASE_URL,
+        isNextPlaceholder: isPlaceholderUrl(process.env.NEXT_PUBLIC_SUPABASE_URL),
+        isCozPlaceholder: isPlaceholderUrl(process.env.COZE_SUPABASE_URL),
       }
     })
 

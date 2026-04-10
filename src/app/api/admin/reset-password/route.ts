@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getEnvWithFallback } from '@/lib/env-config'
 
 /**
  * 重置管理员密码的临时 API
@@ -35,9 +36,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 获取 Supabase Admin Key
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.COZE_SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ADMIN_KEY
+    // 获取 Supabase Admin Key（自动跳过占位符）
+    const supabaseUrl = getEnvWithFallback([
+      'COZE_SUPABASE_URL',
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'SUPABASE_URL',
+    ])
+    const supabaseServiceKey = getEnvWithFallback([
+      'SUPABASE_SERVICE_ROLE_KEY',
+      'SUPABASE_ADMIN_KEY',
+      'COZE_SUPABASE_ANON_KEY',
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    ])
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json(

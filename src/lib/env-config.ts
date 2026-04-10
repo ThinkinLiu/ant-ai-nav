@@ -30,21 +30,58 @@ export function detectEnvironment(): Environment {
 }
 
 /**
+ * 检测 URL 是否为占位符
+ */
+export function isPlaceholderUrl(url: string | undefined): boolean {
+  if (!url) return true;
+  return url.includes('placeholder') || 
+         url.includes('your-project') || 
+         url.includes('your-project-id') ||
+         url === 'https://placeholder.supabase.co';
+}
+
+/**
+ * 检测密钥是否为占位符
+ */
+export function isPlaceholderKey(key: string | undefined): boolean {
+  if (!key) return true;
+  return key.includes('placeholder') || 
+         key.includes('your-anon') ||
+         key.includes('your-') ||
+         key === 'placeholder-anon-key';
+}
+
+/**
  * 获取环境变量，支持多种命名方式
  * @param keys - 环境变量名称列表（按优先级排序）
  * @param defaultValue - 默认值
+ * @param skipPlaceholder - 是否跳过占位符值
  */
-export function getEnv(keys: string | string[], defaultValue?: string): string | undefined {
+export function getEnv(keys: string | string[], defaultValue?: string, skipPlaceholder: boolean = false): string | undefined {
   const keyList = Array.isArray(keys) ? keys : [keys];
   
   for (const key of keyList) {
     const value = process.env[key];
     if (value) {
+      // 如果启用了跳过占位符，且当前值是占位符，则继续查找下一个
+      if (skipPlaceholder) {
+        if (isPlaceholderUrl(value) || isPlaceholderKey(value)) {
+          continue;
+        }
+      }
       return value;
     }
   }
   
   return defaultValue;
+}
+
+/**
+ * 获取环境变量（自动跳过占位符）
+ * 这是 getEnv 的简化版本，自动跳过占位符值
+ */
+export function getEnvWithFallback(keys: string | string[]): string | undefined {
+  return getEnv(keys, undefined, true);
 }
 
 /**
@@ -142,9 +179,9 @@ export function validateEnv(): EnvValidationResult {
   const missing: string[] = [];
   const warnings: string[] = [];
   
-  // 检查必需的环境变量
-  const supabaseUrl = getEnv(ENV_KEY_MAPPING.supabaseUrl);
-  const supabaseAnonKey = getEnv(ENV_KEY_MAPPING.supabaseAnonKey);
+  // 检查必需的环境变量（自动跳过占位符）
+  let supabaseUrl = getEnvWithFallback(ENV_KEY_MAPPING.supabaseUrl);
+  let supabaseAnonKey = getEnvWithFallback(ENV_KEY_MAPPING.supabaseAnonKey);
   
   if (!supabaseUrl) {
     missing.push('NEXT_PUBLIC_SUPABASE_URL 或 COZE_SUPABASE_URL');
@@ -155,17 +192,17 @@ export function validateEnv(): EnvValidationResult {
   }
   
   // 检查可选的环境变量
-  const cozeApiKey = getEnv(ENV_KEY_MAPPING.cozeApiKey);
+  const cozeApiKey = getEnvWithFallback(ENV_KEY_MAPPING.cozeApiKey);
   if (!cozeApiKey && environment === 'coze') {
     warnings.push('COZE API 配置缺失，AI 生成功能可能不可用');
   }
   
   const s3Config = {
-    s3AccessKeyId: getEnv(ENV_KEY_MAPPING.s3AccessKeyId),
-    s3SecretAccessKey: getEnv(ENV_KEY_MAPPING.s3SecretAccessKey),
-    s3BucketName: getEnv(ENV_KEY_MAPPING.s3BucketName),
-    s3Region: getEnv(ENV_KEY_MAPPING.s3Region),
-    s3Endpoint: getEnv(ENV_KEY_MAPPING.s3Endpoint),
+    s3AccessKeyId: getEnvWithFallback(ENV_KEY_MAPPING.s3AccessKeyId),
+    s3SecretAccessKey: getEnvWithFallback(ENV_KEY_MAPPING.s3SecretAccessKey),
+    s3BucketName: getEnvWithFallback(ENV_KEY_MAPPING.s3BucketName),
+    s3Region: getEnvWithFallback(ENV_KEY_MAPPING.s3Region),
+    s3Endpoint: getEnvWithFallback(ENV_KEY_MAPPING.s3Endpoint),
   };
   
   // 检查 S3 配置的完整性
