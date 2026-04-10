@@ -143,6 +143,11 @@ echo "🔧 配置环境变量..."
 
 if [ -n "$NEXT_PUBLIC_SUPABASE_URL" ]; then
   echo "  ✅ NEXT_PUBLIC_SUPABASE_URL 已设置"
+  # 同时设置 COZE_ 变量，确保运行时也能使用
+  if [ -z "$COZE_SUPABASE_URL" ]; then
+    export COZE_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL"
+    echo "  ✅ 同步设置 COZE_SUPABASE_URL"
+  fi
 elif [ -n "$COZE_SUPABASE_URL" ]; then
   export NEXT_PUBLIC_SUPABASE_URL="$COZE_SUPABASE_URL"
   echo "  ✅ 从 COZE_SUPABASE_URL 映射"
@@ -156,6 +161,11 @@ fi
 
 if [ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
   echo "  ✅ NEXT_PUBLIC_SUPABASE_ANON_KEY 已设置"
+  # 同时设置 COZE_ 变量，确保运行时也能使用
+  if [ -z "$COZE_SUPABASE_ANON_KEY" ]; then
+    export COZE_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+    echo "  ✅ 同步设置 COZE_SUPABASE_ANON_KEY"
+  fi
 elif [ -n "$COZE_SUPABASE_ANON_KEY" ]; then
   export NEXT_PUBLIC_SUPABASE_ANON_KEY="$COZE_SUPABASE_ANON_KEY"
   echo "  ✅ 从 COZE_SUPABASE_ANON_KEY 映射"
