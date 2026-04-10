@@ -28,7 +28,7 @@ SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-$COZE_SUPABASE_URL}"
 SUPABASE_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-$COZE_SUPABASE_ANON_KEY}"
 
 # 从 Supabase URL 提取项目 ID
-# 例如: https://br-giddy-crow-97a8b86c.supabase.co -> br-giddy-crow-97a8b86c
+# 例如: https://your-project.supabase.co -> your-project
 PROJECT_ID=$(echo "$SUPABASE_URL" | sed -E 's|https://([^.]+)\..*|\1|')
 
 echo "📋 Supabase 项目信息:"

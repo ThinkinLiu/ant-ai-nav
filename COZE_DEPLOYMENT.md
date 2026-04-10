@@ -10,10 +10,10 @@
 在 Coze 部署配置界面中，需要手动添加以下环境变量：
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://br-giddy-crow-97a8b86c.supabase2.aidap-global.cn-beijing.volces.com
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjMzNTM3MTM5NDMsInJvbGUiOiJhbm9uIn0.n0YDj3Gjz3xKmcrcc8j_IxnO2VgSkkI4_6tU5q52sO0
-COZE_SUPABASE_URL=https://br-giddy-crow-97a8b86c.supabase2.aidap-global.cn-beijing.volces.com
-COZE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjMzNTM3MTM5NDMsInJvbGUiOiJhbm9uIn0.n0YDj3Gjz3xKmcrcc8j_IxnO2VgSkkI4_6tU5q52sO0
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+COZE_SUPABASE_URL=https://your-project.supabase.co
+COZE_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
 ### 方案 2：修改 .env.build 文件
@@ -21,10 +21,10 @@ COZE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjMzNTM3MTM5
 由于 `.env.build` 会被 git 追踪，可以在 `.env.build` 中添加 Supabase 配置：
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://br-giddy-crow-97a8b86c.supabase2.aidap-global.cn-beijing.volces.com
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjMzNTM3MTM5NDMsInJvbGUiOiJhbm9uIn0.n0YDj3Gjz3xKmcrcc8j_IxnO2VgSkkI4_6tU5q52sO0
-COZE_SUPABASE_URL=https://br-giddy-crow-97a8b86c.supabase2.aidap-global.cn-beijing.volces.com
-COZE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjMzNTM3MTM5NDMsInJvbGUiOiJhbm9uIn0.n0YDj3Gjz3xKmcrcc8j_IxnO2VgSkkI4_6tU5q52sO0
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+COZE_SUPABASE_URL=https://your-project.supabase.co
+COZE_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
 ## 环境变量说明
@@ -52,7 +52,18 @@ COZE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjMzNTM3MTM5
 
 ## 注意事项
 
-- 确保 Supabase URL 和 ANON KEY 与本地开发环境一致
-- 环境变量设置后需要重新部署才能生效
-- 如果使用方案 2，请将 `.env.build` 提交到 Git 仓库
-- 建议同时设置 `NEXT_PUBLIC_` 和 `COZE_` 前缀的变量，以确保前后端都能正确使用
+- **重要**：请勿将包含真实凭据的 `.env.production` 或 `.env.build` 文件提交到 GitHub！
+- 建议使用 Coze 控制台配置环境变量，而不是依赖文件
+- 如果必须使用文件，请确保在 `.gitignore` 中添加相应的文件
+
+## 如何获取环境变量
+
+### Supabase 配置
+1. 登录 [Supabase 控制台](https://supabase.com/dashboard)
+2. 进入项目设置 → API
+3. 复制 `Project URL` 和 `anon public` 密钥
+
+### Coze 认证配置
+1. 登录 Coze 控制台
+2. 进入部署配置 → 环境变量
+3. 配置 Coze 工作负载身份验证
