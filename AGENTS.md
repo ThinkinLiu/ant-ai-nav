@@ -116,6 +116,31 @@ pnpm ts-check     # TypeScript 类型检查
 - 使用 Supabase Auth 进行用户认证
 - JWT token 存储在 Cookie 中
 - 支持跨域认证同步
+- 使用 refreshTrigger 模式实现无闪烁登录/登出体验
+
+### AuthContext 刷新机制
+AuthContext 提供了 `refreshTrigger` 机制用于在不刷新页面的情况下通知组件刷新用户状态：
+
+**导出值**：
+- `refreshTrigger: number` - 刷新触发器计数，每次登录/登出后递增
+- `triggerAuthRefresh: () => void` - 手动触发刷新的函数
+
+**使用方式**：
+```tsx
+// 在组件中使用
+const { user, refreshTrigger, triggerAuthRefresh } = useAuth()
+
+// 监听用户状态变化（当 refreshTrigger 变化时会自动触发）
+useEffect(() => {
+  // 刷新用户相关数据
+  fetchUserData()
+}, [refreshTrigger, user])
+```
+
+**注意事项**：
+- 登录/登出后 AuthContext 会自动触发 refreshTrigger
+- 大多数组件通过依赖 `user` 状态来响应登录变化，无需额外监听 refreshTrigger
+- 只有在数据获取不直接依赖 user 状态时，才需要额外监听 refreshTrigger
 
 ### API 安全
 - 管理接口需要进行身份验证

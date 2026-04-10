@@ -37,7 +37,7 @@ interface MenuItem {
 }
 
 export function HeaderContent() {
-  const { user, logout } = useAuth()
+  const { user, logout, refreshTrigger } = useAuth()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isMenuOpen, setIsMenuOpen] = useState(false)

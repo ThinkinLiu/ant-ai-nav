@@ -29,6 +29,9 @@ interface AuthContextType {
   refreshUser: () => Promise<void>
   updateActivity: () => void
   lastActivityTime: number | null
+  // 刷新触发器 - 用于通知组件刷新数据
+  refreshTrigger: number
+  triggerAuthRefresh: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -38,6 +41,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [lastActivityTime, setLastActivityTime] = useState<number | null>(null)
+  // 刷新触发器 - 用于通知组件在登录/登出后刷新数据
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  // 触发认证刷新 - 组件监听此值变化来刷新数据
+  const triggerAuthRefresh = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1)
+  }, [])
 
   // 跨域认证
   const { syncLogin: crossDomainSyncLogin, syncLogout: crossDomainSyncLogout } = useCrossDomainAuth({
@@ -90,6 +100,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     // 先同步到其他域名
     await crossDomainSyncLogout()
+    // 清除本地存储
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem(LAST_ACTIVITY_KEY)
+    // 清除状态
+    setUser(null)
+    setToken(null)
+    setLastActivityTime(null)
+    // 触发刷新 - 通知所有监听组件刷新数据
+    setRefreshTrigger(prev => prev + 1)
     // 然后执行登出
     await performLogout(token)
   }, [token, performLogout, crossDomainSyncLogout])
@@ -264,6 +283,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(accessToken)
         setUser(data.data.user)
         
+        // 触发刷新 - 通知所有监听组件刷新数据
+        setRefreshTrigger(prev => prev + 1)
+        
         // 同步到其他域名（异步，不阻塞）
         crossDomainSyncLogin(accessToken).catch(err => {
           console.warn('跨域同步失败:', err)
@@ -334,7 +356,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout, 
       refreshUser,
       updateActivity,
-      lastActivityTime
+      lastActivityTime,
+      refreshTrigger,
+      triggerAuthRefresh
     }}>
       {children}
     </AuthContext.Provider>

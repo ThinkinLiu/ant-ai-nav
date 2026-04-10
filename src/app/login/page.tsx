@@ -67,7 +67,7 @@ function LoginForm() {
   const [countdown, setCountdown] = useState(0)
   const [sendingCode, setSendingCode] = useState(false)
   
-  const { login, user, isLoading } = useAuth()
+  const { login, user, isLoading, triggerAuthRefresh } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/'
@@ -142,12 +142,13 @@ function LoginForm() {
     try {
       const result = await login(email, password)
       if (result.success) {
-        // 使用 window.location.href 进行硬刷新，确保 middleware 重新验证
-        // 因为 router.push() 不会触发 middleware
+        // 登录成功后使用软刷新，AuthContext 已触发 refreshTrigger
+        // 使用 router.push 而非 window.location.href 避免页面闪烁
+        toast.success('登录成功')
         if (redirect === '/' || redirect === '/login') {
-          window.location.href = '/'
+          router.push('/')
         } else {
-          window.location.href = redirect
+          router.push(redirect)
         }
       } else {
         setError(translateError(result.error || ''))
@@ -222,8 +223,11 @@ function LoginForm() {
           toast.success('登录成功')
         }
         
-        // 刷新页面以更新AuthContext
-        window.location.href = redirect
+        // 触发 AuthContext 刷新，替代硬刷新
+        triggerAuthRefresh()
+        
+        // 使用软刷新跳转到目标页面
+        router.push(redirect)
         return
       } else {
         setError(data.error || '登录失败')
