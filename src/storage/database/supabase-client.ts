@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { isPlaceholderUrl, isPlaceholderKey } from '@/lib/env-config';
 
 /**
  * Supabase 客户端配置
@@ -18,24 +19,32 @@ let cachedCredentials: SupabaseCredentials | null = null;
 
 /**
  * 获取 Supabase 凭据
- * 在构建时如果环境变量不存在，返回 null 而不是抛出错误
+ * 在构建时如果环境变量不存在或为占位符，返回 null 而不是抛出错误
  */
 function getSupabaseCredentials(): SupabaseCredentials | null {
   if (cachedCredentials) {
     return cachedCredentials;
   }
 
-  // 优先使用标准环境变量，其次使用兼容的环境变量
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.COZE_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.COZE_SUPABASE_ANON_KEY;
+  // 尝试多个环境变量组合
+  const candidates = [
+    { url: process.env.NEXT_PUBLIC_SUPABASE_URL, key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY },
+    { url: process.env.COZE_SUPABASE_URL, key: process.env.COZE_SUPABASE_ANON_KEY },
+    { url: process.env.SUPABASE_URL, key: process.env.SUPABASE_ANON_KEY },
+  ];
 
-  // 在构建时如果环境变量不存在，返回 null
-  if (!url || !anonKey) {
-    return null;
+  for (const candidate of candidates) {
+    if (candidate.url && candidate.key) {
+      // 跳过占位符值
+      if (isPlaceholderUrl(candidate.url) || isPlaceholderKey(candidate.key)) {
+        continue;
+      }
+      cachedCredentials = { url: candidate.url, anonKey: candidate.key };
+      return cachedCredentials;
+    }
   }
 
-  cachedCredentials = { url, anonKey };
-  return cachedCredentials;
+  return null;
 }
 
 /**
