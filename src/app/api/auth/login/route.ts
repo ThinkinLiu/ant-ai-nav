@@ -111,6 +111,17 @@ export async function POST(request: NextRequest) {
       'SUPABASE_ANON_KEY',
     ])
 
+    console.log('[登录] Supabase 配置检查:', {
+      supabaseUrl: supabaseUrl ? '已设置' : '未设置',
+      supabaseUrlValue: supabaseUrl,
+      supabaseAnonKey: supabaseAnonKey ? '已设置' : '未设置',
+      allEnvKeys: {
+        NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        COZE_SUPABASE_URL: process.env.COZE_SUPABASE_URL,
+        SUPABASE_URL: process.env.SUPABASE_URL,
+      }
+    })
+
     if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json(
         { success: false, error: '服务器配置错误' },
