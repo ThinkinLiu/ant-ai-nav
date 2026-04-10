@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { getEnv, getEnvWithFallback, isPlaceholderUrl } from '@/lib/env-config'
-import { fetchCrossDomainConfig } from '@/lib/auth/cross-domain'
+import { getSupabaseClient } from '@/storage/database/supabase-client'
 
 // 本地缓存（5分钟）
 let mainDomainsCache: {
@@ -12,7 +12,7 @@ const CACHE_TTL = 5 * 60 * 1000
 
 /**
  * 获取所有主域名配置（支持多个）
- * 优先从数据库读取，fallback 到环境变量
+ * 直接从数据库读取，fallback 到环境变量
  */
 async function getMainDomains(): Promise<string[]> {
   // 检查缓存
@@ -22,13 +22,18 @@ async function getMainDomains(): Promise<string[]> {
 
   const domains: string[] = []
 
-  // 1. 优先从数据库读取
+  // 1. 直接从数据库读取
   try {
-    const config = await fetchCrossDomainConfig()
-    if (config.enabled && config.mainDomains && config.mainDomains.length > 0) {
-      domains.push(...config.mainDomains)
-    } else if (config.enabled && config.mainDomain) {
-      domains.push(config.mainDomain)
+    const client = getSupabaseClient()
+    const { data, error } = await client
+      .from('cross_domain_config')
+      .select('main_domains, enabled')
+      .eq('id', 1)
+      .single()
+    
+    if (!error && data && data.enabled) {
+      const mainDomains = data.main_domains || []
+      domains.push(...mainDomains)
     }
   } catch (error) {
     console.error('[登录] 读取跨域配置失败:', error)
