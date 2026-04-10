@@ -23,7 +23,7 @@ interface CrossDomainConfig {
 /**
  * 从 API 获取跨域配置
  */
-async function fetchCrossDomainConfig(): Promise<CrossDomainConfig> {
+export async function fetchCrossDomainConfig(): Promise<CrossDomainConfig> {
   // 检查缓存
   if (configCache && Date.now() - configCache.timestamp < CACHE_TTL) {
     return {

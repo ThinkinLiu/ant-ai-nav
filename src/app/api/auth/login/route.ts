@@ -1,25 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { getEnv, getEnvWithFallback, isPlaceholderUrl } from '@/lib/env-config'
+import { fetchCrossDomainConfig } from '@/lib/auth/cross-domain'
+
+// 本地缓存（5分钟）
+let mainDomainsCache: {
+  domains: string[]
+  timestamp: number
+} | null = null
+const CACHE_TTL = 5 * 60 * 1000
 
 /**
  * 获取所有主域名配置（支持多个）
+ * 优先从数据库读取，fallback 到环境变量
  */
-function getMainDomains(): string[] {
-  const domains: string[] = []
-  
-  // 优先使用环境变量（多个域名）
-  if (process.env.NEXT_PUBLIC_MAIN_DOMAINS) {
-    domains.push(...process.env.NEXT_PUBLIC_MAIN_DOMAINS.split(',').map(d => d.trim()))
+async function getMainDomains(): Promise<string[]> {
+  // 检查缓存
+  if (mainDomainsCache && Date.now() - mainDomainsCache.timestamp < CACHE_TTL) {
+    return mainDomainsCache.domains
   }
-  
-  // 兼容单个域名
-  if (process.env.NEXT_PUBLIC_MAIN_DOMAIN) {
-    if (!domains.includes(process.env.NEXT_PUBLIC_MAIN_DOMAIN)) {
-      domains.push(process.env.NEXT_PUBLIC_MAIN_DOMAIN)
+
+  const domains: string[] = []
+
+  // 1. 优先从数据库读取
+  try {
+    const config = await fetchCrossDomainConfig()
+    if (config.enabled && config.mainDomains && config.mainDomains.length > 0) {
+      domains.push(...config.mainDomains)
+    } else if (config.enabled && config.mainDomain) {
+      domains.push(config.mainDomain)
+    }
+  } catch (error) {
+    console.error('[登录] 读取跨域配置失败:', error)
+  }
+
+  // 2. Fallback 到环境变量
+  if (domains.length === 0) {
+    if (process.env.NEXT_PUBLIC_MAIN_DOMAINS) {
+      domains.push(...process.env.NEXT_PUBLIC_MAIN_DOMAINS.split(',').map(d => d.trim()))
+    }
+    if (process.env.NEXT_PUBLIC_MAIN_DOMAIN) {
+      if (!domains.includes(process.env.NEXT_PUBLIC_MAIN_DOMAIN)) {
+        domains.push(process.env.NEXT_PUBLIC_MAIN_DOMAIN)
+      }
     }
   }
-  
+
+  // 更新缓存
+  mainDomainsCache = {
+    domains,
+    timestamp: Date.now(),
+  }
+
   return domains
 }
 
@@ -70,8 +102,8 @@ function isDomainMatch(hostname: string, mainDomain: string): boolean {
 /**
  * 获取当前域名对应的主域名（如果匹配配置）
  */
-function getMatchedMainDomain(hostname: string): string | null {
-  const mainDomains = getMainDomains()
+async function getMatchedMainDomain(hostname: string): Promise<string | null> {
+  const mainDomains = await getMainDomains()
   
   if (mainDomains.length === 0) {
     return null
@@ -133,8 +165,8 @@ export async function POST(request: NextRequest) {
 
     // 获取请求的主机信息
     const requestHostname = request.headers.get('host')?.split(':')[0] || 'localhost'
-    const matchedMainDomain = getMatchedMainDomain(requestHostname)
-    const configuredMainDomains = getMainDomains()
+    const matchedMainDomain = await getMatchedMainDomain(requestHostname)
+    const configuredMainDomains = await getMainDomains()
 
     // 如果没有匹配到配置的主域名，自动计算当前请求的主域名
     let cookieDomain = matchedMainDomain
