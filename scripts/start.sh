@@ -11,6 +11,34 @@ echo "  Port: $PORT"
 echo "  Hostname: $HOSTNAME"
 echo ""
 
+# ============================================
+# 加载环境变量文件（按优先级）
+# 优先级：.env.local > .env.production > .env
+# ============================================
+
+if [ -f .env.local ]; then
+  echo "📄 加载 .env.local 文件..."
+  set -a
+  source .env.local 2>/dev/null || true
+  set +a
+  echo "✅ .env.local 已加载"
+  echo ""
+fi
+
+if [ -f .env.production ]; then
+  echo "📄 加载 .env.production 文件..."
+  set -a
+  source .env.production 2>/dev/null || true
+  set +a
+  echo "✅ .env.production 已加载"
+  echo ""
+fi
+
+echo "📋 环境变量状态:"
+echo "  - NEXT_PUBLIC_SUPABASE_URL: $([ -n "$NEXT_PUBLIC_SUPABASE_URL" ] && echo "已设置" || echo "未设置")"
+echo "  - NEXT_PUBLIC_SUPABASE_ANON_KEY: $([ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && echo "已设置" || echo "未设置")"
+echo ""
+
 # 检测是否在 standalone 模式下运行
 if [ -f "server.js" ]; then
   echo "✅ 检测到 standalone 模式（Docker 部署）"

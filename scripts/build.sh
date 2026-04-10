@@ -101,6 +101,7 @@ echo ""
 
 # ============================================
 # 加载环境变量文件（按优先级）
+# 优先级：.env.local > .env.build > .env.production
 # ============================================
 
 if [ -f .env.local ]; then
@@ -118,6 +119,15 @@ if [ -f .env.build ]; then
   source .env.build 2>/dev/null || true
   set +a
   echo "✅ .env.build 已加载"
+  echo ""
+fi
+
+if [ -f .env.production ]; then
+  echo "📄 加载 .env.production 文件..."
+  set -a
+  source .env.production 2>/dev/null || true
+  set +a
+  echo "✅ .env.production 已加载"
   echo ""
 fi
 
