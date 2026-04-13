@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     if (!publisherId) {
       // 创建一个系统管理员账户
       const { data: adminUser, error: adminError } = await client.auth.signUp({
-        email: 'admin@antai.com',
+        email: 'admin@mayiai.site',
         password: 'Admin123!',
         options: {
           data: { name: '系统管理员' },
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       if (adminUser.user) {
         await client.from('users').insert({
           id: adminUser.user.id,
-          email: 'admin@antai.com',
+          email: 'admin@mayiai.site',
           name: '系统管理员',
           role: 'admin',
           is_active: true,
