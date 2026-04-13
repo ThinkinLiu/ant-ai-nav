@@ -59,7 +59,7 @@ interface UserStats {
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, token, logout, isLoading } = useAuth()
+  const { user, token, logout, isLoading, triggerAuthRefresh } = useAuth()
   const { confirm, ConfirmDialog } = useConfirm()
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [comments, setComments] = useState<Comment[]>([])
@@ -196,7 +196,8 @@ export default function ProfilePage() {
         if (data.success) {
           toast.success('头像上传成功')
           setAvatarPreview(base64)
-          window.location.reload() // 刷新页面更新头像
+          // 使用软刷新替代硬刷新
+          triggerAuthRefresh()
         } else {
           toast.error(data.error || '上传失败')
         }
@@ -273,7 +274,8 @@ export default function ProfilePage() {
       if (data.success) {
         setEditMode(false)
         // 刷新用户信息
-        window.location.reload()
+        triggerAuthRefresh()
+        toast.success('保存成功')
       }
     } catch (error) {
       console.error('保存失败:', error)

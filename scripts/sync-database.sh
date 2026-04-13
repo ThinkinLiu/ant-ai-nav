@@ -15,20 +15,19 @@ echo "=========================================="
 echo ""
 
 # 检查环境变量
-if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] && [ -z "$COZE_SUPABASE_URL" ]; then
+if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
   echo "❌ 错误: 缺少 Supabase URL 配置"
-  echo "请设置以下任一环境变量:"
+  echo "请设置环境变量:"
   echo "  - NEXT_PUBLIC_SUPABASE_URL"
-  echo "  - COZE_SUPABASE_URL"
   exit 1
 fi
 
 # 获取 Supabase 项目信息
-SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-$COZE_SUPABASE_URL}"
-SUPABASE_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-$COZE_SUPABASE_ANON_KEY}"
+SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL"
+SUPABASE_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
 
 # 从 Supabase URL 提取项目 ID
-# 例如: https://br-giddy-crow-97a8b86c.supabase.co -> br-giddy-crow-97a8b86c
+# 例如: https://your-project.supabase.co -> your-project
 PROJECT_ID=$(echo "$SUPABASE_URL" | sed -E 's|https://([^.]+)\..*|\1|')
 
 echo "📋 Supabase 项目信息:"

@@ -46,10 +46,29 @@ export async function GET(request: NextRequest) {
       .order('sort_order', { ascending: true })
 
     if (categoriesError) {
-      return NextResponse.json(
-        { success: false, error: categoriesError.message },
-        { status: 400 }
-      )
+      // 返回默认分类数据
+      const defaultCategories = [
+        { id: 1, name: 'AI聊天', slug: 'chatbots', icon: 'message-circle', sort_order: 1, toolCount: 0 },
+        { id: 2, name: 'AI图像', slug: 'image', icon: 'image', sort_order: 2, toolCount: 0 },
+        { id: 3, name: 'AI视频', slug: 'video', icon: 'video', sort_order: 3, toolCount: 0 },
+        { id: 4, name: 'AI写作', slug: 'writing', icon: 'pen-tool', sort_order: 4, toolCount: 0 },
+        { id: 5, name: 'AI音频', slug: 'audio', icon: 'music', sort_order: 5, toolCount: 0 },
+        { id: 6, name: 'AI编程', slug: 'coding', icon: 'code', sort_order: 6, toolCount: 0 },
+      ]
+      return NextResponse.json({
+        success: true,
+        data: {
+          categories: defaultCategories,
+          hotTools: [],
+          latestTools: [],
+          tabTools: [],
+          tabNews: [],
+          tabFame: [],
+          tabTimeline: [],
+          tabs: [],
+          totalToolCount: 0,
+        },
+      })
     }
 
     // 2. 使用 Supabase count 功能统计每个分类的工具数量
@@ -99,16 +118,10 @@ export async function GET(request: NextRequest) {
     ])
 
     if (hotToolsResult.error) {
-      return NextResponse.json(
-        { success: false, error: hotToolsResult.error.message },
-        { status: 400 }
-      )
+      console.error('获取热门工具错误:', hotToolsResult.error.message)
     }
     if (latestToolsResult.error) {
-      return NextResponse.json(
-        { success: false, error: latestToolsResult.error.message },
-        { status: 400 }
-      )
+      console.error('获取最新工具错误:', latestToolsResult.error.message)
     }
 
     // 创建分类映射

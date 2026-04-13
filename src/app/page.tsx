@@ -303,21 +303,22 @@ function HomePageContent() {
   const { user } = useAuth()
 
   // 获取原始分类数据（所有工具统计）
-  const fetchCategoriesData = useCallback(async () => {
+  const fetchCategoriesData = useCallback(async (signal?: AbortSignal) => {
     try {
       const response = await fetch(`/api/home?t=${Date.now()}`, {
-        cache: 'no-store'
+        cache: 'no-store',
+        signal
       })
 
-      // 检查响应状态
+      // 如果请求被取消，直接返回
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        return
       }
 
       // 检查 Content-Type
       const contentType = response.headers.get('content-type')
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Invalid content type: ${contentType}`)
+        return
       }
 
       const data = await response.json()
@@ -338,7 +339,11 @@ function HomePageContent() {
         console.error('API 返回错误:', data.error)
         setError(data.error || '未知错误')
       }
-    } catch (error) {
+    } catch (error: any) {
+      // 如果是中止错误或请求已中止，不显示错误
+      if (error?.name === 'AbortError' || signal?.aborted) {
+        return
+      }
       console.error('获取分类数据失败:', error)
       setError(error instanceof Error ? error.message : '网络错误')
       // 不设置空数据，保留现有数据
@@ -347,20 +352,36 @@ function HomePageContent() {
 
   // 初始加载：获取分类数据
   useEffect(() => {
-    fetchCategoriesData()
+    const controller = new AbortController()
+    const signal = controller.signal
+
+    fetchCategoriesData(signal)
+
+    return () => {
+      controller.abort()
+    }
   }, [fetchCategoriesData])
 
   // 退出筛选模式时重置页码
   useEffect(() => {
     if (isFeatured !== 'true' && !searchQuery && !categoryId && activeCategory === 'all') {
-      setPage(1)
-      setHasMore(true)
-      fetchCategoriesData()
+      const controller = new AbortController()
+      const signal = controller.signal
+
+      fetchCategoriesData(signal)
+
+      return () => {
+        controller.abort()
+      }
     }
   }, [isFeatured, searchQuery, categoryId, activeCategory, fetchCategoriesData])
 
   // 合并加载逻辑：一次性获取所有数据（首页第一页）
   useEffect(() => {
+    // 使用 AbortController 取消之前的请求
+    const controller = new AbortController()
+    const signal = controller.signal
+
     const fetchAllData = async () => {
       setLoading(true)
       setPage(1)
@@ -371,10 +392,14 @@ function HomePageContent() {
       const retryDelay = 1000 // 1秒
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
+        // 检查是否已取消
+        if (signal.aborted) return
+
         try {
           // 使用 /api/tools 端点，支持分页
           const response = await fetch(`/api/tools?page=1&limit=16&sortBy=created_at&sortOrder=desc&t=${Date.now()}`, {
-            cache: 'no-store'
+            cache: 'no-store',
+            signal
           })
 
           // 检查响应状态
@@ -390,11 +415,18 @@ function HomePageContent() {
 
           const data = await response.json()
 
+          // 检查是否已取消
+          if (signal.aborted) return
+
           if (data.success) {
             // 获取首页所需的分类和Tab数据
             const homeResponse = await fetch(`/api/home?t=${Date.now()}`, {
-              cache: 'no-store'
+              cache: 'no-store',
+              signal
             })
+
+            // 检查是否已取消
+            if (signal.aborted) return
 
             if (homeResponse.ok) {
               const homeData = await homeResponse.json()
@@ -425,7 +457,10 @@ function HomePageContent() {
               setError(data.error || '未知错误')
             }
           }
-        } catch (error) {
+        } catch (error: any) {
+          // 如果是中止错误，直接返回不重试
+          if (error.name === 'AbortError' || signal.aborted) return
+
           console.error(`获取首页数据失败 (尝试 ${attempt + 1}/${maxRetries}):`, error)
 
           // 如果不是最后一次尝试，等待后重试
@@ -446,6 +481,11 @@ function HomePageContent() {
     // 只有在没有筛选条件时才加载首页默认数据
     if (!searchQuery && !categoryId && !isFeatured && activeCategory === 'all') {
       fetchAllData()
+    }
+
+    // 组件卸载时取消请求
+    return () => {
+      controller.abort()
     }
   }, [searchQuery, categoryId, isFeatured, activeCategory])
 

@@ -1,23 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
+
+/**
+ * 从多个来源获取 token
+ * 优先级：Authorization header > cookie
+ */
+function getToken(request: NextRequest): string | null {
+  // 1. 优先从 Authorization header 获取
+  const authHeader = request.headers.get('authorization')
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7)
+  }
+  
+  // 2. 从 cookie 获取
+  const cookies = request.cookies.getAll()
+  const authCookie = cookies.find(c => c.name === 'auth_token')
+  if (authCookie?.value) {
+    return authCookie.value
+  }
+  
+  // 3. 从 Supabase SSR cookie 获取
+  const sbAccessToken = cookies.find(c => c.name === 'sb-access-token')
+  if (sbAccessToken?.value) {
+    return sbAccessToken.value
+  }
+  
+  return null
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = getToken(request)
+    
+    if (!token) {
       return NextResponse.json(
         { success: false, error: '未登录' },
         { status: 401 }
       )
     }
 
-    const token = authHeader.substring(7)
-    const client = getSupabaseClient(token)
+    // 获取 Supabase 配置（支持 NEXT_PUBLIC_ 和 COZE_ 前缀）
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.COZE_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.COZE_SUPABASE_ANON_KEY
 
-    // 获取当前用户
-    const { data: { user }, error: authError } = await client.auth.getUser()
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json(
+        { success: false, error: '服务器配置错误' },
+        { status: 500 }
+      )
+    }
+
+    // 使用 JWT 直接验证
+    const client = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
+
+    const { data: { user }, error: authError } = await client.auth.getUser(token)
 
     if (authError || !user) {
+      console.error('[/api/auth/me] Token 验证失败:', authError?.message)
       return NextResponse.json(
         { success: false, error: '无效的登录状态' },
         { status: 401 }
@@ -25,7 +70,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取用户详细信息
-    const { data: userData } = await client
+    const dbClient = getSupabaseClient(token)
+    const { data: userData } = await dbClient
       .from('users')
       .select('*')
       .eq('id', user.id)
@@ -41,7 +87,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('获取用户信息错误:', error)
+    console.error('[/api/auth/me] Error:', error)
     return NextResponse.json(
       { success: false, error: '服务器错误' },
       { status: 500 }

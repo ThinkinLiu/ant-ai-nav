@@ -24,6 +24,7 @@ import {
 interface CrossDomainConfig {
   enabled: boolean
   mainDomain: string | null
+  mainDomains: string[]
   sharedDomains: string[]
   authSyncTimeout: number
 }
@@ -32,12 +33,14 @@ export default function CrossDomainConfigPage() {
   const [config, setConfig] = useState<CrossDomainConfig>({
     enabled: false,
     mainDomain: '',
+    mainDomains: [],
     sharedDomains: [],
     authSyncTimeout: 5000,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [newDomain, setNewDomain] = useState('')
+  const [newMainDomain, setNewMainDomain] = useState('')
 
   // 加载配置
   const loadConfig = async () => {
@@ -50,6 +53,7 @@ export default function CrossDomainConfigPage() {
         setConfig({
           enabled: result.data.enabled,
           mainDomain: result.data.mainDomain || '',
+          mainDomains: result.data.mainDomains || [],
           sharedDomains: result.data.sharedDomains || [],
           authSyncTimeout: result.data.authSyncTimeout || 5000,
         })
@@ -78,6 +82,7 @@ export default function CrossDomainConfigPage() {
         body: JSON.stringify({
           enabled: config.enabled,
           mainDomain: config.mainDomain,
+          mainDomains: config.mainDomains,
           sharedDomains: config.sharedDomains,
           authSyncTimeout: config.authSyncTimeout,
         }),
@@ -97,6 +102,41 @@ export default function CrossDomainConfigPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  // 添加主域名
+  const addMainDomain = () => {
+    if (!newMainDomain.trim()) return
+
+    // 验证域名格式（支持带点或不带点）
+    const domainRegex = /^(\.)?[a-z0-9]+(-[a-z0-9]+)*\.[a-z]{2,}$/i
+    if (!domainRegex.test(newMainDomain.trim())) {
+      toast.error('域名格式不正确')
+      return
+    }
+
+    // 检查重复
+    const normalizedDomain = newMainDomain.trim().startsWith('.') 
+      ? newMainDomain.trim() 
+      : `.${newMainDomain.trim()}`
+    if (config.mainDomains.some(d => d === normalizedDomain || d === newMainDomain.trim())) {
+      toast.error('域名已存在')
+      return
+    }
+
+    setConfig({
+      ...config,
+      mainDomains: [...config.mainDomains, normalizedDomain],
+    })
+    setNewMainDomain('')
+  }
+
+  // 删除主域名
+  const removeMainDomain = (domain: string) => {
+    setConfig({
+      ...config,
+      mainDomains: config.mainDomains.filter(d => d !== domain),
+    })
   }
 
   // 添加域名
@@ -136,6 +176,7 @@ export default function CrossDomainConfigPage() {
     setConfig({
       enabled: false,
       mainDomain: '',
+      mainDomains: [],
       sharedDomains: [],
       authSyncTimeout: 5000,
     })
@@ -186,35 +227,72 @@ export default function CrossDomainConfigPage() {
 
           <Separator />
 
-          {/* 主域名配置 */}
+          {/* 多个主域名配置 */}
           <div className="space-y-3">
             <Label>
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
-                主域名（子域名共享）
+                主域名列表（子域名共享）
               </div>
             </Label>
-            <Input
-              placeholder="例如：example.com"
-              value={config.mainDomain || ''}
-              onChange={(e) =>
-                setConfig({ ...config, mainDomain: e.target.value })
-              }
-              disabled={!config.enabled}
-            />
+            <div className="flex gap-2">
+              <Input
+                placeholder="例如：example.com 或 .example.com"
+                value={newMainDomain}
+                onChange={(e) => setNewMainDomain(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addMainDomain()}
+                disabled={!config.enabled}
+              />
+              <Button
+                onClick={addMainDomain}
+                disabled={!config.enabled || !newMainDomain.trim()}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
             <p className="text-sm text-muted-foreground">
-              用于子域名共享（如 www.example.com, ai.example.com）。
-              只需配置主域名，所有子域名将自动共享登录状态。
+              用于子域名共享。配置主域名后，该主域名下的所有子域名自动共享登录状态。
+              支持配置多个不同主域名（如 .itlao5.com, .mayiai.site）。
             </p>
-            {config.mainDomain && (
+            {config.mainDomains.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {config.mainDomains.map((domain) => (
+                  <Badge key={domain} variant="default" className="gap-1 pr-1 bg-green-600">
+                    {domain}
+                    <button
+                      type="button"
+                      className="h-3 w-3 cursor-pointer hover:text-destructive rounded-sm flex items-center justify-center"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        removeMainDomain(domain)
+                      }}
+                      title="删除域名"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {config.mainDomains.length > 0 && (
               <Alert>
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertDescription>
-                  子域名将共享：{config.mainDomain}
+                  已配置 {config.mainDomains.length} 个主域名，共享登录状态
                 </AlertDescription>
               </Alert>
             )}
           </div>
+
+          <Separator />
+
+          {/* 兼容：单个主域名（隐藏域） */}
+          <input 
+            type="hidden" 
+            value={config.mainDomain || ''} 
+            onChange={() => {}} 
+          />
 
           <Separator />
 

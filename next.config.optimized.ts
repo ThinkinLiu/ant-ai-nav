@@ -1,5 +1,34 @@
 import type { NextConfig } from 'next';
 
+/**
+ * 检测值是否为占位符
+ */
+function isPlaceholder(value: string | undefined): boolean {
+  if (!value) return true;
+  return value.includes('placeholder') || 
+         value.includes('your-') ||
+         value === 'https://placeholder.supabase.co' ||
+         value === 'placeholder-anon-key';
+}
+
+/**
+ * 获取非占位符的环境变量值
+ */
+function getEnvValue(...values: (string | undefined)[]): string {
+  for (const value of values) {
+    if (value && !isPlaceholder(value)) {
+      return value;
+    }
+  }
+  // 如果所有值都是占位符，返回最后一个非空值（避免完全为空）
+  for (const value of values) {
+    if (value) {
+      return value;
+    }
+  }
+  return '';
+}
+
 const nextConfig: NextConfig = {
   // 启用 standalone 输出模式，用于 Docker 部署
   output: 'standalone',
@@ -55,22 +84,6 @@ const nextConfig: NextConfig = {
       './node_modules/coze-coding-dev-sdk/**',
       './public/**',
     ],
-  },
-
-  // 环境变量配置 - 在构建时注入
-  env: {
-    NEXT_PUBLIC_SUPABASE_URL:
-      process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      process.env.COZE_SUPABASE_URL ||
-      process.env.SUPABASE_URL ||
-      '',
-
-    NEXT_PUBLIC_SUPABASE_ANON_KEY:
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      process.env.COZE_SUPABASE_ANON_KEY ||
-      process.env.SUPABASE_ANON_KEY ||
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      '',
   },
 };
 

@@ -29,6 +29,9 @@ interface AuthContextType {
   refreshUser: () => Promise<void>
   updateActivity: () => void
   lastActivityTime: number | null
+  // 刷新触发器 - 用于通知组件刷新数据
+  refreshTrigger: number
+  triggerAuthRefresh: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -38,6 +41,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [lastActivityTime, setLastActivityTime] = useState<number | null>(null)
+  // 刷新触发器 - 用于通知组件在登录/登出后刷新数据
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  // 触发认证刷新 - 组件监听此值变化来刷新数据
+  const triggerAuthRefresh = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1)
+  }, [])
 
   // 跨域认证
   const { syncLogin: crossDomainSyncLogin, syncLogout: crossDomainSyncLogout } = useCrossDomainAuth({
@@ -90,17 +100,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     // 先同步到其他域名
     await crossDomainSyncLogout()
+    // 清除本地存储
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem(LAST_ACTIVITY_KEY)
+    // 清除状态
+    setUser(null)
+    setToken(null)
+    setLastActivityTime(null)
+    // 触发刷新 - 通知所有监听组件刷新数据
+    setRefreshTrigger(prev => prev + 1)
     // 然后执行登出
     await performLogout(token)
   }, [token, performLogout, crossDomainSyncLogout])
 
   // 从 localStorage 恢复登录状态
   const fetchUser = useCallback(async (authToken: string) => {
+    console.log('[AuthContext] fetchUser 开始，token:', authToken.substring(0, 20) + '...')
     try {
       const response = await fetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${authToken}` },
       })
+      console.log('[AuthContext] /api/auth/me 响应状态:', response.status)
       const data = await response.json()
+      console.log('[AuthContext] /api/auth/me 响应数据:', data)
+      
       if (data.success && data.data) {
         setUser(data.data)
         // 恢复或初始化活动时间
@@ -128,11 +151,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(LAST_ACTIVITY_KEY, now.toString())
         }
       } else {
+        console.log('[AuthContext] /api/auth/me 返回失败，清除 token')
         localStorage.removeItem('auth_token')
         localStorage.removeItem(LAST_ACTIVITY_KEY)
         setToken(null)
       }
-    } catch {
+    } catch (error) {
+      console.error('[AuthContext] fetchUser 异常:', error)
       localStorage.removeItem('auth_token')
       localStorage.removeItem(LAST_ACTIVITY_KEY)
       setToken(null)
@@ -202,7 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // 使用节流来避免频繁更新
-    let throttleTimer: NodeJS.Timeout | null = null
+    let throttleTimer: ReturnType<typeof setTimeout> | null = null
     const throttledHandleActivity = () => {
       if (throttleTimer) return
       throttleTimer = setTimeout(() => {
@@ -245,17 +270,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.success && data.data) {
         const accessToken = data.data.session.access_token
-        setUser(data.data.user)
-        setToken(accessToken)
+        
+        // 先保存到 localStorage（持久化）
         localStorage.setItem('auth_token', accessToken)
-
+        
         // 初始化活动时间
         const now = Date.now()
-        setLastActivityTime(now)
         localStorage.setItem(LAST_ACTIVITY_KEY, now.toString())
-
-        // 同步到其他域名
-        await crossDomainSyncLogin(accessToken)
+        setLastActivityTime(now)
+        
+        // 然后设置状态（React 状态）
+        setToken(accessToken)
+        setUser(data.data.user)
+        
+        // 触发刷新 - 通知所有监听组件刷新数据
+        setRefreshTrigger(prev => prev + 1)
+        
+        // 同步到其他域名（异步，不阻塞）
+        crossDomainSyncLogin(accessToken).catch(err => {
+          console.warn('跨域同步失败:', err)
+        })
 
         return { success: true }
       }
@@ -322,7 +356,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout, 
       refreshUser,
       updateActivity,
-      lastActivityTime
+      lastActivityTime,
+      refreshTrigger,
+      triggerAuthRefresh
     }}>
       {children}
     </AuthContext.Provider>

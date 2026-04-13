@@ -11,40 +11,61 @@ echo "  Port: $PORT"
 echo "  Hostname: $HOSTNAME"
 echo ""
 
+# ============================================
+# 加载环境变量文件（按优先级）
+# 优先级：.env.local > .env.production > .env
+# ============================================
+
+if [ -f .env.local ]; then
+  echo "📄 加载 .env.local 文件..."
+  set -a
+  source .env.local 2>/dev/null || true
+  set +a
+  echo "✅ .env.local 已加载"
+  echo ""
+fi
+
+if [ -f .env.production ]; then
+  echo "📄 加载 .env.production 文件..."
+  set -a
+  source .env.production 2>/dev/null || true
+  set +a
+  echo "✅ .env.production 已加载"
+  echo ""
+fi
+
+echo "📋 环境变量状态:"
+echo "  - NEXT_PUBLIC_SUPABASE_URL: $([ -n "$NEXT_PUBLIC_SUPABASE_URL" ] && echo "已设置" || echo "未设置")"
+echo "  - NEXT_PUBLIC_SUPABASE_ANON_KEY: $([ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && echo "已设置" || echo "未设置")"
+echo ""
+
 # 检测是否在 standalone 模式下运行
-if [ -f "server.js" ]; then
-  echo "✅ 检测到 standalone 模式（Docker 部署）"
+if [ -f ".next/standalone/workspace/projects/server.js" ]; then
+  echo "✅ 检测到 standalone 模式"
   echo ""
   
-  # 检查静态文件是否存在
-  if [ ! -d ".next/static" ]; then
-    echo "❌ 错误：静态文件目录不存在 (.next/static)"
-    echo "   目录结构："
-    ls -la
-    echo ""
-    echo "   .next 目录："
-    ls -la .next/ 2>&1 || echo "   .next 目录不存在"
-    exit 1
-  fi
+  cd .next/standalone/workspace/projects
 
-  if [ ! -d "public" ]; then
-    echo "❌ 错误：public 目录不存在"
-    echo "   目录结构："
-    ls -la
-    exit 1
-  fi
-
-  echo "✅ 静态资源检查通过"
+  # 复制静态文件到 standalone 目录
+  echo "📦 复制静态文件..."
+  cp -r ../../static ./ 2>/dev/null || true
+  mkdir -p ./public
+  cp -r ../../../public/* ./public/ 2>/dev/null || true
+  
+  # 复制环境变量文件
+  echo "📄 复制环境变量文件..."
+  [ -f ../../../.env.production ] && cp ../../../.env.production ./  || true
+  [ -f ../../../.env.local ] && cp ../../../.env.local ./  || true
+  [ -f ../../../.env ] && cp ../../../.env ./  || true
+  
+  echo "📁 当前目录：$(pwd)"
+  echo "🚀 启动服务器（standalone 模式，端口 $PORT）..."
+  exec node server.js
+elif [ -f "server.js" ]; then
+  echo "✅ 检测到 standalone 模式（已 cd 到 standalone 目录）"
   echo ""
-  echo "📁 目录结构："
-  echo "  .next/static:"
-  ls -la .next/static | head -10
-  echo ""
-  echo "  public:"
-  ls -la public | head -10
-  echo ""
-
-  # 直接运行 server.js（standalone 模式）
+  
+  # 静态文件已在进入 standalone 目录时复制
   echo "🚀 启动服务器（standalone 模式）..."
   exec node server.js
 else

@@ -24,12 +24,14 @@ coverage/
 .env.test.local
 .env.production.local
 .env.build
+.env.production
 
 # Allow example env files (safe to commit)
 !.env.example
 !.env.example.*
 !.env.docker
 !.env.build.example
+!.env.production.example
 
 # Logs
 logs/

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev --port 5000",
     "build": "next build",
-    "start": "next start --port 5000",
+    "start": "bash ./scripts/start.sh",
     "lint": "eslint",
     "ts-check": "tsc --noEmit"
   },

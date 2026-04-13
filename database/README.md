@@ -260,7 +260,7 @@ LIMIT 10;
 ## 📞 技术支持
 
 如有问题，请联系：
-- Email: admin@antai.com
+- Email: admin@mayiai.site
 - GitHub: [项目地址]
 
 ---

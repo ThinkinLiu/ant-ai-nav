@@ -25,31 +25,31 @@ export function AnnouncementBar() {
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
 
   useEffect(() => {
-    fetchAnnouncements()
-  }, [])
+    // 使用 AbortController 取消之前的请求
+    const controller = new AbortController()
+    const signal = controller.signal
 
-  // 自动轮播
-  useEffect(() => {
-    if (announcements.length <= 1) return
-
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % announcements.length)
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [announcements.length])
-
-  const fetchAnnouncements = async () => {
-    try {
-      const response = await fetch('/api/announcements')
-      const data = await response.json()
-      if (data.success) {
-        setAnnouncements(data.data)
+    const fetchAnnouncements = async () => {
+      try {
+        const response = await fetch('/api/announcements', { signal })
+        const data = await response.json()
+        if (data.success) {
+          setAnnouncements(data.data)
+        }
+      } catch (error: any) {
+        // 如果是中止错误或请求已中止，不显示错误
+        if (error?.name === 'AbortError' || signal?.aborted) return
+        console.error('获取公告失败:', error)
       }
-    } catch (error) {
-      console.error('获取公告失败:', error)
     }
-  }
+
+    fetchAnnouncements()
+
+    // 组件卸载时取消请求
+    return () => {
+      controller.abort()
+    }
+  }, [])
 
   const handleViewDetail = (announcement: Announcement) => {
     setSelectedAnnouncement(announcement)
