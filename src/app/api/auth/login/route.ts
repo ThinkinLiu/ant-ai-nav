@@ -137,14 +137,14 @@ export async function POST(request: NextRequest) {
 
     // 获取 Supabase 配置（自动跳过占位符）
     const supabaseUrl = getEnvWithFallback([
-      'COZE_SUPABASE_URL',
       'NEXT_PUBLIC_SUPABASE_URL',
+      'COZE_SUPABASE_URL',
       'SUPABASE_URL',
     ])
 
     const supabaseAnonKey = getEnvWithFallback([
-      'COZE_SUPABASE_ANON_KEY',
       'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+      'COZE_SUPABASE_ANON_KEY',
       'SUPABASE_ANON_KEY',
     ])
 

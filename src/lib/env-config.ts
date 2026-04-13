@@ -35,13 +35,20 @@ export function detectEnvironment(): Environment {
  */
 export function isPlaceholderUrl(url: string | undefined): boolean {
   if (!url) return true;
-  // 检测明显的占位符模式：包含 placeholder、your-project、your-project-id 等关键词
-  return url.includes('placeholder') || 
-         url.includes('your-project') || 
-         url.includes('your-project-id') ||
-         // 跳过 localhost 和 127.0.0.1（开发环境默认值）
-         (url === 'http://localhost' || url.startsWith('http://localhost:')) ||
-         (url === 'http://127.0.0.1' || url.startsWith('http://127.0.0.1:'));
+  // 检测明显的占位符模式
+  // 注意：placeholder.supabase.co 可能是真实的 Supabase 实例，不应跳过
+  const lowerUrl = url.toLowerCase();
+  return (
+    // 包含 <project-ref> 格式（如 <your-project-ref>）
+    (lowerUrl.includes('<') && lowerUrl.includes('>')) ||
+    // 包含 your-project-id 且后面跟着明显占位符
+    (lowerUrl.includes('your-project-id')) ||
+    // 包含 your-project 且在 .supabase.co 域名中（表示未替换的模板）
+    (lowerUrl.includes('your-project') && lowerUrl.includes('.supabase.co')) ||
+    // localhost 开发环境
+    (url === 'http://localhost' || url.startsWith('http://localhost:')) ||
+    (url === 'http://127.0.0.1' || url.startsWith('http://127.0.0.1:'))
+  );
 }
 
 /**
