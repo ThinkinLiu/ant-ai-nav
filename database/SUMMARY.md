@@ -30,6 +30,7 @@
 | 14_traffic_data_sources.sql | 流量数据源配置（4条） |
 | 15_friend_links.sql | 友情链接（3条） |
 | 16_smtp_settings.sql | SMTP设置（1条） |
+| 17_cross_domain_config.sql | 跨域认证配置 |
 
 ## 数据统计
 
