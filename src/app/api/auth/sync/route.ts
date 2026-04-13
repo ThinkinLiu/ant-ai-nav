@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { getEnv } from '@/lib/env-config'
 
 /**
  * 跨域认证同步 API
- * 支持两种模式：
- * 1. 页面加载模式（返回 HTML + JS，用于 iframe/直接访问）
- * 2. API 模式（直接设置 cookie，用于 fetch/img/script 跨域请求）
+ * 支持多种模式：
+ * 1. html 模式（默认）- 返回 HTML + JS，用于 iframe/直接访问
+ * 2. json 模式 - 直接设置 cookie 并返回 JSON 结果
+ * 3. jsonp 模式 - 通过回调函数返回（已废弃，仅保留兼容性）
+ * 4. window 模式 - 用于 window.open + postMessage 方式
  */
 export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const token = searchParams.get('token')
+  const action = searchParams.get('action')
+  const format = searchParams.get('format') || 'html' // html, json, jsonp, window
+  
   try {
-    const searchParams = request.nextUrl.searchParams
-    const token = searchParams.get('token')
-    const action = searchParams.get('action')
-    const format = searchParams.get('format') || 'html' // html, json, 或 jsonp
-    
     if (!action || (action === 'login' && !token)) {
       if (format === 'json') {
         return NextResponse.json(
@@ -59,25 +59,11 @@ export async function GET(request: NextRequest) {
         // 获取刷新令牌（如果可用）
         const refreshToken = searchParams.get('refresh_token') || token
         
-        // 设置 Supabase SSR cookie
-        const cookieOptions: CookieOptions = {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 7, // 7 天
-          path: '/',
-        }
-        
-        // 如果是子域名，设置 domain
-        if (mainDomain !== 'localhost' && mainDomain !== requestHostname) {
-          cookieOptions.domain = mainDomain
-        }
-
         // 设置 cookie
         responseHeaders.set('Set-Cookie', [
-          `sb-access-token=${encodeURIComponent(token)}; Path=/; Max-Age=${60 * 60 * 24 * 7}; ${process.env.NODE_ENV === 'production' ? 'Secure; ' : ''}SameSite=Lax${cookieOptions.domain ? `; Domain=${cookieOptions.domain}` : ''}`,
-          `sb-refresh-token=${encodeURIComponent(refreshToken)}; Path=/; Max-Age=${60 * 60 * 24 * 7}; ${process.env.NODE_ENV === 'production' ? 'Secure; ' : ''}SameSite=Lax${cookieOptions.domain ? `; Domain=${cookieOptions.domain}` : ''}`,
-          `auth_token=${encodeURIComponent(token)}; Path=/; Max-Age=${60 * 60 * 24 * 7}; ${process.env.NODE_ENV === 'production' ? 'Secure; ' : ''}SameSite=Lax${cookieOptions.domain ? `; Domain=${cookieOptions.domain}` : ''}`,
+          `sb-access-token=${encodeURIComponent(token)}; Path=/; Max-Age=${60 * 60 * 24 * 7}; ${process.env.NODE_ENV === 'production' ? 'Secure; ' : ''}SameSite=Lax${mainDomain !== 'localhost' && mainDomain !== requestHostname ? `; Domain=${mainDomain}` : ''}`,
+          `sb-refresh-token=${encodeURIComponent(refreshToken)}; Path=/; Max-Age=${60 * 60 * 24 * 7}; ${process.env.NODE_ENV === 'production' ? 'Secure; ' : ''}SameSite=Lax${mainDomain !== 'localhost' && mainDomain !== requestHostname ? `; Domain=${mainDomain}` : ''}`,
+          `auth_token=${encodeURIComponent(token)}; Path=/; Max-Age=${60 * 60 * 24 * 7}; ${process.env.NODE_ENV === 'production' ? 'Secure; ' : ''}SameSite=Lax${mainDomain !== 'localhost' && mainDomain !== requestHostname ? `; Domain=${mainDomain}` : ''}`,
         ].join(', '))
 
         response = new NextResponse(JSON.stringify({ success: true, action: 'login' }), {
@@ -111,7 +97,13 @@ export async function GET(request: NextRequest) {
       const responseHeaders = new Headers()
       responseHeaders.set('Content-Type', 'application/javascript; charset=utf-8')
       
-      let result: any
+      interface SyncResult {
+        success: boolean
+        action?: string
+        error?: string
+      }
+      
+      let result: SyncResult = { success: false, error: 'Invalid action' }
       let cookies: string[] = []
       
       if (action === 'login' && token) {
@@ -155,6 +147,145 @@ export async function GET(request: NextRequest) {
       
       response = new NextResponse(jsonpResponse, {
         headers: responseHeaders,
+      })
+    } else if (format === 'window') {
+      // Window 模式：用于 window.open + postMessage 方式
+      // 监听来自 opener 的消息，设置 Cookie，然后发送确认
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Auth Sync</title>
+            <style>
+              body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                height: 100vh; 
+                margin: 0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+              }
+              .status {
+                text-align: center;
+                padding: 20px;
+                background: rgba(255,255,255,0.1);
+                border-radius: 10px;
+                backdrop-filter: blur(10px);
+              }
+              .success { color: #4ade80; }
+            </style>
+          </head>
+          <body>
+            <div class="status" id="status">
+              <div class="success">等待同步...</div>
+            </div>
+            <script>
+              (function() {
+                var mainDomain = '${mainDomain}';
+                var requestHostname = '${requestHostname}';
+                var cookieDomain = (mainDomain && mainDomain !== 'localhost' && mainDomain !== requestHostname) ? mainDomain : null;
+                var isHttps = location.protocol === 'https:';
+                
+                // 设置 Cookie（支持子域名）
+                function setCookie(name, value, days, domain) {
+                  var expires = '';
+                  if (days) {
+                    var date = new Date();
+                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                    expires = '; expires=' + date.toUTCString();
+                  }
+                  var cookieValue = name + '=' + (value || '') + expires + '; path=/' + 
+                    (domain && domain !== requestHostname ? '; domain=' + domain : '') +
+                    '; SameSite=Lax' + 
+                    (isHttps ? '; Secure' : '');
+                  document.cookie = cookieValue;
+                  console.log('Set cookie:', name, 'domain:', domain || 'current');
+                }
+                
+                // 清除 Cookie
+                function clearCookie(name, domain) {
+                  setCookie(name, '', -1, domain);
+                }
+                
+                // 处理认证同步消息
+                window.addEventListener('message', function(event) {
+                  var data = event.data;
+                  if (!data || data.type !== 'AUTH_SYNC_TOKEN') return;
+                  
+                  console.log('Received AUTH_SYNC_TOKEN:', data);
+                  
+                  var token = data.token || '';
+                  var action = data.action;
+                  
+                  if (action === 'login' && token) {
+                    // 设置认证 cookie
+                    setCookie('sb-access-token', token, 30, cookieDomain);
+                    setCookie('sb-refresh-token', token, 30, cookieDomain);
+                    setCookie('auth_token', token, 30, cookieDomain);
+                    
+                    document.getElementById('status').innerHTML = '<div class="success">登录状态已同步</div>';
+                    console.log('Auth sync completed: login');
+                    
+                    // 发送确认消息给 opener
+                    if (event.source) {
+                      event.source.postMessage({ type: 'AUTH_SYNC_ACK' }, event.origin);
+                      console.log('Sent AUTH_SYNC_ACK to opener');
+                    }
+                    
+                    // 延迟关闭窗口
+                    setTimeout(function() {
+                      if (window.opener) window.close();
+                    }, 500);
+                    
+                  } else if (action === 'logout') {
+                    // 清除认证 cookie
+                    clearCookie('sb-access-token', cookieDomain);
+                    clearCookie('sb-refresh-token', cookieDomain);
+                    clearCookie('auth_token', cookieDomain);
+                    
+                    document.getElementById('status').innerHTML = '<div class="success">已清除登录状态</div>';
+                    console.log('Auth sync completed: logout');
+                    
+                    // 发送确认消息给 opener
+                    if (event.source) {
+                      event.source.postMessage({ type: 'AUTH_SYNC_ACK' }, event.origin);
+                      console.log('Sent AUTH_SYNC_ACK to opener');
+                    }
+                    
+                    // 延迟关闭窗口
+                    setTimeout(function() {
+                      if (window.opener) window.close();
+                    }, 500);
+                  }
+                });
+                
+                // 页面加载后，立即向 opener 发送 ping 消息，等待认证信息
+                window.addEventListener('load', function() {
+                  // 通知 opener 窗口已准备好接收消息
+                  if (window.opener && !window.opener.closed) {
+                    console.log('Window loaded, waiting for AUTH_SYNC_TOKEN from opener...');
+                  }
+                });
+                
+                // 5秒后自动关闭（如果没有收到消息）
+                setTimeout(function() {
+                  if (window.opener) window.close();
+                }, 5000);
+              })();
+            </script>
+          </body>
+        </html>
+      `
+      
+      response = new NextResponse(html, {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
       })
     } else {
       // HTML 模式：返回页面，使用 JS 设置 cookie 并通知父窗口
@@ -313,7 +444,7 @@ export async function GET(request: NextRequest) {
 }
 
 // 支持 OPTIONS 请求（CORS 预检）
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return new NextResponse(null, {
     headers: {
       'Access-Control-Allow-Origin': '*',

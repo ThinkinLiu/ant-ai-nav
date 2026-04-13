@@ -100,7 +100,7 @@ export function useCrossDomainAuth(options: CrossDomainAuthOptions = {}) {
               // 通知来源域收到消息
               event.source?.postMessage(
                 { type: 'AUTH_SYNC_ACK' },
-                event.origin
+                { targetOrigin: event.origin }
               )
 
               // 触发登录回调
@@ -118,7 +118,7 @@ export function useCrossDomainAuth(options: CrossDomainAuthOptions = {}) {
               // 通知来源域收到消息
               event.source?.postMessage(
                 { type: 'AUTH_SYNC_ACK' },
-                event.origin
+                { targetOrigin: event.origin }
               )
 
               // 触发登出回调

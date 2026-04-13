@@ -115,8 +115,33 @@ pnpm ts-check     # TypeScript 类型检查
 ### 认证
 - 使用 Supabase Auth 进行用户认证
 - JWT token 存储在 Cookie 中
-- 支持跨域认证同步
+- 支持跨域认证同步（多域名登录状态共享）
 - 使用 refreshTrigger 模式实现无闪烁登录/登出体验
+
+### 跨域认证同步机制
+支持在多个域名之间共享登录状态（如 `ai.mayiai.site`、`mayi.mayiai.site`、`mayiai.site` 等）。
+
+**实现方式**：
+1. **子域名共享**：通过设置 `Domain=.mayiai.site` 的 Cookie，所有 `.mayiai.site` 的子域名都能访问这个 Cookie
+2. **跨域名同步**：使用 `window.open` + `postMessage` 方式，将登录状态同步到其他完全不同的域名
+
+**同步流程**：
+1. 用户在 `mayiai.site` 登录
+2. 系统设置带有主域名 `.mayiai.site` 的 Cookie
+3. 系统调用 `syncAuthTokenToDomains()` 同步到其他配置的目标域名
+4. 目标域名的 `/api/auth/sync` 端点接收消息并设置 Cookie
+
+**配置方式**：
+跨域配置存储在数据库 `cross_domain_config` 表中：
+- `enabled`: 是否启用跨域同步
+- `main_domains`: 主域名列表（如 `[".mayiai.site", ".itlao5.com", ".coze.site"]`）
+- `shared_domains`: 需要同步的完整域名列表（如 `["ai.mayiai.site", "mayi.mayiai.site", ...]`）
+- `auth_sync_timeout`: 同步超时时间（毫秒）
+
+**API 端点**：
+- `GET /api/auth/sync` - 跨域认证同步
+  - 支持多种格式：`html`（默认）、`json`、`jsonp`、`window`
+  - `window` 模式用于 `window.open` + `postMessage` 方式
 
 ### AuthContext 刷新机制
 AuthContext 提供了 `refreshTrigger` 机制用于在不刷新页面的情况下通知组件刷新用户状态：
