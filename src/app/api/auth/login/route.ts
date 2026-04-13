@@ -226,12 +226,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 获取用户信息
+    // 获取用户信息并检查状态
     const { data: userData } = await supabase
       .from('users')
       .select('*')
       .eq('id', authData.user.id)
       .single()
+
+    // 检查用户是否被停用
+    if (userData && userData.is_active === false) {
+      return NextResponse.json(
+        { success: false, error: '该账号已被停用，请联系管理员' },
+        { status: 403 }
+      )
+    }
 
     // 构建响应
     const response = NextResponse.json({

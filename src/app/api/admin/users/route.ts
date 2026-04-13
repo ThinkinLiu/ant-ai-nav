@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const role = searchParams.get('role')
+    const status = searchParams.get('status') // active, inactive, all
 
     let query = client
       .from('users')
@@ -38,6 +39,13 @@ export async function GET(request: NextRequest) {
 
     if (role) {
       query = query.eq('role', role)
+    }
+
+    // 状态筛选
+    if (status === 'active') {
+      query = query.eq('is_active', true)
+    } else if (status === 'inactive') {
+      query = query.eq('is_active', false)
     }
 
     const from = (page - 1) * limit
@@ -88,24 +96,35 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { userId, role } = body
+    const { userId, role, isActive } = body
 
-    if (!userId || !role) {
-      return NextResponse.json({ success: false, error: '缺少参数' }, { status: 400 })
+    // 更新用户角色
+    if (role) {
+      const { error } = await client
+        .from('users')
+        .update({ role, updated_at: new Date().toISOString() })
+        .eq('id', userId)
+
+      if (error) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 400 })
+      }
     }
 
-    const { error } = await client
-      .from('users')
-      .update({ role, updated_at: new Date().toISOString() })
-      .eq('id', userId)
+    // 更新用户状态（启用/停用）
+    if (typeof isActive === 'boolean') {
+      const { error } = await client
+        .from('users')
+        .update({ is_active: isActive, updated_at: new Date().toISOString() })
+        .eq('id', userId)
 
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 400 })
+      if (error) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 400 })
+      }
     }
 
     return NextResponse.json({ success: true, message: '更新成功' })
   } catch (error) {
-    console.error('更新用户角色错误:', error)
+    console.error('更新用户错误:', error)
     return NextResponse.json({ success: false, error: '服务器错误' }, { status: 500 })
   }
 }
