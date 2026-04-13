@@ -28,27 +28,40 @@ export async function GET() {
       .single()
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      )
+      console.error('查询跨域配置错误:', error)
+      // 如果表不存在或查询失败，返回默认配置
+      return NextResponse.json({
+        success: true,
+        data: {
+          enabled: false,
+          mainDomains: [],
+          sharedDomains: [],
+          authSyncTimeout: 5000,
+        },
+      })
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        enabled: data?.enabled || false,
-        mainDomains: data?.main_domains || [], // 支持多个主域名
-        sharedDomains: data?.shared_domains || [],
-        authSyncTimeout: data?.auth_sync_timeout || 5000,
+        enabled: data?.enabled ?? false,
+        mainDomains: data?.main_domains ?? [], // 支持多个主域名
+        sharedDomains: data?.shared_domains ?? [],
+        authSyncTimeout: data?.auth_sync_timeout ?? 5000,
       },
     })
   } catch (error) {
     console.error('获取跨域配置错误:', error)
-    return NextResponse.json(
-      { success: false, error: '服务器错误' },
-      { status: 500 }
-    )
+    // 出错时返回默认配置
+    return NextResponse.json({
+      success: true,
+      data: {
+        enabled: false,
+        mainDomains: [],
+        sharedDomains: [],
+        authSyncTimeout: 5000,
+      },
+    })
   }
 }
 
