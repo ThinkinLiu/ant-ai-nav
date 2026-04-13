@@ -31,24 +31,32 @@ export function detectEnvironment(): Environment {
 
 /**
  * 检测 URL 是否为占位符
+ * 只检测明显的占位符模式，不拒绝真实但包含某些关键词的 URL
  */
 export function isPlaceholderUrl(url: string | undefined): boolean {
   if (!url) return true;
+  // 检测明显的占位符模式：包含 placeholder、your-project、your-project-id 等关键词
   return url.includes('placeholder') || 
          url.includes('your-project') || 
          url.includes('your-project-id') ||
-         url === 'https://placeholder.supabase.co';
+         // 跳过 localhost 和 127.0.0.1（开发环境默认值）
+         (url === 'http://localhost' || url.startsWith('http://localhost:')) ||
+         (url === 'http://127.0.0.1' || url.startsWith('http://127.0.0.1:'));
 }
 
 /**
  * 检测密钥是否为占位符
+ * 只检测明显的占位符模式
  */
 export function isPlaceholderKey(key: string | undefined): boolean {
   if (!key) return true;
+  // 检测明显的占位符模式
   return key.includes('placeholder') || 
          key.includes('your-anon') ||
          key.includes('your-') ||
-         key === 'placeholder-anon-key';
+         key === 'placeholder-anon-key' ||
+         // 跳过无效的 "eyJ" 前缀（没有三个点分隔的 JWT 格式是无效的）
+         (key.startsWith('eyJ') && key.split('.').length !== 3);
 }
 
 /**
