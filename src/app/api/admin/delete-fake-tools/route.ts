@@ -5,10 +5,10 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 // Delay initialization of Supabase client to avoid build-time environment variable issues
-// Unified use of NEXT_PUBLIC_ prefix
+// Support both NEXT_PUBLIC_ and COZE_ prefixes
 function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.COZE_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.COZE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error('Missing required Supabase environment variables');

@@ -31,12 +31,11 @@ export function detectEnvironment(): Environment {
 
 /**
  * 检测 URL 是否为占位符
- * 只检测明显的占位符模式，不拒绝真实但包含某些关键词的 URL
+ * 只检测明显的占位符模式
  */
 export function isPlaceholderUrl(url: string | undefined): boolean {
   if (!url) return true;
   // 检测明显的占位符模式
-  // 注意：placeholder.supabase.co 可能是真实的 Supabase 实例，不应跳过
   const lowerUrl = url.toLowerCase();
   return (
     // 包含 <project-ref> 格式（如 <your-project-ref>）
@@ -45,6 +44,8 @@ export function isPlaceholderUrl(url: string | undefined): boolean {
     (lowerUrl.includes('your-project-id')) ||
     // 包含 your-project 且在 .supabase.co 域名中（表示未替换的模板）
     (lowerUrl.includes('your-project') && lowerUrl.includes('.supabase.co')) ||
+    // placeholder.supabase.co 是默认占位符
+    (lowerUrl.includes('placeholder.supabase.co')) ||
     // localhost 开发环境
     (url === 'http://localhost' || url.startsWith('http://localhost:')) ||
     (url === 'http://127.0.0.1' || url.startsWith('http://127.0.0.1:'))
@@ -69,21 +70,35 @@ export function isPlaceholderKey(key: string | undefined): boolean {
 /**
  * 获取环境变量
  * @param key - 环境变量名称
+ * @param fallbackKey - 备选环境变量名称（可选）
  * @param defaultValue - 默认值
  * @param skipPlaceholder - 是否跳过占位符值
  */
-export function getEnv(key: string, defaultValue?: string, skipPlaceholder: boolean = false): string | undefined {
-  const value = process.env[key];
+export function getEnv(
+  key: string, 
+  fallbackKey?: string, 
+  defaultValue?: string | boolean,
+  skipPlaceholder?: boolean
+): string | undefined {
+  // 获取主环境变量
+  let value = process.env[key];
+  
+  // 如果主环境变量不存在或为空，尝试备选环境变量
+  if (!value && fallbackKey) {
+    value = process.env[fallbackKey];
+  }
+  
   if (value) {
     // 如果启用了跳过占位符，且当前值是占位符，则返回默认值
     if (skipPlaceholder) {
       if (isPlaceholderUrl(value) || isPlaceholderKey(value)) {
-        return defaultValue;
+        return defaultValue as string | undefined;
       }
     }
     return value;
   }
-  return defaultValue;
+  
+  return defaultValue as string | undefined;
 }
 
 /**
@@ -128,16 +143,16 @@ export function validateEnv(): EnvValidationResult {
   const missing: string[] = [];
   const warnings: string[] = [];
   
-  // 检查必需的环境变量（自动跳过占位符）
-  const supabaseUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL', undefined, true);
-  const supabaseAnonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', undefined, true);
+  // 检查必需的环境变量（自动跳过占位符，支持 COZE_ 前缀作为备选）
+  const supabaseUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL', 'COZE_SUPABASE_URL', undefined, true);
+  const supabaseAnonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'COZE_SUPABASE_ANON_KEY', undefined, true);
   
   if (!supabaseUrl) {
-    missing.push('NEXT_PUBLIC_SUPABASE_URL');
+    missing.push('NEXT_PUBLIC_SUPABASE_URL 或 COZE_SUPABASE_URL');
   }
   
   if (!supabaseAnonKey) {
-    missing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    missing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY 或 COZE_SUPABASE_ANON_KEY');
   }
   
   // 检查可选的环境变量

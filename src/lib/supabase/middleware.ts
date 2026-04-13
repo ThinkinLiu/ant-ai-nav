@@ -3,12 +3,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 /**
  * 验证用户是否已登录
- * 统一使用 NEXT_PUBLIC_ 前缀的环境变量
+ * 优先使用 NEXT_PUBLIC_ 前缀，备选 COZE_ 前缀
  */
 async function verifyUser(request: NextRequest): Promise<boolean> {
-  // 获取 Supabase 配置
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // 优先使用 NEXT_PUBLIC_ 前缀，备选 COZE_ 前缀
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.COZE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.COZE_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return false;

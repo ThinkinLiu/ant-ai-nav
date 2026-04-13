@@ -99,10 +99,12 @@ fi
 
 echo ""
 
-# ============================================
 # 加载环境变量文件（按优先级）
 # 优先级：.env.local > .env.build > .env.production
 # ============================================
+
+# 设置 LANG 以避免编码问题
+export LANG=C.UTF-8
 
 if [ -f .env.local ]; then
   echo "📄 加载 .env.local 文件..."
@@ -133,13 +135,27 @@ fi
 
 echo "📋 环境变量状态:"
 echo "  - NEXT_PUBLIC_SUPABASE_URL: $([ -n "$NEXT_PUBLIC_SUPABASE_URL" ] && echo "已设置" || echo "未设置")"
+echo "  - COZE_SUPABASE_URL: $([ -n "$COZE_SUPABASE_URL" ] && echo "已设置" || echo "未设置")"
 echo "  - NEXT_PUBLIC_SUPABASE_ANON_KEY: $([ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && echo "已设置" || echo "未设置")"
+echo "  - COZE_SUPABASE_ANON_KEY: $([ -n "$COZE_SUPABASE_ANON_KEY" ] && echo "已设置" || echo "未设置")"
 echo ""
 
 # ============================================
 # 环境变量配置
 # ============================================
 echo "🔧 配置环境变量..."
+
+# 如果没有 NEXT_PUBLIC_ 前缀的环境变量，尝试从 COZE_ 前缀复制
+# 这样可以在 Coze 平台环境中正确构建
+if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] && [ -n "$COZE_SUPABASE_URL" ]; then
+  export NEXT_PUBLIC_SUPABASE_URL="$COZE_SUPABASE_URL"
+  echo "  ✅ 从 COZE_SUPABASE_URL 复制到 NEXT_PUBLIC_SUPABASE_URL"
+fi
+
+if [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && [ -n "$COZE_SUPABASE_ANON_KEY" ]; then
+  export NEXT_PUBLIC_SUPABASE_ANON_KEY="$COZE_SUPABASE_ANON_KEY"
+  echo "  ✅ 从 COZE_SUPABASE_ANON_KEY 复制到 NEXT_PUBLIC_SUPABASE_ANON_KEY"
+fi
 
 # 统一使用 NEXT_PUBLIC_ 前缀
 if [ -n "$NEXT_PUBLIC_SUPABASE_URL" ]; then

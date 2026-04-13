@@ -95,8 +95,9 @@ async function getDatabaseStatus(supabase: any) {
 
 export async function GET(request: Request) {
   try {
-    const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL');
-    const supabaseKey = getEnvVar(['SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY']);
+    // 获取 Supabase 配置（支持 NEXT_PUBLIC_ 和 COZE_ 前缀）
+    const supabaseUrl = getEnvVar(['NEXT_PUBLIC_SUPABASE_URL', 'COZE_SUPABASE_URL']);
+    const supabaseKey = getEnvVar(['SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'COZE_SUPABASE_ANON_KEY']);
     
     if (!supabaseUrl || !supabaseKey) {
       return NextResponse.json(
@@ -152,8 +153,9 @@ export async function POST(request: Request) {
       );
     }
     
-    const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL');
-    const serviceRoleKey = getEnvVar(['SUPABASE_SERVICE_ROLE_KEY']);
+    // 获取 Supabase 配置（支持 NEXT_PUBLIC_ 和 COZE_ 前缀）
+    const supabaseUrl = getEnvVar(['NEXT_PUBLIC_SUPABASE_URL', 'COZE_SUPABASE_URL']);
+    const serviceRoleKey = getEnvVar(['SUPABASE_SERVICE_ROLE_KEY', 'COZE_SUPABASE_SERVICE_ROLE_KEY']);
     
     if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json(

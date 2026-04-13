@@ -3,7 +3,7 @@ import { isPlaceholderUrl, isPlaceholderKey } from '@/lib/env-config';
 
 /**
  * Supabase 客户端配置
- * 统一使用 NEXT_PUBLIC_ 前缀的环境变量
+ * 统一使用 NEXT_PUBLIC_ 前缀，兼容 COZE_ 前缀
  */
 
 interface SupabaseCredentials {
@@ -16,6 +16,7 @@ let cachedCredentials: SupabaseCredentials | null = null;
 
 /**
  * 获取 Supabase 凭据
+ * 优先使用 NEXT_PUBLIC_ 前缀，备选 COZE_ 前缀
  * 在构建时如果环境变量不存在或为占位符，返回 null 而不是抛出错误
  */
 function getSupabaseCredentials(): SupabaseCredentials | null {
@@ -23,14 +24,17 @@ function getSupabaseCredentials(): SupabaseCredentials | null {
     return cachedCredentials;
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // 优先使用 NEXT_PUBLIC_ 前缀，备选 COZE_ 前缀
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.COZE_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.COZE_SUPABASE_ANON_KEY;
 
   // 调试日志：在服务端渲染时记录环境变量状态
   if (typeof window === 'undefined') {
     console.log('[Supabase] 检查环境变量配置:');
-    console.log('  NEXT_PUBLIC_SUPABASE_URL:', url ? '已设置' : '未设置');
-    console.log('  NEXT_PUBLIC_SUPABASE_ANON_KEY:', key ? '已设置' : '未设置');
+    console.log('  NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? '已设置' : '未设置');
+    console.log('  COZE_SUPABASE_URL:', process.env.COZE_SUPABASE_URL ? '已设置' : '未设置');
+    console.log('  NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '已设置' : '未设置');
+    console.log('  COZE_SUPABASE_ANON_KEY:', process.env.COZE_SUPABASE_ANON_KEY ? '已设置' : '未设置');
     console.log('  NODE_ENV:', process.env.NODE_ENV);
   }
 
@@ -42,6 +46,7 @@ function getSupabaseCredentials(): SupabaseCredentials | null {
     } else {
       cachedCredentials = { url, anonKey: key };
       console.log('[Supabase] 成功加载 Supabase 配置');
+      console.log('[Supabase] Supabase URL:', url);
     }
   } else {
     console.log('[Supabase] 未找到有效的 Supabase 配置');

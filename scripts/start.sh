@@ -52,6 +52,12 @@ if [ -f ".next/standalone/workspace/projects/server.js" ]; then
   mkdir -p ./public
   cp -r ../../../public/* ./public/ 2>/dev/null || true
   
+  # 复制环境变量文件
+  echo "📄 复制环境变量文件..."
+  [ -f ../../../.env.production ] && cp ../../../.env.production ./  || true
+  [ -f ../../../.env.local ] && cp ../../../.env.local ./  || true
+  [ -f ../../../.env ] && cp ../../../.env ./  || true
+  
   echo "📁 当前目录：$(pwd)"
   echo "🚀 启动服务器（standalone 模式，端口 $PORT）..."
   exec node server.js

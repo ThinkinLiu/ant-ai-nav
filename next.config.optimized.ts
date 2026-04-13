@@ -85,12 +85,6 @@ const nextConfig: NextConfig = {
       './public/**',
     ],
   },
-
-  // 环境变量配置 - 统一使用 NEXT_PUBLIC_ 前缀
-  env: {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-  },
 };
 
 export default nextConfig;
