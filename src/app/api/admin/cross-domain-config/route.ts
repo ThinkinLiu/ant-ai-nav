@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseClient } from '@/storage/database/supabase-client'
+import { getSupabaseClient, isSupabaseConfigured } from '@/storage/database/supabase-client'
 
 /**
  * 获取跨域配置（公开接口）
  */
 export async function GET() {
   try {
+    // 如果 Supabase 未配置，返回默认配置
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          enabled: false,
+          mainDomains: [],
+          sharedDomains: [],
+          authSyncTimeout: 5000,
+        },
+      })
+    }
+
     const client = getSupabaseClient()
 
     const { data, error } = await client
