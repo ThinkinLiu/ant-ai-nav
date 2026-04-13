@@ -163,14 +163,13 @@ export default function RichTextEditor({
       </div>
 
       {/* 编辑器内容区域 */}
-      <div className="prose prose-sm max-w-none p-3">
+      <div className="prose prose-sm max-w-none p-3 relative">
         <EditorContent 
           editor={editor} 
-          placeholder={placeholder}
-          className={disabled ? 'opacity-50 cursor-not-allowed' : ''}
+          className={[disabled ? 'opacity-50 cursor-not-allowed' : '', editor.isEmpty ? 'invisible' : ''].join(' ')}
         />
         {editor.isEmpty && (
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-start p-3 text-muted-foreground">
+          <div className="absolute inset-0 pointer-events-none flex items-start justify-start p-3 text-muted-foreground">
             {placeholder}
           </div>
         )}
