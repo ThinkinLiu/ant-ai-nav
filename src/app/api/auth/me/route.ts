@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
-import { getEnvWithFallback } from '@/lib/env-config'
 
 /**
  * 从多个来源获取 token
@@ -41,17 +40,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 获取 Supabase 配置（自动跳过占位符）
-    const supabaseUrl = getEnvWithFallback([
-      'COZE_SUPABASE_URL',
-      'NEXT_PUBLIC_SUPABASE_URL',
-      'SUPABASE_URL',
-    ])
-    const supabaseAnonKey = getEnvWithFallback([
-      'COZE_SUPABASE_ANON_KEY',
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-      'SUPABASE_ANON_KEY',
-    ])
+    // 获取 Supabase 配置
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json(

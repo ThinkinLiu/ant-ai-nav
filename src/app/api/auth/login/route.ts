@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { getEnv, getEnvWithFallback, isPlaceholderUrl } from '@/lib/env-config'
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 
 // 本地缓存（5分钟）
@@ -135,30 +134,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 获取 Supabase 配置（自动跳过占位符）
-    const supabaseUrl = getEnvWithFallback([
-      'NEXT_PUBLIC_SUPABASE_URL',
-      'COZE_SUPABASE_URL',
-      'SUPABASE_URL',
-    ])
+    // 获取 Supabase 配置
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    const supabaseAnonKey = getEnvWithFallback([
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-      'COZE_SUPABASE_ANON_KEY',
-      'SUPABASE_ANON_KEY',
-    ])
-
-    console.log('[登录] Supabase 配置检查:', {
+    console.log('[登录] Supabase 配置:', {
       supabaseUrl: supabaseUrl ? '已设置' : '未设置',
       supabaseUrlValue: supabaseUrl,
       supabaseAnonKey: supabaseAnonKey ? '已设置' : '未设置',
-      allEnvKeys: {
-        NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-        COZE_SUPABASE_URL: process.env.COZE_SUPABASE_URL,
-        SUPABASE_URL: process.env.SUPABASE_URL,
-        isNextPlaceholder: isPlaceholderUrl(process.env.NEXT_PUBLIC_SUPABASE_URL),
-        isCozPlaceholder: isPlaceholderUrl(process.env.COZE_SUPABASE_URL),
-      }
     })
 
     if (!supabaseUrl || !supabaseAnonKey) {
