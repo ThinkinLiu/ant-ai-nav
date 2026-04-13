@@ -45,40 +45,21 @@ if [ -f ".next/standalone/workspace/projects/server.js" ]; then
   echo ""
   
   cd .next/standalone/workspace/projects
+
+  # 复制静态文件到 standalone 目录
+  echo "📦 复制静态文件..."
+  cp -r ../../static ./ 2>/dev/null || true
+  mkdir -p ./public
+  cp -r ../../../public/* ./public/ 2>/dev/null || true
   
-  # 设置端口
-  PORT=${PORT:-5000}
-  
-  # 启动服务器（standalone 模式）
+  echo "📁 当前目录：$(pwd)"
   echo "🚀 启动服务器（standalone 模式，端口 $PORT）..."
-  echo "   当前目录：$(pwd)"
   exec node server.js
 elif [ -f "server.js" ]; then
-  echo "✅ 检测到 standalone 模式（根目录）"
+  echo "✅ 检测到 standalone 模式（已 cd 到 standalone 目录）"
   echo ""
   
-  # 检查静态文件是否存在
-  if [ ! -d ".next/static" ]; then
-    echo "❌ 错误：静态文件目录不存在 (.next/static)"
-    exit 1
-  fi
-
-  if [ ! -d "public" ]; then
-    echo "❌ 错误：public 目录不存在"
-    exit 1
-  fi
-
-  echo "✅ 静态资源检查通过"
-  echo ""
-  echo "📁 目录结构："
-  echo "  .next/static:"
-  ls -la .next/static | head -10
-  echo ""
-  echo "  public:"
-  ls -la public | head -10
-  echo ""
-
-  # 直接运行 server.js（standalone 模式）
+  # 静态文件已在进入 standalone 目录时复制
   echo "🚀 启动服务器（standalone 模式）..."
   exec node server.js
 else
