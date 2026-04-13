@@ -110,13 +110,80 @@ pnpm ts-check     # TypeScript 类型检查
 - 使用 Tailwind CSS 进行样式
 - 使用 dark mode 支持
 
+### 富文本编辑器
+项目使用 TipTap 作为富文本编辑器，支持丰富的编辑功能：
+
+**组件位置**：`src/components/ui/rich-text-editor.tsx`
+
+**功能特性**：
+- 支持加粗、斜体、删除线、行内代码
+- 支持标题（H1、H2、H3）
+- 支持有序列表、无序列表、任务列表
+- 支持引用和代码块
+- 支持添加链接
+- 支持插入图片（支持粘贴、拖拽上传）
+- 支持从网页粘贴内容（保留基本格式）
+
+**使用方式**：
+```tsx
+import RichTextEditor from '@/components/ui/rich-text-editor'
+
+<RichTextEditor
+  content={htmlContent}
+  onChange={(html) => setContent(html)}
+  placeholder="请输入内容..."
+  minHeight="200px"
+  onImageUpload={async (file) => {
+    // 返回图片 URL
+    return '/uploads/image.png'
+  }}
+/>
+```
+
+**粘贴行为**：
+- 从网页粘贴：自动清理外部样式，保留基本 HTML 结构（标题、列表、图片等）
+- 粘贴图片：自动转换为 base64 或通过 `onImageUpload` 上传
+- 拖拽图片：同上
+
 ## 安全注意事项
 
 ### 认证
 - 使用 Supabase Auth 进行用户认证
 - JWT token 存储在 Cookie 中
-- 支持跨域认证同步
+- 支持跨域认证同步（多域名登录状态共享）
 - 使用 refreshTrigger 模式实现无闪烁登录/登出体验
+
+### 跨域认证同步机制
+支持在多个域名之间共享登录状态（如 `ai.mayiai.site`、`mayi.mayiai.site`、`mayiai.site` 等）。
+
+**简化后的实现（2024年优化）**：
+
+1. **子域名共享**：
+   - 登录时 `/api/auth/login` 设置带有 `Domain=.mayiai.site` 的 Cookie
+   - 所有子域名（ai.mayiai.site, mayi.mayiai.site 等）自动共享该 Cookie
+   - 无需额外同步调用
+
+2. **跨域名验证**：
+   - 其他域名访问时，`/api/auth/me` 从 Cookie 读取 token
+   - 后端验证 token 有效性，自动恢复登录状态
+   - 无需主动同步
+
+3. **登出处理**：
+   - 删除本地 Cookie
+   - 调用 `/api/auth/logout` 清除后端 session
+   - 无需同步到其他域名
+
+**配置方式**：
+跨域配置存储在数据库 `cross_domain_config` 表中：
+- `enabled`: 是否启用跨域同步
+- `main_domains`: 主域名列表（如 `[".mayiai.site", ".itlao5.com", ".coze.site"]`）
+- `shared_domains`: 需要同步的完整域名列表（如 `["ai.mayiai.site", "mayi.mayiai.site", ...]`）
+- `auth_sync_timeout`: 同步超时时间（毫秒）
+
+**API 端点**：
+- `GET /api/auth/sync` - 跨域认证同步
+  - 支持多种格式：`html`（默认）、`json`、`jsonp`、`window`
+  - `window` 模式用于 `window.open` + `postMessage` 方式
 
 ### AuthContext 刷新机制
 AuthContext 提供了 `refreshTrigger` 机制用于在不刷新页面的情况下通知组件刷新用户状态：

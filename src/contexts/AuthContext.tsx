@@ -49,20 +49,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRefreshTrigger(prev => prev + 1)
   }, [])
 
-  // 跨域认证
-  const { syncLogin: crossDomainSyncLogin, syncLogout: crossDomainSyncLogout } = useCrossDomainAuth({
-    onLogin: (authToken) => {
-      // 从其他域名收到登录消息，刷新用户信息
-      fetchUser(authToken)
-    },
-    onLogout: () => {
-      // 从其他域名收到登出消息
-      setUser(null)
-      setToken(null)
-      setLastActivityTime(null)
-      setIsLoading(false)
-    },
-  })
+  // 跨域认证监听（仅用于接收其他域名的 postMessage 消息）
+  // 主动同步已移除，因为：
+  // - 子域名：通过 Domain=.xxx.site 的 Cookie 自动共享
+  // - 跨域名：其他域名访问时 /api/auth/me 自动验证 Cookie
+  useCrossDomainAuth()
 
   // 更新用户活动时间
   const updateActivity = useCallback(() => {
@@ -98,8 +89,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(async () => {
-    // 先同步到其他域名
-    await crossDomainSyncLogout()
     // 清除本地存储
     localStorage.removeItem('auth_token')
     localStorage.removeItem(LAST_ACTIVITY_KEY)
@@ -109,9 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLastActivityTime(null)
     // 触发刷新 - 通知所有监听组件刷新数据
     setRefreshTrigger(prev => prev + 1)
-    // 然后执行登出
+    // 执行登出（会清除 Cookie）
     await performLogout(token)
-  }, [token, performLogout, crossDomainSyncLogout])
+  }, [token, performLogout])
 
   // 从 localStorage 恢复登录状态
   const fetchUser = useCallback(async (authToken: string) => {
@@ -286,10 +275,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 触发刷新 - 通知所有监听组件刷新数据
         setRefreshTrigger(prev => prev + 1)
         
-        // 同步到其他域名（异步，不阻塞）
-        crossDomainSyncLogin(accessToken).catch(err => {
-          console.warn('跨域同步失败:', err)
-        })
+        // Cookie 已在 /api/auth/login 中设置（带 Domain），子域名自动共享
+        // 其他域名访问时会通过 /api/auth/me 自动验证
 
         return { success: true }
       }

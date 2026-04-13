@@ -1,91 +1,43 @@
 'use client'
 
-import { useEffect, useCallback, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   setCrossDomainCookieSync,
   removeCrossDomainCookieSync,
-  syncAuthTokenToDomains,
   isCrossDomainEnabled,
-  isCrossDomainEnabledSync,
   clearCrossDomainConfigCache,
 } from '@/lib/auth/cross-domain'
 
-interface CrossDomainAuthOptions {
+interface CrossDomainAuthCallbacks {
   onLogin?: (token: string) => void
   onLogout?: () => void
 }
 
 /**
- * 跨域名认证 Hook
- * 用于在多个域名间同步登录状态
+ * 跨域名认证 Hook（简化版）
+ * 
+ * 注意：这个 hook 现在主要用于接收来自其他域名的 postMessage 消息。
+ * 主动同步功能已移除，因为：
+ * - 子域名：通过设置 Domain=.mayiai.site 的 Cookie 自动共享
+ * - 跨域名：其他域名访问时 /api/auth/me 会自动验证 Cookie 中的 token
  */
-export function useCrossDomainAuth(options: CrossDomainAuthOptions = {}) {
+export function useCrossDomainAuth(callbacks: CrossDomainAuthCallbacks = {}) {
   const initializedRef = useRef(false)
-  const [configLoaded, setConfigLoaded] = useState(false)
 
   /**
-   * 在登录后同步到其他域名
-   */
-  const syncLogin = useCallback(async (token: string) => {
-    const enabled = await isCrossDomainEnabled()
-    if (!enabled) return
-
-    // 保存到 Cookie（用于子域名共享）
-    setCrossDomainCookieSync('auth_token', token, {
-      maxAge: 30 * 24 * 60 * 60, // 30天
-    })
-
-    // 同步到其他完全不同的域名
-    try {
-      await syncAuthTokenToDomains(token, 'login')
-      console.log('跨域登录同步完成')
-    } catch (error) {
-      console.warn('跨域登录同步失败:', error)
-    }
-  }, [])
-
-  /**
-   * 在登出后同步到其他域名
-   */
-  const syncLogout = useCallback(async () => {
-    const enabled = await isCrossDomainEnabled()
-    if (!enabled) return
-
-    // 清除 Cookie
-    removeCrossDomainCookieSync('auth_token')
-
-    // 同步到其他完全不同的域名
-    try {
-      await syncAuthTokenToDomains('', 'logout')
-      console.log('跨域登出同步完成')
-    } catch (error) {
-      console.warn('跨域登出同步失败:', error)
-    }
-  }, [])
-
-  /**
-   * 自动初始化（在组件挂载时）
+   * 自动初始化消息监听
    */
   useEffect(() => {
-    let isMounted = true
+    if (initializedRef.current) return
+    initializedRef.current = true
 
     const init = async () => {
-      if (initializedRef.current) return
-
-      // 先加载配置
       const enabled = await isCrossDomainEnabled()
       if (!enabled) return
 
-      if (!isMounted) return
-
-      initializedRef.current = true
-      setConfigLoaded(true)
-
-      // 监听来自其他域名的认证同步消息
       const handleMessage = (event: MessageEvent) => {
-        // 验证消息来源（可以添加更多验证逻辑）
         try {
-          if (event.data.type === 'AUTH_SYNC_TOKEN') {
+          if (event.data?.type === 'AUTH_SYNC_TOKEN') {
             const { token, action } = event.data
 
             if (action === 'login' && token) {
@@ -100,11 +52,11 @@ export function useCrossDomainAuth(options: CrossDomainAuthOptions = {}) {
               // 通知来源域收到消息
               event.source?.postMessage(
                 { type: 'AUTH_SYNC_ACK' },
-                event.origin
+                { targetOrigin: event.origin }
               )
 
               // 触发登录回调
-              options.onLogin?.(token)
+              callbacks.onLogin?.(token)
 
               // 刷新页面以加载用户信息
               setTimeout(() => {
@@ -118,11 +70,11 @@ export function useCrossDomainAuth(options: CrossDomainAuthOptions = {}) {
               // 通知来源域收到消息
               event.source?.postMessage(
                 { type: 'AUTH_SYNC_ACK' },
-                event.origin
+                { targetOrigin: event.origin }
               )
 
               // 触发登出回调
-              options.onLogout?.()
+              callbacks.onLogout?.()
 
               // 刷新页面
               setTimeout(() => {
@@ -137,7 +89,6 @@ export function useCrossDomainAuth(options: CrossDomainAuthOptions = {}) {
 
       window.addEventListener('message', handleMessage)
 
-      // 清理函数
       return () => {
         window.removeEventListener('message', handleMessage)
       }
@@ -146,27 +97,19 @@ export function useCrossDomainAuth(options: CrossDomainAuthOptions = {}) {
     init()
 
     return () => {
-      isMounted = false
+      initializedRef.current = false
     }
-  }, [options])
+  }, [callbacks])
 
   /**
    * 重新加载配置
    */
-  const reloadConfig = useCallback(async () => {
+  const reloadConfig = async () => {
     clearCrossDomainConfigCache()
-    const enabled = await isCrossDomainEnabled()
-    if (enabled && !initializedRef.current) {
-      initializedRef.current = true
-      setConfigLoaded(true)
-    }
-  }, [])
+    await isCrossDomainEnabled()
+  }
 
   return {
-    syncLogin,
-    syncLogout,
     reloadConfig,
-    isCrossDomainEnabled: isCrossDomainEnabledSync(),
-    configLoaded,
   }
 }

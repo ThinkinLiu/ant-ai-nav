@@ -348,9 +348,8 @@ export function isCrossDomainEnabledSync(): boolean {
 /**
  * 同步认证 token 到其他域名
  * 使用多种方式尝试跨域同步：
- * 1. JSONP 方式（最可靠，直接在目标域设置 cookie）
- * 2. iframe 方式（备用）
- * 3. 图片 ping 方式（触发请求但不等待响应）
+ * 1. window.open + postMessage 方式（最可靠，直接在目标域设置 cookie）
+ * 2. 同步 cookie 到主域名（用于子域名共享）
  */
 export async function syncAuthTokenToDomains(
   token: string,
@@ -389,6 +388,20 @@ export async function syncAuthTokenToDomains(
 
   console.log('[跨域同步] 开始同步到:', targetDomains, 'action:', action)
 
+  // 首先，同步到主域名（用于子域名共享）
+  // 如果当前域名是子域名，设置 Cookie 到主域名
+  const mainDomain = getMainDomain(currentDomain)
+  if (mainDomain !== currentDomain) {
+    const cookieValue = action === 'login' ? token : ''
+    const maxAge = action === 'login' ? 60 * 60 * 24 * 30 : 0 // 30天或立即过期
+    
+    // 设置带有主域名的 Cookie
+    document.cookie = `auth_token=${encodeURIComponent(cookieValue)}; Domain=${mainDomain}; Path=/; Max-Age=${maxAge}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+    document.cookie = `auth_sync=${action === 'login' ? '1' : '0'}; Domain=${mainDomain}; Path=/; Max-Age=${maxAge}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+    
+    console.log('[跨域同步] 已同步到主域名:', mainDomain, 'action:', action)
+  }
+
   // 创建一个 Promise 数组，用于并行同步
   const syncPromises = targetDomains.map(domain => {
     return new Promise<void>((resolve) => {
@@ -396,55 +409,85 @@ export async function syncAuthTokenToDomains(
       const port = window.location.port
       const fullDomain = `${protocol}//${domain}${port ? `:${port}` : ''}`
       
-      // 方式1: 使用 JSONP 方式（通过 script 标签）
-      // 这种方式可以跨域执行代码，直接在目标域设置 cookie
-      const callbackName = `__authSync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      console.log(`[跨域同步] 正在同步到: ${fullDomain}`)
       
-      // 定义回调函数（全局）
-      ;(window as any)[callbackName] = (result: any) => {
-        console.log(`[跨域同步] ${domain} JSONP 结果:`, result)
-        delete (window as any)[callbackName]
-        // 清理 script 标签
-        const script = document.getElementById(`sync-script-${domain}`)
-        if (script) script.remove()
-      }
-
-      // 创建 script 标签
-      const script = document.createElement('script')
-      script.id = `sync-script-${domain}`
-      script.src = `${fullDomain}/api/auth/sync?token=${encodeURIComponent(token)}&action=${action}&format=jsonp&callback=${callbackName}`
-      script.onerror = () => {
-        console.warn(`[跨域同步] ${domain} JSONP 方式失败，尝试 iframe 方式`)
-        delete (window as any)[callbackName]
-        script.remove()
-        
-        // 方式2: 使用 iframe 方式
+      // 使用 window.open + postMessage 方式
+      // 打开目标域名的同步页面
+      const syncWindow = window.open(
+        `${fullDomain}/api/auth/sync?action=${action}&format=window`,
+        `sync_${domain.replace(/\./g, '_')}`,
+        'width=1,height=1,left=-1000,top=-1000,menubar=no,toolbar=no,location=no,status=no'
+      )
+      
+      if (!syncWindow) {
+        console.warn(`[跨域同步] ${domain} 无法打开窗口，尝试 iframe 方式`)
         trySyncWithIframe(fullDomain, token, action, domain).then(resolve)
+        return
       }
       
-      // 超时处理
+      // 等待窗口加载完成，然后发送消息
       const timeoutId = setTimeout(() => {
         console.warn(`[跨域同步] ${domain} 同步超时`)
-        delete (window as any)[callbackName]
-        const existingScript = document.getElementById(`sync-script-${domain}`)
-        if (existingScript) existingScript.remove()
-        
-        // 尝试 iframe 方式
-        trySyncWithIframe(fullDomain, token, action, domain).then(resolve)
+        try {
+          syncWindow.close()
+        } catch {
+          // ignore
+        }
+        resolve()
       }, useTimeout)
-
-      // 脚本加载成功后清除超时
-      script.onload = () => {
-        clearTimeout(timeoutId)
-        // 延迟清理，确保回调有机会执行
+      
+      syncWindow.onload = () => {
+        // 窗口加载后，发送认证信息
+        try {
+          syncWindow.postMessage({
+            type: 'AUTH_SYNC_TOKEN',
+            token: token,
+            action: action,
+          }, fullDomain)
+          
+          console.log(`[跨域同步] 已发送消息到 ${domain}`)
+        } catch (e) {
+          console.warn(`[跨域同步] ${domain} 发送消息失败:`, e)
+        }
+        
+        // 延迟关闭窗口
         setTimeout(() => {
-          delete (window as any)[callbackName]
-          const existingScript = document.getElementById(`sync-script-${domain}`)
-          if (existingScript) existingScript.remove()
+          clearTimeout(timeoutId)
+          try {
+            syncWindow.close()
+          } catch {
+            // ignore
+          }
+          resolve()
         }, 1000)
       }
-
-      document.head.appendChild(script)
+      
+      // 监听来自窗口的响应
+      const messageHandler = (event: MessageEvent) => {
+        // 验证消息来源
+        if (event.origin !== fullDomain) return
+        
+        if (event.data?.type === 'AUTH_SYNC_ACK') {
+          console.log(`[跨域同步] ${domain} 确认同步完成`)
+          clearTimeout(timeoutId)
+          window.removeEventListener('message', messageHandler)
+          try {
+            syncWindow.close()
+          } catch {
+            // ignore
+          }
+          resolve()
+        }
+      }
+      
+      window.addEventListener('message', messageHandler)
+      
+      // 监听窗口关闭事件
+      syncWindow.onunload = () => {
+        clearTimeout(timeoutId)
+        window.removeEventListener('message', messageHandler)
+        resolve()
+      }
     })
   })
 
@@ -481,7 +524,9 @@ async function trySyncWithIframe(
           if (iframe.parentNode) {
             iframe.parentNode.removeChild(iframe)
           }
-        } catch (e) {}
+        } catch {
+          // ignore
+        }
       }
 
       iframe.onload = () => {

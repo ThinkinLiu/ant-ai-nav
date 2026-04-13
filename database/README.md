@@ -34,6 +34,11 @@
 - **12_seo_settings.sql** - SEO设置数据（1条记录）
 - **13_site_settings.sql** - 网站功能设置数据（1条记录）
 - **14_traffic_data_sources.sql** - 流量数据源配置（4条记录）
+- **15_ai_news_fields.sql** - AI资讯自定义字段配置
+- **17_cross_domain_config.sql** - 跨域认证配置
+
+### OAuth设置
+- **init-oauth-settings.sql** - OAuth 第三方登录配置
 
 ## 🚀 使用方法
 
@@ -190,6 +195,21 @@ Get-Content database\*.sql | psql -U username -d database_name
 | site_keywords | TEXT | 关键词 |
 | google_analytics_id | VARCHAR(50) | Google分析ID |
 | baidu_analytics_id | VARCHAR(50) | 百度分析ID |
+
+#### cross_domain_config - 跨域认证配置
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGSERIAL | 主键 |
+| enabled | BOOLEAN | 是否启用跨域认证 |
+| main_domains | TEXT[] | 主域名列表，如 `['.example.com']` |
+| shared_domains | TEXT[] | 共享域名列表，如 `['example.com', 'www.example.com']` |
+| auth_sync_timeout | INTEGER | 同步超时时间（毫秒） |
+| created_at | TIMESTAMPTZ | 创建时间 |
+| updated_at | TIMESTAMPTZ | 更新时间 |
+
+**使用说明**：
+- 子域名共享：设置 `main_domains`，如 `.example.com` 可让 `www.example.com`、`ai.example.com` 等子域名共享登录状态
+- 跨域名验证：设置 `shared_domains`，其他域名访问时会自动验证 Cookie 中的 token
 
 ## ⚠️ 注意事项
 
