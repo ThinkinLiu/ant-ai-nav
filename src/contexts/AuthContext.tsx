@@ -139,6 +139,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLastActivityTime(now)
           localStorage.setItem(LAST_ACTIVITY_KEY, now.toString())
         }
+      } else if (data.code === 'TOKEN_EXPIRED') {
+        // Token 过期（服务器端验证失败）
+        console.log('[AuthContext] Token 已过期，需要重新登录')
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem(LAST_ACTIVITY_KEY)
+        setToken(null)
+        setUser(null)
+        
+        // 显示提示
+        setTimeout(() => {
+          toast.error('登录状态已失效', {
+            description: '请重新登录以继续',
+            duration: 5000,
+          })
+        }, 100)
+        
+        // 如果不在登录页面，重定向到登录页
+        if (typeof window !== 'undefined') {
+          const currentPath = window.location.pathname
+          if (currentPath !== '/login' && currentPath !== '/register') {
+            window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}&expired=true`
+          }
+        }
       } else {
         console.log('[AuthContext] /api/auth/me 返回失败，清除 token')
         localStorage.removeItem('auth_token')
