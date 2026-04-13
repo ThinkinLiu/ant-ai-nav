@@ -16,6 +16,11 @@ export async function GET() {
           sharedDomains: [],
           authSyncTimeout: 5000,
         },
+        _debug: {
+          NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT_SET',
+          COZE_SUPABASE_URL: process.env.COZE_SUPABASE_URL ? 'SET' : 'NOT_SET',
+          NODE_ENV: process.env.NODE_ENV,
+        },
       })
     }
 
