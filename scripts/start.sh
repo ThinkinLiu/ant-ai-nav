@@ -40,25 +40,31 @@ echo "  - NEXT_PUBLIC_SUPABASE_ANON_KEY: $([ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
 echo ""
 
 # 检测是否在 standalone 模式下运行
-if [ -f "server.js" ]; then
-  echo "✅ 检测到 standalone 模式（Docker 部署）"
+if [ -f ".next/standalone/workspace/projects/server.js" ]; then
+  echo "✅ 检测到 standalone 模式"
+  echo ""
+  
+  cd .next/standalone/workspace/projects
+  
+  # 设置端口
+  PORT=${PORT:-5000}
+  
+  # 启动服务器（standalone 模式）
+  echo "🚀 启动服务器（standalone 模式，端口 $PORT）..."
+  echo "   当前目录：$(pwd)"
+  exec node server.js
+elif [ -f "server.js" ]; then
+  echo "✅ 检测到 standalone 模式（根目录）"
   echo ""
   
   # 检查静态文件是否存在
   if [ ! -d ".next/static" ]; then
     echo "❌ 错误：静态文件目录不存在 (.next/static)"
-    echo "   目录结构："
-    ls -la
-    echo ""
-    echo "   .next 目录："
-    ls -la .next/ 2>&1 || echo "   .next 目录不存在"
     exit 1
   fi
 
   if [ ! -d "public" ]; then
     echo "❌ 错误：public 目录不存在"
-    echo "   目录结构："
-    ls -la
     exit 1
   fi
 
