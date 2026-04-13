@@ -21,11 +21,11 @@ export async function GET() {
 
     const client = getSupabaseClient()
 
-    const { data, error } = await client
+    // 安全查询：使用 limit(1) 而不是 single()，避免多条记录报错
+    const { data: configData, error } = await client
       .from('cross_domain_config')
       .select('*')
-      .eq('id', 1)
-      .single()
+      .limit(1)
 
     if (error) {
       console.error('查询跨域配置错误:', error)
@@ -40,6 +40,9 @@ export async function GET() {
         },
       })
     }
+
+    // 获取第一条记录
+    const data = Array.isArray(configData) ? configData[0] : configData
 
     return NextResponse.json({
       success: true,
