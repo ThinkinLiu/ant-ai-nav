@@ -156,15 +156,22 @@ import RichTextEditor from '@/components/ui/rich-text-editor'
 ### 跨域认证同步机制
 支持在多个域名之间共享登录状态（如 `ai.mayiai.site`、`mayi.mayiai.site`、`mayiai.site` 等）。
 
-**实现方式**：
-1. **子域名共享**：通过设置 `Domain=.mayiai.site` 的 Cookie，所有 `.mayiai.site` 的子域名都能访问这个 Cookie
-2. **跨域名同步**：使用 `window.open` + `postMessage` 方式，将登录状态同步到其他完全不同的域名
+**简化后的实现（2024年优化）**：
 
-**同步流程**：
-1. 用户在 `mayiai.site` 登录
-2. 系统设置带有主域名 `.mayiai.site` 的 Cookie
-3. 系统调用 `syncAuthTokenToDomains()` 同步到其他配置的目标域名
-4. 目标域名的 `/api/auth/sync` 端点接收消息并设置 Cookie
+1. **子域名共享**：
+   - 登录时 `/api/auth/login` 设置带有 `Domain=.mayiai.site` 的 Cookie
+   - 所有子域名（ai.mayiai.site, mayi.mayiai.site 等）自动共享该 Cookie
+   - 无需额外同步调用
+
+2. **跨域名验证**：
+   - 其他域名访问时，`/api/auth/me` 从 Cookie 读取 token
+   - 后端验证 token 有效性，自动恢复登录状态
+   - 无需主动同步
+
+3. **登出处理**：
+   - 删除本地 Cookie
+   - 调用 `/api/auth/logout` 清除后端 session
+   - 无需同步到其他域名
 
 **配置方式**：
 跨域配置存储在数据库 `cross_domain_config` 表中：
