@@ -137,23 +137,13 @@ echo "  - NEXT_PUBLIC_SUPABASE_ANON_KEY: $([ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
 echo ""
 
 # ============================================
-# 环境变量映射
+# 环境变量配置
 # ============================================
 echo "🔧 配置环境变量..."
 
+# 统一使用 NEXT_PUBLIC_ 前缀
 if [ -n "$NEXT_PUBLIC_SUPABASE_URL" ]; then
   echo "  ✅ NEXT_PUBLIC_SUPABASE_URL 已设置"
-  # 同时设置 COZE_ 变量，确保运行时也能使用
-  if [ -z "$COZE_SUPABASE_URL" ]; then
-    export COZE_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL"
-    echo "  ✅ 同步设置 COZE_SUPABASE_URL"
-  fi
-elif [ -n "$COZE_SUPABASE_URL" ]; then
-  export NEXT_PUBLIC_SUPABASE_URL="$COZE_SUPABASE_URL"
-  echo "  ✅ 从 COZE_SUPABASE_URL 映射"
-elif [ -n "$SUPABASE_URL" ]; then
-  export NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
-  echo "  ✅ 从 SUPABASE_URL 映射"
 else
   export NEXT_PUBLIC_SUPABASE_URL="https://placeholder.supabase.co"
   echo "  ⚠️ 使用占位符"
@@ -161,20 +151,6 @@ fi
 
 if [ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
   echo "  ✅ NEXT_PUBLIC_SUPABASE_ANON_KEY 已设置"
-  # 同时设置 COZE_ 变量，确保运行时也能使用
-  if [ -z "$COZE_SUPABASE_ANON_KEY" ]; then
-    export COZE_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
-    echo "  ✅ 同步设置 COZE_SUPABASE_ANON_KEY"
-  fi
-elif [ -n "$COZE_SUPABASE_ANON_KEY" ]; then
-  export NEXT_PUBLIC_SUPABASE_ANON_KEY="$COZE_SUPABASE_ANON_KEY"
-  echo "  ✅ 从 COZE_SUPABASE_ANON_KEY 映射"
-elif [ -n "$SUPABASE_ANON_KEY" ]; then
-  export NEXT_PUBLIC_SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
-  echo "  ✅ 从 SUPABASE_ANON_KEY 映射"
-elif [ -n "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-  export NEXT_PUBLIC_SUPABASE_ANON_KEY="$SUPABASE_SERVICE_ROLE_KEY"
-  echo "  ✅ 从 SUPABASE_SERVICE_ROLE_KEY 映射"
 else
   export NEXT_PUBLIC_SUPABASE_ANON_KEY="placeholder-anon-key"
   echo "  ⚠️ 使用占位符"

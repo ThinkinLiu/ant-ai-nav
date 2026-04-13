@@ -13,15 +13,15 @@ if [ ! -f .env.local ]; then
   if [ -n "$COZE_WORKSPACE_PATH" ] || [ -n "$COZE_INTEGRATION_BASE_URL" ]; then
     echo "📦 检测到 Coze 环境"
     
-    # 检查 Coze 环境变量（改为警告而非错误）
-    if [ -z "$COZE_SUPABASE_URL" ] && [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+    # 检查环境变量
+    if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
       echo "⚠️  警告: 缺少 Supabase URL 配置"
       echo "请在 Coze 平台设置环境变量:"
-      echo "  - COZE_SUPABASE_URL 或 NEXT_PUBLIC_SUPABASE_URL"
-      echo "  - COZE_SUPABASE_ANON_KEY 或 NEXT_PUBLIC_SUPABASE_ANON_KEY"
+      echo "  - NEXT_PUBLIC_SUPABASE_URL"
+      echo "  - NEXT_PUBLIC_SUPABASE_ANON_KEY"
       echo "构建将继续，但某些功能可能不可用"
     else
-      echo "✅ Coze 环境变量检查通过"
+      echo "✅ 环境变量检查通过"
     fi
   else
     echo "📦 检测到独立服务器环境"

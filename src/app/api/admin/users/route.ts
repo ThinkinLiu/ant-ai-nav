@@ -172,7 +172,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: '未配置管理员密钥' }, { status: 500 })
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.COZE_SUPABASE_URL
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 
     if (!supabaseUrl) {
       return NextResponse.json({ success: false, error: '未配置 Supabase URL' }, { status: 500 })

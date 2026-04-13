@@ -1,6 +1,6 @@
 /**
  * 环境检测和配置验证工具
- * 支持 Coze 环境和独立服务器环境的兼容部署
+ * 统一使用 NEXT_PUBLIC_ 前缀的环境变量
  */
 
 /**
@@ -67,36 +67,23 @@ export function isPlaceholderKey(key: string | undefined): boolean {
 }
 
 /**
- * 获取环境变量，支持多种命名方式
- * @param keys - 环境变量名称列表（按优先级排序）
+ * 获取环境变量
+ * @param key - 环境变量名称
  * @param defaultValue - 默认值
  * @param skipPlaceholder - 是否跳过占位符值
  */
-export function getEnv(keys: string | string[], defaultValue?: string, skipPlaceholder: boolean = false): string | undefined {
-  const keyList = Array.isArray(keys) ? keys : [keys];
-  
-  for (const key of keyList) {
-    const value = process.env[key];
-    if (value) {
-      // 如果启用了跳过占位符，且当前值是占位符，则继续查找下一个
-      if (skipPlaceholder) {
-        if (isPlaceholderUrl(value) || isPlaceholderKey(value)) {
-          continue;
-        }
+export function getEnv(key: string, defaultValue?: string, skipPlaceholder: boolean = false): string | undefined {
+  const value = process.env[key];
+  if (value) {
+    // 如果启用了跳过占位符，且当前值是占位符，则返回默认值
+    if (skipPlaceholder) {
+      if (isPlaceholderUrl(value) || isPlaceholderKey(value)) {
+        return defaultValue;
       }
-      return value;
     }
+    return value;
   }
-  
   return defaultValue;
-}
-
-/**
- * 获取环境变量（自动跳过占位符）
- * 这是 getEnv 的简化版本，自动跳过占位符值
- */
-export function getEnvWithFallback(keys: string | string[]): string | undefined {
-  return getEnv(keys, undefined, true);
 }
 
 /**
@@ -134,59 +121,6 @@ export interface EnvValidationResult {
 }
 
 /**
- * 环境变量名称映射（支持多种命名方式）
- */
-export const ENV_KEY_MAPPING = {
-  supabaseUrl: [
-    'NEXT_PUBLIC_SUPABASE_URL',
-    'COZE_SUPABASE_URL',
-    'SUPABASE_URL',
-  ],
-  supabaseAnonKey: [
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-    'COZE_SUPABASE_ANON_KEY',
-    'SUPABASE_ANON_KEY',
-    'SUPABASE_SERVICE_ROLE_KEY',
-  ],
-  cozeApiKey: [
-    'COZE_WORKLOAD_IDENTITY_API_KEY',
-    'COZE_API_KEY',
-  ],
-  cozeClientId: [
-    'COZE_WORKLOAD_IDENTITY_CLIENT_ID',
-    'COZE_CLIENT_ID',
-  ],
-  cozeClientSecret: [
-    'COZE_WORKLOAD_IDENTITY_CLIENT_SECRET',
-    'COZE_CLIENT_SECRET',
-  ],
-  cozeBaseUrl: [
-    'COZE_INTEGRATION_BASE_URL',
-    'COZE_BASE_URL',
-  ],
-  s3AccessKeyId: [
-    'S3_ACCESS_KEY_ID',
-    'AWS_ACCESS_KEY_ID',
-  ],
-  s3SecretAccessKey: [
-    'S3_SECRET_ACCESS_KEY',
-    'AWS_SECRET_ACCESS_KEY',
-  ],
-  s3BucketName: [
-    'S3_BUCKET_NAME',
-    'AWS_S3_BUCKET',
-  ],
-  s3Region: [
-    'S3_REGION',
-    'AWS_REGION',
-  ],
-  s3Endpoint: [
-    'S3_ENDPOINT',
-    'AWS_ENDPOINT_URL_S3',
-  ],
-};
-
-/**
  * 验证必需的环境变量
  */
 export function validateEnv(): EnvValidationResult {
@@ -195,29 +129,29 @@ export function validateEnv(): EnvValidationResult {
   const warnings: string[] = [];
   
   // 检查必需的环境变量（自动跳过占位符）
-  let supabaseUrl = getEnvWithFallback(ENV_KEY_MAPPING.supabaseUrl);
-  let supabaseAnonKey = getEnvWithFallback(ENV_KEY_MAPPING.supabaseAnonKey);
+  const supabaseUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL', undefined, true);
+  const supabaseAnonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', undefined, true);
   
   if (!supabaseUrl) {
-    missing.push('NEXT_PUBLIC_SUPABASE_URL 或 COZE_SUPABASE_URL');
+    missing.push('NEXT_PUBLIC_SUPABASE_URL');
   }
   
   if (!supabaseAnonKey) {
-    missing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY 或 COZE_SUPABASE_ANON_KEY');
+    missing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
   }
   
   // 检查可选的环境变量
-  const cozeApiKey = getEnvWithFallback(ENV_KEY_MAPPING.cozeApiKey);
+  const cozeApiKey = getEnv('COZE_WORKLOAD_IDENTITY_API_KEY') || getEnv('COZE_API_KEY');
   if (!cozeApiKey && environment === 'coze') {
     warnings.push('COZE API 配置缺失，AI 生成功能可能不可用');
   }
   
   const s3Config = {
-    s3AccessKeyId: getEnvWithFallback(ENV_KEY_MAPPING.s3AccessKeyId),
-    s3SecretAccessKey: getEnvWithFallback(ENV_KEY_MAPPING.s3SecretAccessKey),
-    s3BucketName: getEnvWithFallback(ENV_KEY_MAPPING.s3BucketName),
-    s3Region: getEnvWithFallback(ENV_KEY_MAPPING.s3Region),
-    s3Endpoint: getEnvWithFallback(ENV_KEY_MAPPING.s3Endpoint),
+    s3AccessKeyId: getEnv('S3_ACCESS_KEY_ID') || getEnv('AWS_ACCESS_KEY_ID'),
+    s3SecretAccessKey: getEnv('S3_SECRET_ACCESS_KEY') || getEnv('AWS_SECRET_ACCESS_KEY'),
+    s3BucketName: getEnv('S3_BUCKET_NAME') || getEnv('AWS_S3_BUCKET'),
+    s3Region: getEnv('S3_REGION') || getEnv('AWS_REGION'),
+    s3Endpoint: getEnv('S3_ENDPOINT') || getEnv('AWS_ENDPOINT_URL_S3'),
   };
   
   // 检查 S3 配置的完整性
@@ -239,9 +173,9 @@ export function validateEnv(): EnvValidationResult {
     supabaseUrl: supabaseUrl!,
     supabaseAnonKey: supabaseAnonKey!,
     cozeApiKey,
-    cozeClientId: getEnv(ENV_KEY_MAPPING.cozeClientId),
-    cozeClientSecret: getEnv(ENV_KEY_MAPPING.cozeClientSecret),
-    cozeBaseUrl: getEnv(ENV_KEY_MAPPING.cozeBaseUrl, 'https://integration.coze.cn'),
+    cozeClientId: getEnv('COZE_WORKLOAD_IDENTITY_CLIENT_ID') || getEnv('COZE_CLIENT_ID'),
+    cozeClientSecret: getEnv('COZE_WORKLOAD_IDENTITY_CLIENT_SECRET') || getEnv('COZE_CLIENT_SECRET'),
+    cozeBaseUrl: getEnv('COZE_INTEGRATION_BASE_URL') || getEnv('COZE_BASE_URL', 'https://integration.coze.cn'),
     ...s3Config,
   } : undefined;
   
@@ -268,17 +202,8 @@ export function generateEnvHelp(): string {
     '',
     '### Supabase 数据库配置',
     '```bash',
-    '# 方式 1: 标准命名 (推荐)',
     'NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key',
-    '',
-    '# 方式 2: Coze 环境命名',
-    'COZE_SUPABASE_URL=https://your-project.supabase.co',
-    'COZE_SUPABASE_ANON_KEY=your-anon-key',
-    '',
-    '# 方式 3: 通用命名',
-    'SUPABASE_URL=https://your-project.supabase.co',
-    'SUPABASE_ANON_KEY=your-anon-key',
     '```',
     '',
     '## 可选的环境变量',
@@ -298,63 +223,7 @@ export function generateEnvHelp(): string {
     'S3_REGION=auto',
     'S3_ENDPOINT=https://your-s3-endpoint.com',
     '```',
-    '',
-    '## 获取帮助',
-    '',
-    '- Supabase 文档: https://supabase.com/docs',
-    '- Coze 平台: https://www.coze.cn',
-    '- 项目 README: 查看 README.md 了解更多信息',
   ];
   
   return lines.join('\n');
 }
-
-/**
- * 打印环境变量验证结果
- */
-export function printEnvStatus(): void {
-  const result = validateEnv();
-  
-  console.log('\n========================================');
-  console.log('环境变量配置检查');
-  console.log('========================================\n');
-  
-  console.log(`当前环境: ${result.environment}`);
-  console.log(`配置状态: ${result.isValid ? '✅ 有效' : '❌ 无效'}\n`);
-  
-  if (result.missing.length > 0) {
-    console.log('❌ 缺少必需的环境变量:');
-    result.missing.forEach(item => {
-      console.log(`  - ${item}`);
-    });
-    console.log('');
-  }
-  
-  if (result.warnings.length > 0) {
-    console.log('⚠️  警告:');
-    result.warnings.forEach(item => {
-      console.log(`  - ${item}`);
-    });
-    console.log('');
-  }
-  
-  if (!result.isValid) {
-    console.log('📝 请配置环境变量后重试。查看以下文档获取帮助:');
-    console.log('  - docs/deployment-guide.md');
-    console.log('  - README.md');
-    console.log('\n或者运行以下命令查看配置说明:');
-    console.log('  pnpm tsx scripts/check-env.ts --help\n');
-  }
-  
-  console.log('========================================\n');
-}
-
-// 导出默认配置
-export default {
-  detectEnvironment,
-  validateEnv,
-  getEnv,
-  generateEnvHelp,
-  printEnvStatus,
-  ENV_KEY_MAPPING,
-};

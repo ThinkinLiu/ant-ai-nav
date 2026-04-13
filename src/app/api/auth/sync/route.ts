@@ -26,17 +26,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取 Supabase 配置
-    const supabaseUrl = getEnv([
-      'NEXT_PUBLIC_SUPABASE_URL',
-      'COZE_SUPABASE_URL',
-      'SUPABASE_URL',
-    ])
-
-    const supabaseAnonKey = getEnv([
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-      'COZE_SUPABASE_ANON_KEY',
-      'SUPABASE_ANON_KEY',
-    ])
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     if (!supabaseUrl || !supabaseAnonKey) {
       if (format === 'json') {
