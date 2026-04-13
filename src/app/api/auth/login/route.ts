@@ -240,7 +240,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 设置 Supabase SSR 所需的 cookie
+    // 设置认证 cookie（合并方案）
     if (authData.session) {
       const { access_token, refresh_token } = authData.session
       const isProduction = process.env.NODE_ENV === 'production'
@@ -255,9 +255,10 @@ export async function POST(request: NextRequest) {
         return domain
       }
 
-      // 设置访问令牌 cookie
-      response.cookies.set('sb-access-token', access_token, {
-        httpOnly: true,
+      // 统一的认证 token cookie（用于跨域共享）
+      // 设置在主域名上，所有子域名可访问
+      response.cookies.set('auth_token', access_token, {
+        httpOnly: true, // 改为 httpOnly，确保安全
         secure: isProduction,
         sameSite: 'lax',
         maxAge: cookieMaxAge,
@@ -268,16 +269,6 @@ export async function POST(request: NextRequest) {
       // 设置刷新令牌 cookie
       response.cookies.set('sb-refresh-token', refresh_token, {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
-        maxAge: cookieMaxAge,
-        path: '/',
-        domain: setCookieDomain(cookieDomain),
-      })
-
-      // 设置 auth_token cookie（用于自定义认证逻辑）
-      response.cookies.set('auth_token', access_token, {
-        httpOnly: false,
         secure: isProduction,
         sameSite: 'lax',
         maxAge: cookieMaxAge,
