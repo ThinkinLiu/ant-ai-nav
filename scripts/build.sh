@@ -179,6 +179,19 @@ export NEXT_TELEMETRY_DISABLED=1
 export NEXT_BUILD_SOURCEMAPS=0
 
 # ============================================
+# 清理旧构建产物
+# ============================================
+echo "🧹 清理旧构建产物..."
+rm -rf .next
+# 确保使用 proxy.ts 而不是 middleware.ts（Next.js 16 要求）
+# 只检查根目录，不检查 src/lib/supabase（这是 Supabase 客户端代码）
+if [ -f "src/middleware.ts" ]; then
+  echo "⚠️ 发现 src/middleware.ts，正在删除..."
+  rm -f src/middleware.ts
+fi
+echo "✅ 清理完成"
+
+# ============================================
 # 安装依赖
 # ============================================
 echo "📦 安装依赖..."
