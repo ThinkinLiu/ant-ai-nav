@@ -4,7 +4,7 @@ import { getSupabaseClient } from '@/storage/database/supabase-client'
 
 /**
  * 从多个来源获取 token
- * 优先级：Authorization header > auth_token > sb-access-token > token（兼容旧格式）
+ * 优先级：Authorization header > token（当前域名）> auth_token（主域名/跨域）
  */
 function getToken(request: NextRequest): string | null {
   // 1. 优先从 Authorization header 获取
@@ -16,22 +16,16 @@ function getToken(request: NextRequest): string | null {
   // 2. 从 cookie 获取
   const cookies = request.cookies.getAll()
   
-  // 2.1 auth_token（当前格式）
-  const authCookie = cookies.find(c => c.name === 'auth_token')
-  if (authCookie?.value) {
-    return authCookie.value
-  }
-  
-  // 2.2 sb-access-token（Supabase SSR 格式）
-  const sbAccessToken = cookies.find(c => c.name === 'sb-access-token')
-  if (sbAccessToken?.value) {
-    return sbAccessToken.value
-  }
-  
-  // 2.3 token（兼容旧格式，自定义 JWT）
+  // 2.1 token（当前域名，自定义 JWT）
   const legacyToken = cookies.find(c => c.name === 'token')
   if (legacyToken?.value) {
     return legacyToken.value
+  }
+  
+  // 2.2 auth_token（主域名，跨域共享）
+  const authCookie = cookies.find(c => c.name === 'auth_token')
+  if (authCookie?.value) {
+    return authCookie.value
   }
   
   return null
