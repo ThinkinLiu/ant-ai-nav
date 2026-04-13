@@ -110,6 +110,41 @@ pnpm ts-check     # TypeScript 类型检查
 - 使用 Tailwind CSS 进行样式
 - 使用 dark mode 支持
 
+### 富文本编辑器
+项目使用 TipTap 作为富文本编辑器，支持丰富的编辑功能：
+
+**组件位置**：`src/components/ui/rich-text-editor.tsx`
+
+**功能特性**：
+- 支持加粗、斜体、删除线、行内代码
+- 支持标题（H1、H2、H3）
+- 支持有序列表、无序列表、任务列表
+- 支持引用和代码块
+- 支持添加链接
+- 支持插入图片（支持粘贴、拖拽上传）
+- 支持从网页粘贴内容（保留基本格式）
+
+**使用方式**：
+```tsx
+import RichTextEditor from '@/components/ui/rich-text-editor'
+
+<RichTextEditor
+  content={htmlContent}
+  onChange={(html) => setContent(html)}
+  placeholder="请输入内容..."
+  minHeight="200px"
+  onImageUpload={async (file) => {
+    // 返回图片 URL
+    return '/uploads/image.png'
+  }}
+/>
+```
+
+**粘贴行为**：
+- 从网页粘贴：自动清理外部样式，保留基本 HTML 结构（标题、列表、图片等）
+- 粘贴图片：自动转换为 base64 或通过 `onImageUpload` 上传
+- 拖拽图片：同上
+
 ## 安全注意事项
 
 ### 认证
