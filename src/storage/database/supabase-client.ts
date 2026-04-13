@@ -33,17 +33,29 @@ function getSupabaseCredentials(): SupabaseCredentials | null {
     { url: process.env.SUPABASE_URL, key: process.env.SUPABASE_ANON_KEY },
   ];
 
+  // 调试日志：在服务端渲染时记录环境变量状态
+  if (typeof window === 'undefined') {
+    console.log('[Supabase] 检查环境变量配置:');
+    console.log('  NEXT_PUBLIC_SUPABASE_URL:', candidates[0].url ? '已设置' : '未设置');
+    console.log('  COZE_SUPABASE_URL:', candidates[1].url ? '已设置' : '未设置');
+    console.log('  SUPABASE_URL:', candidates[2].url ? '已设置' : '未设置');
+    console.log('  NODE_ENV:', process.env.NODE_ENV);
+  }
+
   for (const candidate of candidates) {
     if (candidate.url && candidate.key) {
       // 跳过占位符值
       if (isPlaceholderUrl(candidate.url) || isPlaceholderKey(candidate.key)) {
+        console.log('[Supabase] 跳过占位符值:', candidate.url);
         continue;
       }
       cachedCredentials = { url: candidate.url, anonKey: candidate.key };
+      console.log('[Supabase] 成功加载 Supabase 配置');
       return cachedCredentials;
     }
   }
 
+  console.log('[Supabase] 未找到有效的 Supabase 配置');
   return null;
 }
 
