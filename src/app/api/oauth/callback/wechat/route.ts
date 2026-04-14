@@ -221,17 +221,7 @@ export async function GET(request: NextRequest) {
 
     // 设置 auth_token（主要token）
     response.cookies.set('auth_token', sessionToken, {
-      httpOnly: false, // 前端需要读取
-      secure: isProduction,
-      sameSite: 'lax',
-      maxAge: cookieMaxAge,
-      path: '/',
-      domain: cookieDomain,
-    })
-
-    // 设置 sb-access-token（用于 Supabase SSR middleware）
-    response.cookies.set('sb-access-token', sessionToken, {
-      httpOnly: true,
+      httpOnly: true, // 统一改为 httpOnly
       secure: isProduction,
       sameSite: 'lax',
       maxAge: cookieMaxAge,
