@@ -111,7 +111,7 @@ export default function RichTextEditor({
     editorProps: {
       attributes: {
         class: 'prose prose-sm max-w-none focus:outline-none p-4',
-        style: `min-height: ${minHeight}`,
+        style: `height: ${minHeight}; overflow-y: auto;`,
       },
       handlePaste: (view, event) => {
         // 获取剪贴板数据
