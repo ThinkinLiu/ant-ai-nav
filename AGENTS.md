@@ -71,12 +71,15 @@ pnpm ts-check     # TypeScript 类型检查
 - `GET /api/news` - 资讯列表
 - `GET /api/hall-of-fame` - 名人堂列表
 - `GET /api/timeline` - 时间线列表
+- `GET /api/seo?site_type=nav|home` - 获取指定站点的SEO配置
+- `GET /api/sitemap-home` - 获取蚂蚁AI之家站点地图
 
 ### 管理后台接口
 - `GET/POST /api/admin/tools` - 工具管理
 - `GET/POST /api/admin/categories` - 分类管理
 - `GET/POST /api/admin/news` - 资讯管理
 - `GET/POST /api/admin/announcements` - 公告管理
+- `GET/PUT /api/admin/seo?site_type=nav|home` - SEO设置管理（支持多站点）
 
 ## 数据库
 
@@ -93,6 +96,20 @@ pnpm ts-check     # TypeScript 类型检查
 - `announcements` - 公告表
 - `hall_of_fame` - 名人堂表
 - `timeline` - 时间线表
+- `seo_settings` - SEO配置表（支持多站点，通过 `site_type` 字段区分：`nav`=蚂蚁AI导航，`home`=蚂蚁AI之家）
+
+### SEO 多站点配置
+项目支持为不同站点配置独立的 SEO 设置：
+
+| 站点 | site_type | 描述 |
+|------|-----------|------|
+| 蚂蚁AI导航 | `nav` | AI工具导航平台 |
+| 蚂蚁AI之家 | `home` | AI博客/资讯平台 |
+
+**配置说明**：
+- 管理后台 `/admin/seo` 支持切换站点进行配置
+- 公开 API `/api/seo?site_type=nav|home` 获取指定站点配置
+- 蚂蚁AI之家站点地图：`/api/sitemap-home`
 
 ## 代码风格指南
 
