@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { MarkdownEditor, MarkdownEditorSimple } from '@/components/ui/markdown-editor'
+import RichTextEditor from '@/components/ui/rich-text-editor'
 import { TagInput } from '@/components/ui/tag-input'
 import {
   Select,
@@ -238,27 +238,6 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
     }
   }
 
-  // 简单的Markdown渲染
-  const renderMarkdown = (text: string) => {
-    // 处理标题
-    let html = text
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-4 mb-2">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>')
-      // 处理粗体
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // 处理斜体
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // 处理链接
-      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>')
-      // 处理代码
-      .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>')
-      // 处理换行
-      .replace(/\n/g, '<br />')
-    
-    return html
-  }
-
   if (!user || (user.role !== 'admin' && user.role !== 'publisher')) {
     return null
   }
@@ -376,24 +355,26 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
 
                 {/* 摘要 */}
                 <div className="space-y-2">
-                  <MarkdownEditorSimple
+                  <Label>摘要</Label>
+                  <RichTextEditor
                     value={formData.summary}
                     onChange={(value) => setFormData({ ...formData, summary: value || '' })}
-                    placeholder="请输入资讯摘要（建议200字以内），支持Markdown格式"
-                    minHeight={120}
+                    placeholder="请输入资讯摘要（建议200字以内），支持图文粘贴"
+                    minHeight="120px"
                   />
                   <p className="text-xs text-muted-foreground">
-                    {formData.summary.length}/500 字符
+                    {formData.summary.replace(/<[^>]*>/g, '').length}/500 字符
                   </p>
                 </div>
 
                 {/* 正文内容 */}
                 <div className="space-y-2">
-                  <MarkdownEditor
+                  <Label>正文内容 *</Label>
+                  <RichTextEditor
                     value={formData.content}
                     onChange={(value) => setFormData({ ...formData, content: value || '' })}
-                    height={500}
-                    label="正文内容 *"
+                    placeholder="详细介绍这个资讯的内容，支持图文粘贴..."
+                    minHeight="400px"
                   />
                 </div>
 
@@ -586,7 +567,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                         {formData.summary && (
                           <div className="mb-6 p-4 bg-muted rounded-lg">
                             <h3 className="font-semibold mb-2">摘要</h3>
-                            <p className="text-sm">{formData.summary}</p>
+                            <div className="text-sm prose prose-sm dark:prose-invert" dangerouslySetInnerHTML={{ __html: formData.summary }} />
                           </div>
                         )}
 
@@ -594,10 +575,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                         {formData.content && (
                           <div className="mb-6">
                             <h3 className="font-semibold mb-2">正文</h3>
-                            <div 
-                              className="prose prose-sm dark:prose-invert"
-                              dangerouslySetInnerHTML={{ __html: renderMarkdown(formData.content) }}
-                            />
+                            <div className="prose prose-sm dark:prose-invert" dangerouslySetInnerHTML={{ __html: formData.content }} />
                           </div>
                         )}
 
