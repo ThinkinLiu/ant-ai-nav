@@ -299,7 +299,7 @@ export default function NewToolPage() {
                 value={formData.longDescription}
                 onChange={(value) => setFormData({ ...formData, longDescription: value })}
                 placeholder="详细介绍这个工具的功能、特点、使用场景等..."
-                minHeight={200}
+                minHeight="400px"
               />
             </div>
 
