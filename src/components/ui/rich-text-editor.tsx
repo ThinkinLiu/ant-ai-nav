@@ -55,9 +55,9 @@ export default function RichTextEditor({
   minHeight = '200px',
   onImageUpload
 }: RichTextEditorProps) {
-  // 在编辑器创建之前定义 ref
-  const isInternalUpdate = useRef(false)
-  const lastExternalContent = useRef<string | null>(null)
+  // 用于防止同步循环
+  const isUpdatingFromOutside = useRef(false)
+  const lastExternalValue = useRef(content)
   
   const editor = useEditor({
     extensions: [
@@ -131,9 +131,7 @@ export default function RichTextEditor({
     editable: !disabled,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      if (!isInternalUpdate.current) {
-        onChange(editor.getHTML())
-      }
+      // 这里不做任何事，由 useEffect 监听器处理
     },
     editorProps: {
       attributes: {
@@ -191,20 +189,37 @@ export default function RichTextEditor({
     },
   })
 
-  // 监听外部 value 变化，同步到编辑器
+  // 同步外部 content 变化到编辑器
   useEffect(() => {
     if (!editor) return
     
-    // 如果 content 有值且与上次不同步
-    if (content && content !== lastExternalContent.current) {
-      isInternalUpdate.current = true
-      editor.commands.setContent(content, false)
-      lastExternalContent.current = content
-      setTimeout(() => {
-        isInternalUpdate.current = false
-      }, 50)
+    // 如果外部值变了，且不是由内部更新触发的
+    if (content !== lastExternalValue.current && !isUpdatingFromOutside.current) {
+      // 设置标志防止 onUpdate 触发
+      isUpdatingFromOutside.current = true
+      editor.commands.setContent(content || '', false)
+      lastExternalValue.current = content
+      // 下一个 tick 重置标志
+      requestAnimationFrame(() => {
+        isUpdatingFromOutside.current = false
+      })
     }
   }, [content, editor])
+
+  // 监听编辑器更新，通知外部
+  useEffect(() => {
+    if (!editor) return
+    
+    const handleUpdate = () => {
+      if (!isUpdatingFromOutside.current) {
+        lastExternalValue.current = editor.getHTML()
+        onChange(editor.getHTML())
+      }
+    }
+    
+    editor.on('update', handleUpdate)
+    return () => editor.off('update', handleUpdate)
+  }, [editor, onChange])
 
   const handleImagePaste = async (file: File) => {
     if (!editor) return
