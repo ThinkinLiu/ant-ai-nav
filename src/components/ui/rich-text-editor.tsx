@@ -542,6 +542,73 @@ export default function RichTextEditor({
       }
     })
     
+    // ===== 处理列表：将分散的项目转换为列表 =====
+    // 处理连续的段落，如果它们以 • 或数字. 开头，则转换为列表
+    const convertSimulatedLists = () => {
+      const paragraphs = Array.from(doc.body.querySelectorAll('p, div'))
+      const itemsToConvert: { elements: Element[]; type: 'ul' | 'ol' }[] = []
+      let currentList: { elements: Element[]; type: 'ul' | 'ol' } | null = null
+      
+      for (let i = 0; i < paragraphs.length; i++) {
+        const p = paragraphs[i]
+        const text = p.textContent?.trim() || ''
+        
+        // 检查是否匹配列表项目格式
+        const isBulletItem = /^[\•\-\*\◦\▪\▸]\s/.test(text)
+        const isNumberItem = /^\d+[\.\、\)]\s/.test(text)
+        
+        if (isBulletItem || isNumberItem) {
+          const type = isNumberItem ? 'ol' : 'ul'
+          
+          // 如果是新列表的开始
+          if (!currentList || currentList.type !== type) {
+            if (currentList && currentList.elements.length > 0) {
+              itemsToConvert.push(currentList)
+            }
+            currentList = { elements: [p], type }
+          } else {
+            currentList.elements.push(p)
+          }
+        } else {
+          // 非列表项，结束当前列表
+          if (currentList && currentList.elements.length > 0) {
+            itemsToConvert.push(currentList)
+            currentList = null
+          }
+        }
+      }
+      
+      // 添加最后一个列表
+      if (currentList && currentList.elements.length > 0) {
+        itemsToConvert.push(currentList)
+      }
+      
+      // 转换列表
+      itemsToConvert.forEach(list => {
+        if (list.elements.length < 2) return // 至少需要2个项目才转换
+        
+        const listElement = doc.createElement(list.type)
+        listElement.setAttribute('class', 'list-disc pl-6 my-2')
+        
+        list.elements.forEach(el => {
+          const li = doc.createElement('li')
+          // 移除列表前缀符号
+          const text = el.textContent || ''
+          const cleanedText = text.replace(/^[\•\-\*\◦\▪\▸\d+[\.\、\)]\s]+/, '')
+          li.textContent = cleanedText
+          listElement.appendChild(li)
+        })
+        
+        // 替换第一个元素为列表，删除其余元素
+        list.elements[0].replaceWith(listElement)
+        for (let i = 1; i < list.elements.length; i++) {
+          list.elements[i].remove()
+        }
+      })
+    }
+    
+    convertSimulatedLists()
+    
     // 移除空的段落和 div
     const emptyElements = doc.body.querySelectorAll('p:empty, div:empty, span:empty, br')
     emptyElements.forEach(el => {
@@ -550,12 +617,17 @@ export default function RichTextEditor({
     })
     
     // ===== 最终处理：保护代码块，清理其他地方的格式 =====
-    // 先提取所有 pre 标签内容
-    const preContents: string[] = []
+    // 先提取所有 pre/code 标签内容（保护代码块内的格式）
+    const codeContents: Map<number, string> = new Map()
     const allPreElements = doc.body.querySelectorAll('pre')
+    
+    // 遍历所有 pre 元素，提取并保护其内容
     allPreElements.forEach((pre, index) => {
-      preContents[index] = pre.outerHTML
-      pre.setAttribute('data-code-block-index', index.toString())
+      // 提取整个 pre 标签的 HTML
+      const preHtml = pre.outerHTML
+      // 用占位符替换
+      pre.innerHTML = `___CODE_BLOCK_${index}___`
+      codeContents.set(index, preHtml)
     })
     
     // 清理连续的空行（代码块外）
@@ -572,22 +644,20 @@ export default function RichTextEditor({
     // 替换临时代理符
     cleanHtml = cleanHtml.replace(/<pre([^>]*)>/gi, '___PRE_START___$1___')
     cleanHtml = cleanHtml.replace(/<\/pre>/gi, '___PRE_END___')
-    cleanHtml = cleanHtml.replace(/\s+/g, ' ')
+    // 只清理代码块外的多余空格，保留换行
+    cleanHtml = cleanHtml.replace(/(?:(?!___PRE_START___|___PRE_END___)[\s]){2,}/g, ' ')
     cleanHtml = cleanHtml.replace(/___PRE_START___/g, '<pre')
     cleanHtml = cleanHtml.replace(/___PRE_END___/g, '</pre>')
     
     // 恢复代码块原始内容
     allPreElements.forEach((pre, index) => {
-      if (preContents[index]) {
+      if (codeContents.has(index)) {
         cleanHtml = cleanHtml.replace(
-          `<pre data-code-block-index="${index}">${pre.querySelector('code')?.textContent || ''}</pre>`,
-          preContents[index]
+          `<pre>___CODE_BLOCK_${index}___</pre>`,
+          codeContents.get(index) || ''
         )
       }
     })
-    
-    // 清理 pre 标签上的临时代理属性
-    cleanHtml = cleanHtml.replace(/\s*data-code-block-index="\d+"/g, '')
     
     return cleanHtml
   }
