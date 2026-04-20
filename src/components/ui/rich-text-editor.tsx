@@ -226,116 +226,129 @@ export default function RichTextEditor({
     const parser = new DOMParser()
     const doc = parser.parseFromString(html, 'text/html')
     
-    // ===== 第一步：先处理分散的 Markdown 代码块（在 innerHTML 处理之前） =====
-    // 这个方法直接处理 innerHTML 字符串，更可靠
-    const processDispersedCodeBlocks = () => {
-      let content = doc.body.innerHTML
+    // ===== 第一步：提取并保护所有代码块内容 =====
+    // 使用占位符保护原始代码块内容
+    const codeBlocks: Map<string, string> = new Map()
+    let codeBlockCounter = 0
+    
+    // 提取所有 <pre> 标签内容
+    doc.querySelectorAll('pre').forEach(pre => {
+      const code = pre.querySelector('code')
+      const codeText = code?.textContent || pre.textContent || ''
+      const langClass = code?.className?.match(/language-(\w+)/)?.[1] || ''
+      const placeholder = `___CODE_BLOCK_${codeBlockCounter}___`
       
-      // 检查是否包含 Markdown 代码块标记
-      if (!content.includes('```')) return
+      codeBlocks.set(placeholder, {
+        content: codeText,
+        lang: langClass
+      })
       
-      // 情况1: 处理跨多个标签的代码块（```bash ... ... ```）
-      // 使用正则匹配：开始标记 + 内容（不包括结束标记） + 结束标记
-      // 内容可以是任何字符，包括换行，但不包含 ``` 本身
-      const multiLineCodeBlockRegex = /```(\w*)?\s*\n?([\s\S]*?)```/g
+      // 替换为占位符
+      pre.innerHTML = placeholder
+    })
+    
+    // ===== 第二步：处理 Markdown 代码块（```lang ... ```）=====
+    // 在 innerHTML 上用正则处理
+    let content = doc.body.innerHTML
+    
+    // 匹配 Markdown 代码块
+    const markdownCodeBlockRegex = /```(\w*)?\s*\n?([\s\S]*?)```/g
+    let match
+    while ((match = markdownCodeBlockRegex.exec(content)) !== null) {
+      const fullMatch = match[0]
+      const lang = match[1] || ''
+      const code = match[2] || ''
       
-      let match
-      while ((match = multiLineCodeBlockRegex.exec(content)) !== null) {
-        const fullMatch = match[0]
-        const lang = match[1] || ''
-        const code = match[2] || ''
+      if (code.trim()) {
+        const placeholder = `___CODE_BLOCK_${codeBlockCounter}___`
+        codeBlocks.set(placeholder, {
+          content: code,
+          lang: lang
+        })
         
-        // 如果匹配到了代码内容（不仅仅是标记），创建 pre 元素
-        if (code.trim()) {
-          // 转义 HTML 特殊字符（但保留换行和空格）
-          const escapedCode = code
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-          
-          const preHtml = `<pre class="bg-muted rounded p-4 font-mono text-sm my-2 overflow-x-auto"><code${lang ? ` class="language-${lang}"` : ''}>${escapedCode}</code></pre>`
-          
-          // 替换这个代码块
-          content = content.replace(fullMatch, preHtml)
-        }
+        // 转义并创建临时代码块 HTML
+        const escapedCode = code
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+        
+        const preHtml = `<pre class="bg-muted rounded p-4 font-mono text-sm my-2 overflow-x-auto"><code>${placeholder}</code></pre>`
+        content = content.replace(fullMatch, preHtml)
+        codeBlockCounter++
       }
+    }
+    
+    // 处理分散在多个 <p> 标签中的代码块
+    // 例如: <p>```bash</p><p>代码行1</p><p>代码行2</p><p>```</p>
+    const processParagraphCodeBlocks = () => {
+      // 重新解析（因为 innerHTML 已改变）
+      const tempDoc = parser.parseFromString(content, 'text/html')
+      const paragraphs = Array.from(tempDoc.body.querySelectorAll('p, div'))
       
-      // 情况2: 处理分散在多个 <p> 标签中的代码块
-      // 例如: <p>```bash</p><p>代码</p><p>```</p>
-      // 需要合并相邻的段落并提取代码块
-      const processParagraphCodeBlocks = () => {
-        // 获取所有段落
-        const paragraphs = doc.body.querySelectorAll('p, div')
+      for (let i = 0; i < paragraphs.length; i++) {
+        const p = paragraphs[i]
+        const text = p.textContent || ''
         
-        for (let i = 0; i < paragraphs.length; i++) {
-          const p = paragraphs[i]
-          const text = p.textContent || ''
+        // 检查是否是代码块开始标记
+        if (/^```\w*$/.test(text.trim())) {
+          const lang = text.trim().replace(/^```/, '')
+          const contentParts: string[] = []
+          let endIndex = -1
           
-          // 检查是否是代码块开始标记
-          if (/^```\w*$/.test(text.trim())) {
-            // 找到了开始标记，收集后续段落
-            const lang = text.trim().replace(/^```/, '')
-            const contentParts: string[] = []
-            let endIndex = -1
-            
-            // 向后查找结束标记
-            for (let j = i + 1; j < paragraphs.length; j++) {
-              const nextText = paragraphs[j].textContent || ''
-              if (nextText.trim() === '```') {
-                endIndex = j
-                break
-              }
-              contentParts.push(nextText)
+          // 向后查找结束标记
+          for (let j = i + 1; j < paragraphs.length; j++) {
+            const nextText = paragraphs[j].textContent || ''
+            if (nextText.trim() === '```') {
+              endIndex = j
+              break
             }
+            contentParts.push(nextText)
+          }
+          
+          // 如果找到了结束标记
+          if (endIndex > i) {
+            const codeContent = contentParts.join('\n')
+            const placeholder = `___CODE_BLOCK_${codeBlockCounter}___`
             
-            // 如果找到了结束标记
-            if (endIndex > i) {
-              const codeContent = contentParts.join('\n')
-              
-              // 转义 HTML
-              const escapedCode = codeContent
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-              
-              // 创建 pre 元素
-              const pre = doc.createElement('pre')
-              pre.setAttribute('class', 'bg-muted rounded p-4 font-mono text-sm my-2 overflow-x-auto')
-              const codeEl = doc.createElement('code')
-              if (lang) {
-                codeEl.setAttribute('class', `language-${lang}`)
-              }
-              codeEl.textContent = codeContent
-              pre.appendChild(codeEl)
-              
-              // 替换第一个段落
-              p.replaceWith(pre)
-              
-              // 删除中间的段落
-              for (let k = i + 1; k < endIndex; k++) {
-                paragraphs[k].remove()
-              }
-              
-              // 删除结束标记段落
-              paragraphs[endIndex].remove()
-              
-              // 更新段落列表（因为 DOM 已改变）
-              i = -1 // 重置循环
+            codeBlocks.set(placeholder, {
+              content: codeContent,
+              lang: lang
+            })
+            
+            // 转义并创建临时代码块 HTML
+            const escapedCode = codeContent
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+            
+            const preHtml = `<pre class="bg-muted rounded p-4 font-mono text-sm my-2 overflow-x-auto"><code>${placeholder}</code></pre>`
+            
+            // 替换第一个段落
+            p.innerHTML = preHtml
+            // 删除中间的段落
+            for (let k = i + 1; k < endIndex; k++) {
+              paragraphs[k].innerHTML = ''
             }
+            // 删除结束标记段落
+            paragraphs[endIndex].innerHTML = ''
+            
+            // 更新 content
+            content = tempDoc.body.innerHTML
+            codeBlockCounter++
+            
+            // 重置循环
+            i = -1
           }
         }
       }
-      
-      // 更新 body 内容
-      doc.body.innerHTML = content
-      
-      // 处理分散在多个段落中的代码块
-      processParagraphCodeBlocks()
     }
     
-    processDispersedCodeBlocks()
+    processParagraphCodeBlocks()
     
-    // ===== 第二步：处理已有的 <pre> 标签（如果有的话） =====
+    // 更新 doc.body.innerHTML
+    doc.body.innerHTML = content
+    
+    // ===== 第三步：处理带代码特征的 div/p 标签 =====
     const preElements = doc.body.querySelectorAll('pre')
     preElements.forEach(pre => {
       // 获取纯文本内容，保留换行
@@ -616,22 +629,34 @@ export default function RichTextEditor({
       el.remove()
     })
     
-    // ===== 最终处理：保护代码块，清理其他地方的格式 =====
-    // 先提取所有 pre/code 标签内容（保护代码块内的格式）
-    const codeContents: Map<number, string> = new Map()
-    const allPreElements = doc.body.querySelectorAll('pre')
+    // ===== 最终处理：提取并恢复代码块内容 =====
+    // 使用新的临时 DOM 来恢复代码块内容，避免被后续处理影响
+    const finalDoc = parser.parseFromString(doc.body.innerHTML, 'text/html')
+    const finalPreElements = finalDoc.querySelectorAll('pre')
     
-    // 遍历所有 pre 元素，提取并保护其内容
-    allPreElements.forEach((pre, index) => {
-      // 提取整个 pre 标签的 HTML
-      const preHtml = pre.outerHTML
-      // 用占位符替换
-      pre.innerHTML = `___CODE_BLOCK_${index}___`
-      codeContents.set(index, preHtml)
+    finalPreElements.forEach(pre => {
+      const codeEl = pre.querySelector('code')
+      if (!codeEl) return
+      
+      const placeholder = codeEl.textContent || ''
+      
+      if (placeholder.startsWith('___CODE_BLOCK_') && codeBlocks.has(placeholder)) {
+        const blockInfo = codeBlocks.get(placeholder)!
+        
+        // 设置语言 class
+        if (blockInfo.lang) {
+          codeEl.setAttribute('class', `language-${blockInfo.lang}`)
+        }
+        // 使用 textContent 设置代码内容（保留原始格式，包括换行）
+        codeEl.textContent = blockInfo.content
+        
+        // 清理 codeEl 的其他属性
+        codeEl.removeAttribute('style')
+      }
     })
     
     // 清理连续的空行（代码块外）
-    let cleanHtml = doc.body.innerHTML
+    let cleanHtml = finalDoc.body.innerHTML
     cleanHtml = cleanHtml.replace(/<p><br\s*\/?><\/p>/gi, '<br>')
     cleanHtml = cleanHtml.replace(/<div><br\s*\/?><\/div>/gi, '<br>')
     cleanHtml = cleanHtml.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '<br>')
@@ -639,25 +664,6 @@ export default function RichTextEditor({
     // 标准化列表结构
     cleanHtml = cleanHtml.replace(/<li>\s*<p>([\s\S]*?)<\/p>\s*<\/li>/gi, '<li>$1</li>')
     cleanHtml = cleanHtml.replace(/<p>\s*<li>([\s\S]*?)<\/li>\s*<\/p>/gi, '<li>$1</li>')
-    
-    // 清理多余的空格（但要保护代码块内的格式）
-    // 替换临时代理符
-    cleanHtml = cleanHtml.replace(/<pre([^>]*)>/gi, '___PRE_START___$1___')
-    cleanHtml = cleanHtml.replace(/<\/pre>/gi, '___PRE_END___')
-    // 只清理代码块外的多余空格，保留换行
-    cleanHtml = cleanHtml.replace(/(?:(?!___PRE_START___|___PRE_END___)[\s]){2,}/g, ' ')
-    cleanHtml = cleanHtml.replace(/___PRE_START___/g, '<pre')
-    cleanHtml = cleanHtml.replace(/___PRE_END___/g, '</pre>')
-    
-    // 恢复代码块原始内容
-    allPreElements.forEach((pre, index) => {
-      if (codeContents.has(index)) {
-        cleanHtml = cleanHtml.replace(
-          `<pre>___CODE_BLOCK_${index}___</pre>`,
-          codeContents.get(index) || ''
-        )
-      }
-    })
     
     return cleanHtml
   }
