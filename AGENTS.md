@@ -5,6 +5,14 @@
 - **描述**: 现代化的 AI 工具导航平台
 - **技术栈**: Next.js 16 (App Router), React 19, TypeScript 5, shadcn/ui, Tailwind CSS 4, Supabase
 
+## 主要功能
+- **AI工具导航**: 收录各类AI工具，支持分类浏览和搜索
+- **发布功能**: 登录用户可在顶部导航栏使用发布功能
+  - **发布工具**: 发布AI工具（需要 publisher 或 admin 角色）
+  - **发布资讯**: 发布AI相关资讯（需要 publisher 或 admin 角色）
+- **名人堂**: 展示AI领域杰出人物
+- **时间线**: 记录AI发展重要事件
+
 ## 构建和测试命令
 
 ### 开发环境
