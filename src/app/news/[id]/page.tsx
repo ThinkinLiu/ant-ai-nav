@@ -59,14 +59,27 @@ export default async function NewsDetailPage({ params }: Props) {
   const { id } = await params
   const supabase = getSupabaseClient()
 
-  // 获取资讯详情
-  const { data: news, error } = await supabase
-    .from('ai_news')
-    .select('*')
-    .eq('id', parseInt(id))
-    .single()
+  // 支持 slug 和数字 ID 两种方式访问
+  let news: any
+  if (/^\d+$/.test(id)) {
+    // 如果是数字 ID，使用 ID 查询
+    const result = await supabase
+      .from('ai_news')
+      .select('*')
+      .eq('id', parseInt(id))
+      .single()
+    news = result.data
+  } else {
+    // 如果是 slug，使用 slug 查询
+    const result = await supabase
+      .from('ai_news')
+      .select('*')
+      .eq('slug', id)
+      .single()
+    news = result.data
+  }
 
-  if (error || !news) {
+  if (!news) {
     notFound()
   }
 
