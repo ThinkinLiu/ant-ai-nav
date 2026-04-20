@@ -226,39 +226,7 @@ export default function RichTextEditor({
     const parser = new DOMParser()
     const doc = parser.parseFromString(html, 'text/html')
     
-    // ===== 第一步：检测并转换 Markdown 代码块 =====
-    // 遍历所有文本节点，查找 Markdown 代码块
-    const textWalker = document.createTreeWalker(
-      doc.body,
-      NodeFilter.SHOW_TEXT,
-      null
-    )
-    const textNodes: Text[] = []
-    let node: Text | null
-    while ((node = textWalker.nextNode() as Text)) {
-      textNodes.push(node)
-    }
-    
-    textNodes.forEach(textNode => {
-      const text = textNode.textContent || ''
-      // 检测 Markdown 代码块（支持多种格式）
-      // 匹配 ```bash ... ``` 或 ``` ... ```
-      const codeBlockMatch = text.match(/^```(\w*)?\s*\n([\s\S]*?)```\s*$/m)
-      if (codeBlockMatch && codeBlockMatch[2]) {
-        const pre = doc.createElement('pre')
-        pre.setAttribute('class', 'bg-muted rounded p-4 font-mono text-sm my-2 overflow-x-auto')
-        const code = doc.createElement('code')
-        // 保留原始换行
-        code.textContent = codeBlockMatch[2]
-        if (codeBlockMatch[1]) {
-          code.setAttribute('class', `language-${codeBlockMatch[1]}`)
-        }
-        pre.appendChild(code)
-        textNode.parentNode?.replaceChild(pre, textNode)
-      }
-    })
-    
-    // ===== 第二步：处理已有的 <pre> 标签 =====
+    // ===== 第一步：处理已有的 <pre> 标签（如果有的话） =====
     const preElements = doc.body.querySelectorAll('pre')
     preElements.forEach(pre => {
       // 获取纯文本内容，保留换行
@@ -288,13 +256,12 @@ export default function RichTextEditor({
       
       pre.childNodes.forEach(child => processNode(child))
       
-      // 清除所有子元素并重建（不清理空行，保留代码原始格式）
+      // 清除所有子元素并重建
       while (pre.firstChild) {
         pre.removeChild(pre.firstChild)
       }
       
       const code = doc.createElement('code')
-      // 直接设置 textContent，保留换行符
       code.textContent = rawText
       pre.appendChild(code)
       
@@ -309,7 +276,132 @@ export default function RichTextEditor({
       code.removeAttribute('style')
     })
     
-    // 1.3 检测带有代码特征的 div/p 标签并转换为 pre
+    // ===== 第二步：处理 Markdown 代码块（```xxx ... ```）=====
+    // 遍历所有文本节点，查找 Markdown 代码块并合并
+    const processMarkdownCodeBlocks = () => {
+      const walker = document.createTreeWalker(
+        doc.body,
+        NodeFilter.SHOW_TEXT,
+        null
+      )
+      
+      const nodesToProcess: Text[] = []
+      let n: Text | null
+      while ((n = walker.nextNode() as Text)) {
+        nodesToProcess.push(n)
+      }
+      
+      // 查找包含 ``` 的文本节点
+      for (let i = 0; i < nodesToProcess.length; i++) {
+        const textNode = nodesToProcess[i]
+        const text = textNode.textContent || ''
+        
+        if (!text.includes('```')) continue
+        
+        // 检查是否在 code 标签内（已处理过）
+        if (textNode.parentElement?.tagName.toLowerCase() === 'code') continue
+        
+        // 检查是否在 pre 标签内（已处理过）
+        if (textNode.parentElement?.tagName.toLowerCase() === 'pre') continue
+        
+        // 检查是否在 block 元素内（p, div 等）
+        const parent = textNode.parentElement
+        const inBlock = ['p', 'div', 'span'].includes(parent?.tagName?.toLowerCase() || '')
+        
+        if (!inBlock) continue
+        
+        // 收集所有相关节点
+        const blockNodes: Node[] = []
+        let j = i
+        
+        // 向前查找（通常不需要，但安全起见）
+        while (j > 0 && j < nodesToProcess.length) {
+          const prevNode = nodesToProcess[j - 1]
+          if (prevNode.parentElement === parent) {
+            blockNodes.unshift(prevNode)
+            j--
+          } else {
+            break
+          }
+        }
+        
+        // 从当前位置开始收集
+        let foundEnd = false
+        let foundContent = false
+        while (j < nodesToProcess.length) {
+          const node = nodesToProcess[j]
+          if (node.parentElement !== parent) break
+          
+          blockNodes.push(node)
+          const nodeText = node.textContent || ''
+          
+          // 检查是否找到开始标记
+          if (nodeText.trim().startsWith('```') || nodeText.includes('```')) {
+            foundContent = true
+          }
+          
+          // 检查是否找到结束标记
+          if (foundContent && nodeText.includes('```') && nodeText.indexOf('```') !== nodeText.lastIndexOf('```')) {
+            foundEnd = true
+            break
+          }
+          
+          // 如果是代码块内容，继续收集
+          if (foundContent && !foundEnd) {
+            // 检查是否到达新的块级元素
+            if (nodeText.trim() && 
+                !nodeText.includes('```') && 
+                !nodeText.includes('\n') && 
+                parent?.nextElementSibling) {
+              // 可能到达新段落
+              break
+            }
+          }
+          
+          j++
+          if (j - i > 100) break // 安全限制
+        }
+        
+        // 合并文本
+        const fullText = blockNodes.map(n => n.textContent || '').join('')
+        
+        // 提取代码块内容
+        const match = fullText.match(/```(\w*)?\s*\n?([\s\S]*?)```/)
+        if (match && match[2]) {
+          const code = match[2]
+          const lang = match[1] || ''
+          
+          // 创建 pre 元素
+          const pre = doc.createElement('pre')
+          pre.setAttribute('class', 'bg-muted rounded p-4 font-mono text-sm my-2 overflow-x-auto')
+          const codeEl = doc.createElement('code')
+          if (lang) {
+            codeEl.setAttribute('class', `language-${lang}`)
+          }
+          codeEl.textContent = code
+          pre.appendChild(codeEl)
+          
+          // 替换第一个节点
+          if (blockNodes[0].parentNode) {
+            blockNodes[0].parentNode.replaceChild(pre, blockNodes[0])
+            
+            // 删除其他节点
+            for (let k = 1; k < blockNodes.length; k++) {
+              if (blockNodes[k].parentNode) {
+                blockNodes[k].parentNode.removeChild(blockNodes[k])
+              }
+            }
+          }
+          
+          // 跳过已处理的节点
+          i = j
+        }
+      }
+    }
+    
+    processMarkdownCodeBlocks()
+    
+    // ===== 第三步：处理带代码特征的 div/p 标签 =====
     const codeBlockSelectors = [
       '[class*="code-block"]',
       '[class*="codeblock"]',
