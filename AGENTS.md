@@ -166,10 +166,12 @@ import RichTextEditor from '@/components/ui/rich-text-editor'
 - 拖拽图片：同上
 
 **代码块处理**：
+- 自动检测 Markdown 代码块（```python```）并转换为 `<pre><code>` 格式
+- 识别带代码特征的 div/p 标签（class 包含 language-、code-block、highlight 等）
 - 自动提取纯文本内容，移除语法高亮标签
 - 保留原始换行和缩进
-- 清理连续空行
-- 支持 Markdown 格式代码块（```python```）转换
+- 清理连续空行（最多保留一行）
+- 支持多种代码块样式识别
 
 ## 安全注意事项
 
