@@ -12,6 +12,10 @@ import HorizontalRule from '@tiptap/extension-horizontal-rule'
 import Placeholder from '@tiptap/extension-placeholder'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { 
@@ -100,6 +104,23 @@ export default function RichTextEditor({
       TaskList,
       TaskItem.configure({
         nested: true,
+      }),
+      Table.configure({
+        resizable: false,
+        HTMLAttributes: {
+          class: 'border-collapse w-full my-4',
+        },
+      }),
+      TableRow,
+      TableHeader.configure({
+        HTMLAttributes: {
+          class: 'border bg-muted/50 px-3 py-2 font-semibold text-left',
+        },
+      }),
+      TableCell.configure({
+        HTMLAttributes: {
+          class: 'border px-3 py-2',
+        },
       }),
     ],
     content,
@@ -197,7 +218,7 @@ export default function RichTextEditor({
     }
   }
 
-  // 清理粘贴的 HTML，移除外部样式但保留基本结构
+  // 清理粘贴的 HTML，保留格式但移除外部样式
   const cleanPastedHtml = (html: string): string => {
     // 创建临时 DOM 来处理 HTML
     if (typeof window === 'undefined') return html
@@ -209,57 +230,181 @@ export default function RichTextEditor({
     const elements = doc.body.querySelectorAll('*')
     elements.forEach(el => {
       el.removeAttribute('style')
-      el.removeAttribute('class')
+      // 保留必要的 class，但移除特定于源站的 class
+      const cls = el.getAttribute('class') || ''
+      const allowedClasses = cls.split(' ')
+        .filter(c => c && !c.match(/^(hljs-|language-)/)) // 保留代码高亮 class
+        .join(' ')
+      if (allowedClasses) {
+        el.setAttribute('class', allowedClasses)
+      } else {
+        el.removeAttribute('class')
+      }
       el.removeAttribute('id')
       el.removeAttribute('data-id')
       el.removeAttribute('data-type')
       el.removeAttribute('data-version')
-      el.removeAttribute('data-pault-text-color')
-      el.removeAttribute('data-pault-bg-color')
-      el.removeAttribute('data-pault-font-size')
-      el.removeAttribute('data-pault-letter-spacing')
-      el.removeAttribute('data-pault-line-height')
-      el.removeAttribute('data-pault-text-align')
-      el.removeAttribute('data-pault-width')
-      el.removeAttribute('data-pault-slug')
-      el.removeAttribute('data-pault-image')
-      el.removeAttribute('data-pault-video')
-      el.removeAttribute('data-pault-file')
-      el.removeAttribute('data-pault-embed')
-      el.removeAttribute('data-pault-tweet')
-      el.removeAttribute('data-pault-github')
-      el.removeAttribute('data-pault-hrtype')
-      el.removeAttribute('data-pault-src')
+      // 移除所有 data-* 属性
+      Array.from(el.attributes).forEach(attr => {
+        if (attr.name.startsWith('data-pault-') || 
+            attr.name.startsWith('data-highlight') ||
+            attr.name.startsWith('data-lang')) {
+          el.removeAttribute(attr.name)
+        }
+      })
     })
     
     // 移除 script 和 style 标签
-    const scripts = doc.body.querySelectorAll('script, style, noscript, iframe, object, embed')
+    const scripts = doc.body.querySelectorAll('script, style, noscript, iframe, object, embed, svg')
     scripts.forEach(el => el.remove())
     
-    // 处理图片 - 保留 src，如果是 base64 或绝对 URL
+    // 处理代码块：将 pre 标签内的代码转换为 TipTap 兼容格式
+    const preElements = doc.body.querySelectorAll('pre')
+    preElements.forEach(pre => {
+      // 保留 pre 标签结构
+      const code = pre.querySelector('code')
+      if (code) {
+        // 移除 code 标签，只保留文本
+        const text = code.textContent || ''
+        pre.textContent = text
+        pre.removeAttribute('class')
+        pre.removeAttribute('style')
+      }
+      // 标准化 pre 标签
+      pre.removeAttribute('class')
+      pre.removeAttribute('style')
+      pre.removeAttribute('tabindex')
+      pre.removeAttribute('spellcheck')
+    })
+    
+    // 处理代码行（移除行号、高亮等）
+    const codeLines = doc.body.querySelectorAll('.code-line, .line-number, .highlight-line')
+    codeLines.forEach(line => {
+      line.replaceWith(line.textContent || '')
+    })
+    
+    // 处理图片
     const images = doc.body.querySelectorAll('img')
     images.forEach(img => {
       const src = img.getAttribute('src')
-      if (src && (src.startsWith('data:') || src.startsWith('http'))) {
-        // 保留有效图片
+      // 处理相对路径 - 尝试转为绝对路径（如果可能）
+      if (src && !src.startsWith('data:') && !src.startsWith('http') && !src.startsWith('//')) {
+        img.remove()
+      } else if (src && (src.startsWith('data:') || src.startsWith('http') || src.startsWith('//'))) {
+        // 保留有效图片，添加样式
+        img.setAttribute('class', 'max-w-full h-auto rounded-lg my-4')
+        img.removeAttribute('style')
+        img.removeAttribute('width')
+        img.removeAttribute('height')
+        img.removeAttribute('loading')
       } else {
-        // 移除无效图片
         img.remove()
       }
     })
+    
+    // 处理表格 - 转换为简单的 HTML 表格
+    const tables = doc.body.querySelectorAll('table')
+    tables.forEach(table => {
+      // 清理表格单元格
+      const cells = table.querySelectorAll('td, th')
+      cells.forEach(cell => {
+        cell.removeAttribute('style')
+        cell.removeAttribute('class')
+        // 保留基本的单元格内容
+        const content = cell.innerHTML
+        cell.innerHTML = content
+      })
+      
+      // 清理表格行
+      const rows = table.querySelectorAll('tr')
+      rows.forEach(row => {
+        row.removeAttribute('style')
+        row.removeAttribute('class')
+      })
+      
+      // 清理表格
+      table.removeAttribute('style')
+      table.removeAttribute('class')
+      table.setAttribute('class', 'border-collapse w-full my-4')
+      
+      // 清理 thead 和 tbody
+      const thead = table.querySelector('thead')
+      if (thead) {
+        thead.removeAttribute('style')
+        thead.removeAttribute('class')
+      }
+      const tbody = table.querySelector('tbody')
+      if (tbody) {
+        tbody.removeAttribute('style')
+        tbody.removeAttribute('class')
+      }
+    })
+    
+    // 处理 Markdown 风格的代码块（如 ```python ... ```）
+    const processMarkdownCodeBlocks = (element: Element) => {
+      const walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
+        null
+      )
+      const textNodes: Text[] = []
+      let node: Text | null
+      while ((node = walker.nextNode() as Text)) {
+        textNodes.push(node)
+      }
+      
+      textNodes.forEach(textNode => {
+        const text = textNode.textContent || ''
+        // 检测 Markdown 代码块
+        const codeBlockMatch = text.match(/^```(\w*)\n([\s\S]*?)```$/)
+        if (codeBlockMatch) {
+          const pre = doc.createElement('pre')
+          const code = doc.createElement('code')
+          code.textContent = codeBlockMatch[2].trim()
+          pre.appendChild(code)
+          textNode.parentNode?.replaceChild(pre, textNode)
+        }
+      })
+    }
+    processMarkdownCodeBlocks(doc.body)
     
     // 处理链接
     const links = doc.body.querySelectorAll('a')
     links.forEach(link => {
       // 保留 href
       const href = link.getAttribute('href')
-      if (!href || href.startsWith('javascript:')) {
+      if (!href || href.startsWith('javascript:') || href === '#') {
         // 移除无用的链接，保留文本
         link.replaceWith(link.textContent || '')
+      } else {
+        // 保留链接但移除样式
+        link.removeAttribute('style')
+        link.removeAttribute('class')
       }
     })
     
-    return doc.body.innerHTML
+    // 移除空的段落和 div
+    const emptyElements = doc.body.querySelectorAll('p:empty, div:empty, span:empty, br')
+    emptyElements.forEach(el => {
+      if (el.tagName === 'BR') return // 保留 br
+      el.remove()
+    })
+    
+    // 清理连续的空行
+    let cleanHtml = doc.body.innerHTML
+    cleanHtml = cleanHtml.replace(/<p><br\s*\/?><\/p>/gi, '<br>')
+    cleanHtml = cleanHtml.replace(/<div><br\s*\/?><\/div>/gi, '<br>')
+    cleanHtml = cleanHtml.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '<br>')
+    
+    // 标准化列表结构
+    cleanHtml = cleanHtml.replace(/<li>\s*<p>([\s\S]*?)<\/p>\s*<\/li>/gi, '<li>$1</li>')
+    cleanHtml = cleanHtml.replace(/<p>\s*<li>([\s\S]*?)<\/li>\s*<\/p>/gi, '<li>$1</li>')
+    
+    // 清理多余的空格和换行
+    cleanHtml = cleanHtml.replace(/\s+/g, ' ')
+    cleanHtml = cleanHtml.replace(/>\s+</g, '><')
+    
+    return cleanHtml
   }
 
   const addLink = useCallback(() => {
