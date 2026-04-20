@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -127,7 +127,9 @@ export default function RichTextEditor({
     editable: !disabled,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+      if (!isInternalUpdate.current) {
+        onChange(editor.getHTML())
+      }
     },
     editorProps: {
       attributes: {
@@ -184,6 +186,19 @@ export default function RichTextEditor({
       },
     },
   })
+
+  // 监听外部 value 变化，同步到编辑器
+  const isInternalUpdate = useRef(false)
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      isInternalUpdate.current = true
+      editor.commands.setContent(content, false)
+      // 使用 setTimeout 确保在 setContent 之后重置标志
+      setTimeout(() => {
+        isInternalUpdate.current = false
+      }, 0)
+    }
+  }, [content, editor])
 
   const handleImagePaste = async (file: File) => {
     if (!editor) return
