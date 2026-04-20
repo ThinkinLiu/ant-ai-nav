@@ -55,6 +55,10 @@ export default function RichTextEditor({
   minHeight = '200px',
   onImageUpload
 }: RichTextEditorProps) {
+  // 在编辑器创建之前定义 ref
+  const isInternalUpdate = useRef(false)
+  const lastExternalContent = useRef<string | null>(null)
+  
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -188,15 +192,17 @@ export default function RichTextEditor({
   })
 
   // 监听外部 value 变化，同步到编辑器
-  const isInternalUpdate = useRef(false)
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
+    if (!editor) return
+    
+    // 如果 content 有值且与上次不同步
+    if (content && content !== lastExternalContent.current) {
       isInternalUpdate.current = true
       editor.commands.setContent(content, false)
-      // 使用 setTimeout 确保在 setContent 之后重置标志
+      lastExternalContent.current = content
       setTimeout(() => {
         isInternalUpdate.current = false
-      }, 0)
+      }, 50)
     }
   }, [content, editor])
 
