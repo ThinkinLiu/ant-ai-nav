@@ -21,6 +21,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { ArrowLeft, Save, Send, Eye, Sparkles, Loader2, AlertTriangle } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
+import ImageUploader from '@/components/ui/image-uploader'
 import {
   Dialog,
   DialogContent,
@@ -467,25 +468,18 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
 
                 {/* 封面图片 */}
                 <div className="space-y-2">
-                  <Label htmlFor="coverImage">封面图片URL</Label>
-                  <Input
-                    id="coverImage"
+                  <Label>封面图片</Label>
+                  <ImageUploader
                     value={formData.coverImage}
-                    onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
+                    onChange={(url) => setFormData({ ...formData, coverImage: url })}
+                    folder="news/covers"
+                    aspectRatio="16/9"
+                    placeholder="点击上传封面图片"
+                    maxSize={5}
                   />
-                  {formData.coverImage && (
-                    <div className="mt-2">
-                      <img
-                        src={formData.coverImage}
-                        alt="封面预览"
-                        className="w-full max-w-md h-40 object-cover rounded-lg border"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                        }}
-                      />
-                    </div>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    建议尺寸 1200x630 像素，支持 JPG、PNG 格式，最大 5MB
+                  </p>
                 </div>
 
                 {/* 标签 */}
