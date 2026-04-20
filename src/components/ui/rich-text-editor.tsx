@@ -39,7 +39,8 @@ import {
 } from 'lucide-react'
 
 interface RichTextEditorProps {
-  content: string
+  content?: string
+  value?: string
   onChange: (content: string) => void
   disabled?: boolean
   placeholder?: string
@@ -47,17 +48,27 @@ interface RichTextEditorProps {
   onImageUpload?: (file: File) => Promise<string>
 }
 
+// 统一 content 变量，支持 value 或 content 作为 prop 名称
+function useContentProp(content?: string, value?: string): string {
+  // value 优先，其次 content，最后空字符串
+  return value ?? content ?? ''
+}
+
 export default function RichTextEditor({
   content,
+  value,
   onChange,
   disabled = false,
   placeholder = '请输入内容，支持粘贴富文本内容...',
   minHeight = '200px',
   onImageUpload
 }: RichTextEditorProps) {
+  // 统一 content 变量
+  const contentValue = useContentProp(content, value)
+  
   // 用于防止同步循环
   const isUpdatingFromOutside = useRef(false)
-  const lastExternalValue = useRef(content)
+  const lastExternalValue = useRef(contentValue)
   
   const editor = useEditor({
     extensions: [
@@ -127,7 +138,7 @@ export default function RichTextEditor({
         },
       }),
     ],
-    content,
+    content: contentValue,
     editable: !disabled,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
@@ -194,17 +205,17 @@ export default function RichTextEditor({
     if (!editor) return
     
     // 如果外部值变了，且不是由内部更新触发的
-    if (content !== lastExternalValue.current && !isUpdatingFromOutside.current) {
+    if (contentValue !== lastExternalValue.current && !isUpdatingFromOutside.current) {
       // 设置标志防止 onUpdate 触发
       isUpdatingFromOutside.current = true
-      editor.commands.setContent(content || '', false)
-      lastExternalValue.current = content
+      editor.commands.setContent(contentValue || '')
+      lastExternalValue.current = contentValue
       // 下一个 tick 重置标志
       requestAnimationFrame(() => {
         isUpdatingFromOutside.current = false
       })
     }
-  }, [content, editor])
+  }, [contentValue, editor])
 
   // 监听编辑器更新，通知外部
   useEffect(() => {
@@ -218,7 +229,7 @@ export default function RichTextEditor({
     }
     
     editor.on('update', handleUpdate)
-    return () => editor.off('update', handleUpdate)
+    return () => { editor.off('update', handleUpdate) }
   }, [editor, onChange])
 
   const handleImagePaste = async (file: File) => {
