@@ -258,29 +258,128 @@ export default function RichTextEditor({
     const scripts = doc.body.querySelectorAll('script, style, noscript, iframe, object, embed, svg')
     scripts.forEach(el => el.remove())
     
-    // 处理代码块：将 pre 标签内的代码转换为 TipTap 兼容格式
+    // 处理 Markdown 格式的代码块（如 ```python ... ```）
+    const processMarkdownCodeBlocks = (element: Element) => {
+      const walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
+        null
+      )
+      const textNodes: Text[] = []
+      let node: Text | null
+      while ((node = walker.nextNode() as Text)) {
+        textNodes.push(node)
+      }
+      
+      textNodes.forEach(textNode => {
+        const text = textNode.textContent || ''
+        // 检测 Markdown 代码块
+        const codeBlockMatch = text.match(/^```(\w*)\n?([\s\S]*?)```$/)
+        if (codeBlockMatch) {
+          const pre = doc.createElement('pre')
+          const code = doc.createElement('code')
+          code.textContent = codeBlockMatch[2].trim()
+          pre.appendChild(code)
+          textNode.parentNode?.replaceChild(pre, textNode)
+        }
+      })
+    }
+    processMarkdownCodeBlocks(doc.body)
+    
+    // 处理代码块：递归提取纯文本，保留换行
+    const extractPureText = (element: Element | Node): string => {
+      if (element.nodeType === Node.TEXT_NODE) {
+        return element.textContent || ''
+      }
+      if (element.nodeType === Node.ELEMENT_NODE) {
+        const el = element as Element
+        const tagName = el.tagName?.toLowerCase()
+        
+        // 递归处理子元素
+        let content = ''
+        el.childNodes.forEach(child => {
+          content += extractPureText(child)
+        })
+        
+        // 根据标签添加适当的分隔
+        if (tagName === 'br') return '\n'
+        if (['div', 'p', 'tr'].includes(tagName || '')) return content + '\n'
+        if (['li'].includes(tagName || '')) return content + '\n'
+        
+        return content
+      }
+      return ''
+    }
+    
+    // 清理代码块中的所有格式元素
+    const cleanCodeBlockElements = (pre: Element) => {
+      // 获取纯文本内容，保留换行
+      const rawText = extractPureText(pre)
+      
+      // 清理多余的空行（保留最多一个空行）
+      const lines = rawText.split('\n')
+      const cleanedLines: string[] = []
+      let emptyCount = 0
+      
+      for (const line of lines) {
+        const trimmed = line.trimEnd()
+        if (trimmed === '') {
+          emptyCount++
+          if (emptyCount <= 1) {
+            cleanedLines.push('')
+          }
+        } else {
+          emptyCount = 0
+          cleanedLines.push(trimmed)
+        }
+      }
+      
+      return cleanedLines.join('\n')
+    }
+    
     const preElements = doc.body.querySelectorAll('pre')
     preElements.forEach(pre => {
-      // 保留 pre 标签结构
-      const code = pre.querySelector('code')
-      if (code) {
-        // 移除 code 标签，只保留文本
-        const text = code.textContent || ''
-        pre.textContent = text
-        pre.removeAttribute('class')
-        pre.removeAttribute('style')
+      // 获取纯文本内容
+      const cleanText = cleanCodeBlockElements(pre)
+      
+      // 清除所有子元素
+      while (pre.firstChild) {
+        pre.removeChild(pre.firstChild)
       }
-      // 标准化 pre 标签
+      
+      // 添加 code 元素
+      const code = doc.createElement('code')
+      code.textContent = cleanText
+      pre.appendChild(code)
+      
+      // 清理属性
       pre.removeAttribute('class')
       pre.removeAttribute('style')
       pre.removeAttribute('tabindex')
       pre.removeAttribute('spellcheck')
+      pre.removeAttribute('data-language')
+      pre.removeAttribute('data-highlighted')
+      pre.removeAttribute('data-lang')
+      
+      code.removeAttribute('class')
+      code.removeAttribute('style')
+      
+      // 设置默认样式类
+      pre.setAttribute('class', 'bg-muted rounded p-4 font-mono text-sm my-2 overflow-x-auto')
     })
     
     // 处理代码行（移除行号、高亮等）
-    const codeLines = doc.body.querySelectorAll('.code-line, .line-number, .highlight-line')
+    const codeLines = doc.body.querySelectorAll('.code-line, .line-number, .highlight-line, .code, .token, span[data-language]')
     codeLines.forEach(line => {
-      line.replaceWith(line.textContent || '')
+      const text = line.textContent || ''
+      line.replaceWith(doc.createTextNode(text))
+    })
+    
+    // 移除所有残留的 span 和 div（代码块内的）
+    const nestedSpans = doc.body.querySelectorAll('pre span, pre div, code span, code div')
+    nestedSpans.forEach(span => {
+      const text = span.textContent || ''
+      span.replaceWith(doc.createTextNode(text))
     })
     
     // 处理图片
@@ -339,34 +438,6 @@ export default function RichTextEditor({
         tbody.removeAttribute('class')
       }
     })
-    
-    // 处理 Markdown 风格的代码块（如 ```python ... ```）
-    const processMarkdownCodeBlocks = (element: Element) => {
-      const walker = document.createTreeWalker(
-        element,
-        NodeFilter.SHOW_TEXT,
-        null
-      )
-      const textNodes: Text[] = []
-      let node: Text | null
-      while ((node = walker.nextNode() as Text)) {
-        textNodes.push(node)
-      }
-      
-      textNodes.forEach(textNode => {
-        const text = textNode.textContent || ''
-        // 检测 Markdown 代码块
-        const codeBlockMatch = text.match(/^```(\w*)\n([\s\S]*?)```$/)
-        if (codeBlockMatch) {
-          const pre = doc.createElement('pre')
-          const code = doc.createElement('code')
-          code.textContent = codeBlockMatch[2].trim()
-          pre.appendChild(code)
-          textNode.parentNode?.replaceChild(pre, textNode)
-        }
-      })
-    }
-    processMarkdownCodeBlocks(doc.body)
     
     // 处理链接
     const links = doc.body.querySelectorAll('a')
