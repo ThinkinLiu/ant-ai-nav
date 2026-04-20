@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { ArrowLeft, Save, Send, Eye } from 'lucide-react'
+import { ArrowLeft, Save, Send, Eye, Sparkles, Loader2, AlertTriangle } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
@@ -54,6 +54,8 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [fetchingData, setFetchingData] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
   const [categories, setCategories] = useState<NewsCategory[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
   const [formData, setFormData] = useState({
@@ -142,6 +144,51 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
       router.push(returnUrl)
     } finally {
       setFetchingData(false)
+    }
+  }
+
+  // 自动生成资讯信息
+  const handleGenerateInfo = async () => {
+    if (!formData.title.trim()) {
+      toast.error('请先输入资讯标题')
+      return
+    }
+
+    setGenerating(true)
+    setGenerateError(null)
+    try {
+      const response = await fetch('/api/admin/generate-news-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title.trim(),
+          sourceUrl: formData.sourceUrl.trim() || undefined,
+        }),
+      })
+      const data = await response.json()
+
+      if (data.success && data.data) {
+        const result = data.data
+        setFormData(prev => ({
+          ...prev,
+          title: result.title || prev.title,
+          slug: prev.slug || generateSlug(result.title || prev.title),
+          summary: result.summary || prev.summary,
+          content: result.content || prev.content,
+          source: result.source || prev.source,
+          sourceUrl: result.sourceUrl || prev.sourceUrl,
+          tags: result.tags?.length > 0 ? result.tags : prev.tags,
+        }))
+        toast.success('资讯信息已自动生成')
+        setGenerateError(null)
+      } else {
+        setGenerateError(data.error || '生成失败，请稍后重试')
+      }
+    } catch (error) {
+      console.error('自动生成失败:', error)
+      setGenerateError('网络错误，请检查网络连接后重试')
+    } finally {
+      setGenerating(false)
     }
   }
 
@@ -271,6 +318,45 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
+                {/* AI 自动生成区域 */}
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 text-sm text-muted-foreground">
+                      输入标题和来源链接后，点击"AI采集"可自动从网络获取资讯内容（摘要、正文、来源、标签等）
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateInfo}
+                      disabled={generating || !formData.title.trim()}
+                    >
+                      {generating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          采集中...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          AI采集
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  {/* 错误提示 */}
+                  {generateError && (
+                    <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                        <div className="text-sm">
+                          <p className="font-medium text-destructive mb-1">采集失败</p>
+                          <p className="text-muted-foreground whitespace-pre-wrap">{generateError}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* 标题 */}
                 <div className="space-y-2">
                   <Label htmlFor="title">标题 *</Label>
@@ -284,6 +370,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                         title,
                         slug: mode === 'create' && !formData.slug ? generateSlug(title) : formData.slug,
                       })
+                      setGenerateError(null)
                     }}
                     placeholder="请输入资讯标题"
                     maxLength={200}
