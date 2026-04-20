@@ -226,43 +226,42 @@ export default function RichTextEditor({
     const parser = new DOMParser()
     const doc = parser.parseFromString(html, 'text/html')
     
-    // ===== 第一步：处理代码块（优先级最高） =====
-    
-    // 1.1 检测并转换 Markdown 代码块（```python ... ```）
-    const processMarkdownCodeBlocks = (element: Element) => {
-      const walker = document.createTreeWalker(
-        element,
-        NodeFilter.SHOW_TEXT,
-        null
-      )
-      const textNodes: Text[] = []
-      let node: Text | null
-      while ((node = walker.nextNode() as Text)) {
-        textNodes.push(node)
-      }
-      
-      textNodes.forEach(textNode => {
-        const text = textNode.textContent || ''
-        // 检测 Markdown 代码块（支持多种格式）
-        const codeBlockMatch = text.match(/^```(\w*)?\s*\n?([\s\S]*?)```\s*$/)
-        if (codeBlockMatch) {
-          const pre = doc.createElement('pre')
-          const code = doc.createElement('code')
-          code.textContent = codeBlockMatch[2].trim()
-          if (codeBlockMatch[1]) {
-            code.setAttribute('class', `language-${codeBlockMatch[1]}`)
-          }
-          pre.appendChild(code)
-          textNode.parentNode?.replaceChild(pre, textNode)
-        }
-      })
+    // ===== 第一步：检测并转换 Markdown 代码块 =====
+    // 遍历所有文本节点，查找 Markdown 代码块
+    const textWalker = document.createTreeWalker(
+      doc.body,
+      NodeFilter.SHOW_TEXT,
+      null
+    )
+    const textNodes: Text[] = []
+    let node: Text | null
+    while ((node = textWalker.nextNode() as Text)) {
+      textNodes.push(node)
     }
-    processMarkdownCodeBlocks(doc.body)
     
-    // 1.2 处理已有的 <pre> 标签：清理复杂格式，提取纯文本
+    textNodes.forEach(textNode => {
+      const text = textNode.textContent || ''
+      // 检测 Markdown 代码块（支持多种格式）
+      // 匹配 ```bash ... ``` 或 ``` ... ```
+      const codeBlockMatch = text.match(/^```(\w*)?\s*\n([\s\S]*?)```\s*$/m)
+      if (codeBlockMatch && codeBlockMatch[2]) {
+        const pre = doc.createElement('pre')
+        pre.setAttribute('class', 'bg-muted rounded p-4 font-mono text-sm my-2 overflow-x-auto')
+        const code = doc.createElement('code')
+        // 保留原始换行
+        code.textContent = codeBlockMatch[2]
+        if (codeBlockMatch[1]) {
+          code.setAttribute('class', `language-${codeBlockMatch[1]}`)
+        }
+        pre.appendChild(code)
+        textNode.parentNode?.replaceChild(pre, textNode)
+      }
+    })
+    
+    // ===== 第二步：处理已有的 <pre> 标签 =====
     const preElements = doc.body.querySelectorAll('pre')
     preElements.forEach(pre => {
-      // 获取纯文本内容
+      // 获取纯文本内容，保留换行
       let rawText = ''
       const processNode = (node: Node) => {
         if (node.nodeType === Node.TEXT_NODE) {
@@ -271,11 +270,9 @@ export default function RichTextEditor({
           const el = node as Element
           const tagName = el.tagName?.toLowerCase()
           
-          // 特殊处理特定标签
           if (tagName === 'br') {
             rawText += '\n'
-          } else if (['div', 'p', 'li', 'tr'].includes(tagName || '')) {
-            // 这些标签在开头加换行
+          } else if (['div', 'p', 'li', 'tr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName || '')) {
             if (rawText.length > 0 && !rawText.endsWith('\n')) {
               rawText += '\n'
             }
@@ -291,36 +288,25 @@ export default function RichTextEditor({
       
       pre.childNodes.forEach(child => processNode(child))
       
-      // 清理多余的空行（保留最多一个）
-      const lines = rawText.split('\n')
-      const cleanedLines: string[] = []
-      let emptyCount = 0
-      
-      for (const line of lines) {
-        if (line.trim() === '') {
-          emptyCount++
-          if (emptyCount <= 1) {
-            cleanedLines.push('')
-          }
-        } else {
-          emptyCount = 0
-          cleanedLines.push(line)
-        }
-      }
-      
-      // 清除所有子元素并重建
+      // 清除所有子元素并重建（不清理空行，保留代码原始格式）
       while (pre.firstChild) {
         pre.removeChild(pre.firstChild)
       }
       
       const code = doc.createElement('code')
-      code.textContent = cleanedLines.join('\n').trim()
+      // 直接设置 textContent，保留换行符
+      code.textContent = rawText
       pre.appendChild(code)
       
       // 清理属性
       pre.removeAttribute('class')
       pre.removeAttribute('style')
+      pre.removeAttribute('data-language')
+      pre.removeAttribute('data-highlighted')
       pre.setAttribute('class', 'bg-muted rounded p-4 font-mono text-sm my-2 overflow-x-auto')
+      
+      code.removeAttribute('class')
+      code.removeAttribute('style')
     })
     
     // 1.3 检测带有代码特征的 div/p 标签并转换为 pre
@@ -487,7 +473,16 @@ export default function RichTextEditor({
       el.remove()
     })
     
-    // 清理连续的空行
+    // ===== 最终处理：保护代码块，清理其他地方的格式 =====
+    // 先提取所有 pre 标签内容
+    const preContents: string[] = []
+    const allPreElements = doc.body.querySelectorAll('pre')
+    allPreElements.forEach((pre, index) => {
+      preContents[index] = pre.outerHTML
+      pre.setAttribute('data-code-block-index', index.toString())
+    })
+    
+    // 清理连续的空行（代码块外）
     let cleanHtml = doc.body.innerHTML
     cleanHtml = cleanHtml.replace(/<p><br\s*\/?><\/p>/gi, '<br>')
     cleanHtml = cleanHtml.replace(/<div><br\s*\/?><\/div>/gi, '<br>')
@@ -497,9 +492,26 @@ export default function RichTextEditor({
     cleanHtml = cleanHtml.replace(/<li>\s*<p>([\s\S]*?)<\/p>\s*<\/li>/gi, '<li>$1</li>')
     cleanHtml = cleanHtml.replace(/<p>\s*<li>([\s\S]*?)<\/li>\s*<\/p>/gi, '<li>$1</li>')
     
-    // 清理多余的空格和换行
+    // 清理多余的空格（但要保护代码块内的格式）
+    // 替换临时代理符
+    cleanHtml = cleanHtml.replace(/<pre([^>]*)>/gi, '___PRE_START___$1___')
+    cleanHtml = cleanHtml.replace(/<\/pre>/gi, '___PRE_END___')
     cleanHtml = cleanHtml.replace(/\s+/g, ' ')
-    cleanHtml = cleanHtml.replace(/>\s+</g, '><')
+    cleanHtml = cleanHtml.replace(/___PRE_START___/g, '<pre')
+    cleanHtml = cleanHtml.replace(/___PRE_END___/g, '</pre>')
+    
+    // 恢复代码块原始内容
+    allPreElements.forEach((pre, index) => {
+      if (preContents[index]) {
+        cleanHtml = cleanHtml.replace(
+          `<pre data-code-block-index="${index}">${pre.querySelector('code')?.textContent || ''}</pre>`,
+          preContents[index]
+        )
+      }
+    })
+    
+    // 清理 pre 标签上的临时代理属性
+    cleanHtml = cleanHtml.replace(/\s*data-code-block-index="\d+"/g, '')
     
     return cleanHtml
   }
