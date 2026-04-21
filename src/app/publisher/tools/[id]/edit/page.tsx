@@ -6,19 +6,26 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Loader2, AlertCircle, Upload, Link2, PanelRightOpen, PanelRightClose } from 'lucide-react'
+import { ArrowLeft, Loader2, AlertCircle, Upload, Link2, Eye } from 'lucide-react'
 import ImageUploader from '@/components/ui/image-uploader'
 import RichTextEditor from '@/components/ui/rich-text-editor'
 import { MarkdownEditorSimple } from '@/components/ui/markdown-editor'
 import { ToolLogo } from '@/components/tools/ToolLogo'
 import { TagInput } from '@/components/ui/tag-input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface Category {
   id: number
@@ -52,7 +59,6 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [showPreview, setShowPreview] = useState(true) // 默认显示预览
   const [logoInputMode, setLogoInputMode] = useState<string>('upload')
   const [formData, setFormData] = useState({
     name: '',
@@ -188,276 +194,270 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
               返回发布中心
             </Link>
           </Button>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <span className="text-sm font-medium">编辑工具</span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowPreview(!showPreview)}
-              className="gap-2"
-            >
-              {showPreview ? (
-                <>
-                  <PanelRightClose className="h-4 w-4" />
-                  隐藏预览
-                </>
-              ) : (
-                <>
-                  <PanelRightOpen className="h-4 w-4" />
-                  显示预览
-                </>
-              )}
-            </Button>
+            {tool.status === 'approved' && (
+              <Badge variant="default" className="text-xs">已通过</Badge>
+            )}
+            {tool.status === 'pending' && (
+              <Badge variant="secondary" className="text-xs">待审核</Badge>
+            )}
+            {tool.status === 'rejected' && (
+              <Badge variant="destructive" className="text-xs">已拒绝</Badge>
+            )}
           </div>
+          <div className="w-[120px]" /> {/* 占位，保持标题居中 */}
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-6">
-        {/* 左右两栏布局 */}
-        <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-          {/* 左栏：表单区域 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                填写工具信息
-                {tool.status === 'approved' && (
-                  <Badge variant="default" className="text-xs">已通过</Badge>
-                )}
-                {tool.status === 'pending' && (
-                  <Badge variant="secondary" className="text-xs">待审核</Badge>
-                )}
-                {tool.status === 'rejected' && (
-                  <Badge variant="destructive" className="text-xs">已拒绝</Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* 提示信息 */}
-              {tool.status === 'approved' && (
-                <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                    <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                      <p className="font-medium">编辑后需要重新审核</p>
-                      <p className="mt-1">修改工具信息后，状态将变为"待审核"，需要管理员重新审批通过后才会显示在平台上。</p>
+        {/* 提示信息 */}
+        {tool.status === 'approved' && (
+          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                <p className="font-medium">编辑后需要重新审核</p>
+                <p className="mt-1">修改工具信息后，状态将变为"待审核"，需要管理员重新审批通过后才会显示在平台上。</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tool.status === 'rejected' && tool.reject_reason && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+              <div className="text-sm text-red-800 dark:text-red-200">
+                <p className="font-medium">拒绝原因：{tool.reject_reason}</p>
+                <p className="mt-1">请根据拒绝原因修改后重新提交。</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 左右两栏布局：左侧详细介绍，右侧其他字段 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 左栏：详细介绍 */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>详细介绍</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  支持富文本编辑，可从微信、百度等网站直接复制图文粘贴
+                </p>
+              </CardHeader>
+              <CardContent>
+                <RichTextEditor
+                  value={formData.longDescription}
+                  onChange={(value) => setFormData({ ...formData, longDescription: value })}
+                  placeholder="详细介绍这个工具的功能、特点、使用场景等..."
+                  minHeight="400px"
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 右栏：其他字段 */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>基本信息</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {error && (
+                    <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      {error}
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {tool.status === 'rejected' && tool.reject_reason && (
-                <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                    <div className="text-sm text-red-800 dark:text-red-200">
-                      <p className="font-medium">拒绝原因：{tool.reject_reason}</p>
-                      <p className="mt-1">请根据拒绝原因修改后重新提交。</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">工具名称 *</Label>
+                    <Input
+                      id="name"
+                      placeholder="例如：ChatGPT"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="website">官网地址 *</Label>
+                    <Input
+                      id="website"
+                      type="url"
+                      placeholder="https://..."
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="categoryId">分类 *</Label>
+                    <Select
+                      value={formData.categoryId}
+                      onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择分类" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id.toString()}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">简短描述 *</Label>
+                    <Input
+                      id="description"
+                      placeholder="一句话介绍这个工具"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+
+                  {/* Logo 上传/URL 输入 */}
+                  <div className="space-y-3">
+                    <Label>工具图标</Label>
+                    
+                    {/* 图标预览 */}
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden border-2 bg-muted">
+                        <ToolLogo
+                          logo={formData.logo || null}
+                          name={formData.name || '工具'}
+                          website={formData.website}
+                          className="w-full h-full object-cover"
+                          size={64}
+                          fallbackBgColor={selectedCategory?.color}
+                        />
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <p>图标预览</p>
+                        <p className="text-xs">为空时自动使用网站图标服务生成</p>
+                      </div>
                     </div>
+
+                    {/* 输入方式切换 */}
+                    <Tabs value={logoInputMode} onValueChange={setLogoInputMode}>
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="upload" className="flex items-center gap-2">
+                          <Upload className="h-4 w-4" />
+                          上传
+                        </TabsTrigger>
+                        <TabsTrigger value="url" className="flex items-center gap-2">
+                          <Link2 className="h-4 w-4" />
+                          URL
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="upload" className="mt-4">
+                        <ImageUploader
+                          value={formData.logo}
+                          onChange={(url) => setFormData({ ...formData, logo: url })}
+                          folder="logos"
+                          aspectRatio="square"
+                          maxSize={2}
+                          placeholder="点击上传图标"
+                        />
+                      </TabsContent>
+                      
+                      <TabsContent value="url" className="mt-4">
+                        <Input
+                          id="logo"
+                          type="url"
+                          placeholder="https://example.com/logo.png"
+                          value={formData.logo}
+                          onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                        />
+                      </TabsContent>
+                    </Tabs>
                   </div>
-                </div>
-              )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                {error}
-              </div>
-            )}
+                  <div className="space-y-2">
+                    <Label htmlFor="tags">标签</Label>
+                    <TagInput
+                      value={formData.tags}
+                      onChange={(tags: string[]) => setFormData({ ...formData, tags })}
+                      placeholder="输入标签，按回车或逗号分隔"
+                      maxTags={10}
+                    />
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="name">工具名称 *</Label>
-              <Input
-                id="name"
-                placeholder="例如：ChatGPT"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="isFree">免费使用</Label>
+                    <Switch
+                      id="isFree"
+                      checked={formData.isFree}
+                      onCheckedChange={(checked) => setFormData({ ...formData, isFree: checked })}
+                    />
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="website">官网地址 *</Label>
-              <Input
-                id="website"
-                type="url"
-                placeholder="https://..."
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              />
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pricingInfo">定价信息</Label>
+                    <MarkdownEditorSimple
+                      value={formData.pricingInfo}
+                      onChange={(value) => setFormData({ ...formData, pricingInfo: value || '' })}
+                      placeholder={
+                        formData.isFree
+                          ? "描述免费情况，如：完全免费、部分功能免费等"
+                          : "描述定价方案，如：免费版、专业版$20/月"
+                      }
+                    />
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="categoryId">分类 *</Label>
-              <Select
-                value={formData.categoryId}
-                onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="选择分类" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id.toString()}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                  {/* 操作按钮 */}
+                  <div className="space-y-3 pt-4 border-t">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="w-full"
+                          disabled={!formData.name && !formData.description && !formData.longDescription}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          预览
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[80vh]">
+                        <DialogHeader>
+                          <DialogTitle className="text-xl">工具预览</DialogTitle>
+                        </DialogHeader>
+                        <ScrollArea className="max-h-[60vh] pr-4">
+                          <ToolPreviewContent formData={formData} selectedCategory={selectedCategory} />
+                        </ScrollArea>
+                      </DialogContent>
+                    </Dialog>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">简短描述 *</Label>
-              <Input
-                id="description"
-                placeholder="一句话介绍这个工具"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="longDescription">详细介绍</Label>
-              <p className="text-xs text-muted-foreground">
-                支持富文本编辑，可从微信、百度等网站直接复制图文粘贴
-              </p>
-              <RichTextEditor
-                value={formData.longDescription}
-                onChange={(value) => setFormData({ ...formData, longDescription: value })}
-                placeholder="详细介绍这个工具的功能、特点、使用场景等..."
-                minHeight="400px"
-              />
-            </div>
-
-            {/* Logo 上传/URL 输入 */}
-            {/* Logo 上传/URL 输入 */}
-            <div className="space-y-3">
-              <Label>工具图标</Label>
-              
-              {/* 图标预览 */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 rounded-xl overflow-hidden border-2 bg-muted">
-                  <ToolLogo
-                    logo={formData.logo || null}
-                    name={formData.name || '工具'}
-                    website={formData.website}
-                    className="w-full h-full object-cover"
-                    size={64}
-                    fallbackBgColor={selectedCategory?.color}
-                  />
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  <p>图标预览（与首页显示一致）</p>
-                  <p className="text-xs">为空时自动使用网站图标服务生成</p>
-                </div>
-              </div>
-
-              {/* 输入方式切换 */}
-              <Tabs value={logoInputMode} onValueChange={setLogoInputMode}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="upload" className="flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
-                    上传图片
-                  </TabsTrigger>
-                  <TabsTrigger value="url" className="flex items-center gap-2">
-                    <Link2 className="h-4 w-4" />
-                    输入 URL
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="upload" className="mt-4">
-                  <ImageUploader
-                    value={formData.logo}
-                    onChange={(url) => setFormData({ ...formData, logo: url })}
-                    folder="logos"
-                    aspectRatio="square"
-                    maxSize={2}
-                    placeholder="点击上传图标"
-                  />
-                </TabsContent>
-                
-                <TabsContent value="url" className="mt-4">
-                  <Input
-                    id="logo"
-                    type="url"
-                    placeholder="https://example.com/logo.png"
-                    value={formData.logo}
-                    onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    输入图标的完整 URL 地址
-                  </p>
-                </TabsContent>
-              </Tabs>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tags">标签</Label>
-              <TagInput
-                value={formData.tags}
-                onChange={(tags: string[]) => setFormData({ ...formData, tags })}
-                placeholder="输入标签，按回车或逗号分隔"
-                maxTags={10}
-              />
-              <p className="text-xs text-muted-foreground">
-                输入标签后按回车或输入逗号（中英文皆可）自动分隔，最多添加 10 个标签
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="isFree">免费使用</Label>
-              <Switch
-                id="isFree"
-                checked={formData.isFree}
-                onCheckedChange={(checked) => setFormData({ ...formData, isFree: checked })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="pricingInfo">定价信息</Label>
-              <p className="text-xs text-muted-foreground">
-                支持富文本编辑，可从微信、百度等网站直接复制图文粘贴
-              </p>
-              <MarkdownEditorSimple
-                value={formData.pricingInfo}
-                onChange={(value) => setFormData({ ...formData, pricingInfo: value || '' })}
-                placeholder={
-                  formData.isFree
-                    ? "描述免费情况，如：完全免费、部分功能免费等"
-                    : "描述定价方案，如：免费版、专业版$20/月"
-                }
-              />
-            </div>
-
-            <div className="flex gap-4 pt-4 border-t">
-              <Button type="submit" disabled={submitting}>
-                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                保存并提交审核
-              </Button>
-              <Button type="button" variant="outline" asChild>
-                <Link href="/publisher">取消</Link>
-              </Button>
-            </div>
-          </form>
-            </CardContent>
-          </Card>
-
-          {/* 右栏：实时预览 */}
-          {showPreview && (
-            <div className="hidden lg:block">
-              <div className="sticky top-20">
-                <ToolPreviewPanel formData={formData} categories={categories} />
-              </div>
-            </div>
-          )}
+                    <Button type="submit" disabled={submitting} className="w-full">
+                      {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      保存并提交审核
+                    </Button>
+                    <Button type="button" variant="outline" className="w-full" asChild>
+                      <Link href="/publisher">取消</Link>
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-// 预览面板组件
-function ToolPreviewPanel({ 
+// 工具预览内容组件
+function ToolPreviewContent({ 
   formData, 
-  categories 
+  selectedCategory 
 }: { 
   formData: {
     name: string
@@ -470,103 +470,102 @@ function ToolPreviewPanel({
     pricingInfo: string
     tags: string[]
   }
-  categories: { id: number; name: string; color?: string }[]
+  selectedCategory?: { id: number; name: string; color?: string }
 }) {
-  const selectedCategory = categories.find(c => c.id.toString() === formData.categoryId)
-
   return (
-    <div className="bg-muted/30 rounded-lg border overflow-hidden">
-      <div className="bg-primary/10 px-4 py-2 border-b">
-        <p className="text-sm font-medium text-primary">实时预览</p>
-      </div>
-      <div className="p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
-        {/* Tool Info */}
-        <div className="bg-background rounded-lg border mb-4">
-          <div className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="w-14 h-14 rounded-lg overflow-hidden border bg-muted shrink-0">
-                <ToolLogo
-                  logo={formData.logo || null}
-                  name={formData.name || '工具'}
-                  website={formData.website}
-                  className="w-full h-full object-cover"
-                  size={56}
-                  fallbackBgColor={selectedCategory?.color}
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="font-semibold text-lg truncate">{formData.name || '工具名称'}</h2>
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {formData.description || '工具描述将在此处显示...'}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 mt-3">
-              {selectedCategory ? (
-                <span 
-                  className="text-xs px-2 py-1 rounded-full border"
-                  style={{ borderColor: selectedCategory.color, color: selectedCategory.color }}
-                >
-                  {selectedCategory.name}
-                </span>
-              ) : (
-                <span className="text-xs px-2 py-1 rounded-full border border-muted text-muted-foreground">
-                  未选择分类
-                </span>
-              )}
-              <span className={`text-xs px-2 py-1 rounded-full ${formData.isFree ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-secondary'}`}>
-                {formData.isFree ? '免费' : '付费'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Long Description */}
-        {formData.longDescription && (
-          <div className="bg-background rounded-lg border mb-4">
-            <div className="px-4 py-3 border-b">
-              <h3 className="font-medium text-sm">详细介绍</h3>
-            </div>
-            <div className="p-4">
-              <div 
-                className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none line-clamp-6" 
-                dangerouslySetInnerHTML={{ __html: formData.longDescription }} 
+    <div className="space-y-6">
+      {/* 工具信息卡片 */}
+      <div className="bg-card rounded-lg border overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-20 h-20 rounded-xl overflow-hidden border-2 bg-muted shrink-0">
+              <ToolLogo
+                logo={formData.logo || null}
+                name={formData.name || '工具'}
+                website={formData.website}
+                className="w-full h-full object-cover"
+                size={80}
+                fallbackBgColor={selectedCategory?.color}
               />
             </div>
-          </div>
-        )}
-
-        {/* Pricing Info */}
-        {formData.pricingInfo && (
-          <div className="bg-background rounded-lg border mb-4">
-            <div className="px-4 py-3 border-b">
-              <h3 className="font-medium text-sm">💰 定价信息</h3>
-            </div>
-            <div className="p-4">
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{formData.pricingInfo}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Tags */}
-        {formData.tags && formData.tags.length > 0 && (
-          <div className="bg-background rounded-lg border">
-            <div className="px-4 py-3 border-b">
-              <h3 className="font-medium text-sm">标签</h3>
-            </div>
-            <div className="p-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="font-semibold text-2xl mb-2">{formData.name || '工具名称'}</h2>
+              <p className="text-muted-foreground mb-3">
+                {formData.description || '工具描述将在此处显示...'}
+              </p>
               <div className="flex flex-wrap gap-2">
-                {formData.tags.map((tag, index) => (
-                  <span key={index} className="text-xs px-2 py-1 rounded-full bg-secondary">
-                    {tag}
+                {selectedCategory ? (
+                  <span 
+                    className="text-xs px-2.5 py-1 rounded-full border"
+                    style={{ borderColor: selectedCategory.color, color: selectedCategory.color }}
+                  >
+                    {selectedCategory.name}
                   </span>
-                ))}
+                ) : (
+                  <span className="text-xs px-2.5 py-1 rounded-full border border-muted text-muted-foreground">
+                    未选择分类
+                  </span>
+                )}
+                <span className={`text-xs px-2.5 py-1 rounded-full ${formData.isFree ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-secondary'}`}>
+                  {formData.isFree ? '免费' : '付费'}
+                </span>
               </div>
             </div>
           </div>
-        )}
+          
+          {/* 官网链接 */}
+          {formData.website && (
+            <div className="mt-4 pt-4 border-t">
+              <a
+                href={formData.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-primary hover:underline"
+              >
+                <span>访问官网</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* 标签 */}
+      {formData.tags && formData.tags.length > 0 && (
+        <div className="bg-card rounded-lg border p-4">
+          <h3 className="font-medium text-sm mb-3">标签</h3>
+          <div className="flex flex-wrap gap-2">
+            {formData.tags.map((tag, index) => (
+              <span key={index} className="text-xs px-2.5 py-1 rounded-full bg-secondary">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 定价信息 */}
+      {formData.pricingInfo && (
+        <div className="bg-card rounded-lg border p-4">
+          <h3 className="font-medium text-sm mb-2">💰 定价信息</h3>
+          <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {formData.pricingInfo}
+          </div>
+        </div>
+      )}
+
+      {/* 详细介绍 */}
+      {formData.longDescription && (
+        <div className="bg-card rounded-lg border p-4">
+          <h3 className="font-medium text-sm mb-3">详细介绍</h3>
+          <div 
+            className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none" 
+            dangerouslySetInnerHTML={{ __html: formData.longDescription }} 
+          />
+        </div>
+      )}
     </div>
   )
 }
