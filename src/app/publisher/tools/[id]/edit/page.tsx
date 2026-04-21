@@ -126,8 +126,7 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
     setError('')
 
     if (!formData.name || !formData.description || !formData.website || !formData.categoryId) {
@@ -206,7 +205,7 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
               <Badge variant="destructive" className="text-xs">已拒绝</Badge>
             )}
           </div>
-          <div className="w-[120px]" /> {/* 占位，保持标题居中 */}
+          <div className="w-[120px]" />
         </div>
       </div>
 
@@ -236,24 +235,84 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
           </div>
         )}
 
-        {/* 左右两栏布局：左侧详细介绍，右侧其他字段 */}
+        {/* 左右两栏布局：左侧基本信息+详细介绍，右侧其他字段 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 左栏：详细介绍 */}
-          <div className="lg:col-span-2">
+          {/* 左栏：基本信息 + 详细介绍 */}
+          <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>详细介绍</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  支持富文本编辑，可从微信、百度等网站直接复制图文粘贴
-                </p>
+                <CardTitle>基本信息</CardTitle>
               </CardHeader>
-              <CardContent>
-                <RichTextEditor
-                  value={formData.longDescription}
-                  onChange={(value) => setFormData({ ...formData, longDescription: value })}
-                  placeholder="详细介绍这个工具的功能、特点、使用场景等..."
-                  minHeight="400px"
-                />
+              <CardContent className="space-y-6">
+                {error && (
+                  <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    {error}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">工具名称 *</Label>
+                  <Input
+                    id="name"
+                    placeholder="例如：ChatGPT"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="website">官网地址 *</Label>
+                  <Input
+                    id="website"
+                    type="url"
+                    placeholder="https://..."
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="categoryId">分类 *</Label>
+                  <Select
+                    value={formData.categoryId}
+                    onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择分类" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id.toString()}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">简短描述 *</Label>
+                  <Input
+                    id="description"
+                    placeholder="一句话介绍这个工具"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                </div>
+
+                {/* 详细介绍 */}
+                <div className="space-y-2">
+                  <Label htmlFor="longDescription">详细介绍</Label>
+                  <p className="text-xs text-muted-foreground">
+                    支持富文本编辑，可从微信、百度等网站直接复制图文粘贴
+                  </p>
+                  <RichTextEditor
+                    value={formData.longDescription}
+                    onChange={(value) => setFormData({ ...formData, longDescription: value })}
+                    placeholder="详细介绍这个工具的功能、特点、使用场景等..."
+                    minHeight="400px"
+                  />
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -262,189 +321,136 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>基本信息</CardTitle>
+                <CardTitle>其他设置</CardTitle>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {error && (
-                    <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                      {error}
+              <CardContent className="space-y-6">
+                {/* Logo 上传/URL 输入 */}
+                <div className="space-y-3">
+                  <Label>工具图标</Label>
+                  
+                  {/* 图标预览 */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 bg-muted">
+                      <ToolLogo
+                        logo={formData.logo || null}
+                        name={formData.name || '工具'}
+                        website={formData.website}
+                        className="w-full h-full object-cover"
+                        size={64}
+                        fallbackBgColor={selectedCategory?.color}
+                      />
                     </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="name">工具名称 *</Label>
-                    <Input
-                      id="name"
-                      placeholder="例如：ChatGPT"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    />
+                    <div className="text-sm text-muted-foreground">
+                      <p>图标预览</p>
+                      <p className="text-xs">为空时自动使用网站图标服务生成</p>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="website">官网地址 *</Label>
-                    <Input
-                      id="website"
-                      type="url"
-                      placeholder="https://..."
-                      value={formData.website}
-                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="categoryId">分类 *</Label>
-                    <Select
-                      value={formData.categoryId}
-                      onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择分类" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id.toString()}>
-                            {cat.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">简短描述 *</Label>
-                    <Input
-                      id="description"
-                      placeholder="一句话介绍这个工具"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    />
-                  </div>
-
-                  {/* Logo 上传/URL 输入 */}
-                  <div className="space-y-3">
-                    <Label>工具图标</Label>
+                  {/* 输入方式切换 */}
+                  <Tabs value={logoInputMode} onValueChange={setLogoInputMode}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="upload" className="flex items-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        上传
+                      </TabsTrigger>
+                      <TabsTrigger value="url" className="flex items-center gap-2">
+                        <Link2 className="h-4 w-4" />
+                        URL
+                      </TabsTrigger>
+                    </TabsList>
                     
-                    {/* 图标预览 */}
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden border-2 bg-muted">
-                        <ToolLogo
-                          logo={formData.logo || null}
-                          name={formData.name || '工具'}
-                          website={formData.website}
-                          className="w-full h-full object-cover"
-                          size={64}
-                          fallbackBgColor={selectedCategory?.color}
-                        />
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        <p>图标预览</p>
-                        <p className="text-xs">为空时自动使用网站图标服务生成</p>
-                      </div>
-                    </div>
+                    <TabsContent value="upload" className="mt-4">
+                      <ImageUploader
+                        value={formData.logo}
+                        onChange={(url) => setFormData({ ...formData, logo: url })}
+                        folder="logos"
+                        aspectRatio="square"
+                        maxSize={2}
+                        placeholder="点击上传图标"
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="url" className="mt-4">
+                      <Input
+                        id="logo"
+                        type="url"
+                        placeholder="https://example.com/logo.png"
+                        value={formData.logo}
+                        onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </div>
 
-                    {/* 输入方式切换 */}
-                    <Tabs value={logoInputMode} onValueChange={setLogoInputMode}>
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="upload" className="flex items-center gap-2">
-                          <Upload className="h-4 w-4" />
-                          上传
-                        </TabsTrigger>
-                        <TabsTrigger value="url" className="flex items-center gap-2">
-                          <Link2 className="h-4 w-4" />
-                          URL
-                        </TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="upload" className="mt-4">
-                        <ImageUploader
-                          value={formData.logo}
-                          onChange={(url) => setFormData({ ...formData, logo: url })}
-                          folder="logos"
-                          aspectRatio="square"
-                          maxSize={2}
-                          placeholder="点击上传图标"
-                        />
-                      </TabsContent>
-                      
-                      <TabsContent value="url" className="mt-4">
-                        <Input
-                          id="logo"
-                          type="url"
-                          placeholder="https://example.com/logo.png"
-                          value={formData.logo}
-                          onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                        />
-                      </TabsContent>
-                    </Tabs>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tags">标签</Label>
+                  <TagInput
+                    value={formData.tags}
+                    onChange={(tags: string[]) => setFormData({ ...formData, tags })}
+                    placeholder="输入标签，按回车或逗号分隔"
+                    maxTags={10}
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="tags">标签</Label>
-                    <TagInput
-                      value={formData.tags}
-                      onChange={(tags: string[]) => setFormData({ ...formData, tags })}
-                      placeholder="输入标签，按回车或逗号分隔"
-                      maxTags={10}
-                    />
-                  </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="isFree">免费使用</Label>
+                  <Switch
+                    id="isFree"
+                    checked={formData.isFree}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isFree: checked })}
+                  />
+                </div>
 
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="isFree">免费使用</Label>
-                    <Switch
-                      id="isFree"
-                      checked={formData.isFree}
-                      onCheckedChange={(checked) => setFormData({ ...formData, isFree: checked })}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pricingInfo">定价信息</Label>
+                  <MarkdownEditorSimple
+                    value={formData.pricingInfo}
+                    onChange={(value) => setFormData({ ...formData, pricingInfo: value || '' })}
+                    placeholder={
+                      formData.isFree
+                        ? "描述免费情况，如：完全免费、部分功能免费等"
+                        : "描述定价方案，如：免费版，专业版$20/月"
+                    }
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="pricingInfo">定价信息</Label>
-                    <MarkdownEditorSimple
-                      value={formData.pricingInfo}
-                      onChange={(value) => setFormData({ ...formData, pricingInfo: value || '' })}
-                      placeholder={
-                        formData.isFree
-                          ? "描述免费情况，如：完全免费、部分功能免费等"
-                          : "描述定价方案，如：免费版、专业版$20/月"
-                      }
-                    />
-                  </div>
+                {/* 操作按钮 */}
+                <div className="space-y-3 pt-4 border-t">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        disabled={!formData.name && !formData.description && !formData.longDescription}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        预览
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh]">
+                      <DialogHeader>
+                        <DialogTitle className="text-xl">工具预览</DialogTitle>
+                      </DialogHeader>
+                      <ScrollArea className="max-h-[60vh] pr-4">
+                        <ToolPreviewContent formData={formData} selectedCategory={selectedCategory} />
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
 
-                  {/* 操作按钮 */}
-                  <div className="space-y-3 pt-4 border-t">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="w-full"
-                          disabled={!formData.name && !formData.description && !formData.longDescription}
-                        >
-                          <Eye className="mr-2 h-4 w-4" />
-                          预览
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[80vh]">
-                        <DialogHeader>
-                          <DialogTitle className="text-xl">工具预览</DialogTitle>
-                        </DialogHeader>
-                        <ScrollArea className="max-h-[60vh] pr-4">
-                          <ToolPreviewContent formData={formData} selectedCategory={selectedCategory} />
-                        </ScrollArea>
-                      </DialogContent>
-                    </Dialog>
-
-                    <Button type="submit" disabled={submitting} className="w-full">
-                      {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      保存并提交审核
-                    </Button>
-                    <Button type="button" variant="outline" className="w-full" asChild>
-                      <Link href="/publisher">取消</Link>
-                    </Button>
-                  </div>
-                </form>
+                  <Button 
+                    type="button"
+                    disabled={submitting}
+                    className="w-full"
+                    onClick={handleSubmit}
+                  >
+                    {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    保存并提交审核
+                  </Button>
+                  <Button type="button" variant="outline" className="w-full" asChild>
+                    <Link href="/publisher">取消</Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -501,68 +507,49 @@ function ToolPreviewContent({
                   >
                     {selectedCategory.name}
                   </span>
-                ) : (
-                  <span className="text-xs px-2.5 py-1 rounded-full border border-muted text-muted-foreground">
-                    未选择分类
+                ) : null}
+                {formData.tags.map((tag, index) => (
+                  <span key={index} className="text-xs px-2.5 py-1 rounded-full bg-muted">
+                    {tag}
                   </span>
-                )}
-                <span className={`text-xs px-2.5 py-1 rounded-full ${formData.isFree ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-secondary'}`}>
-                  {formData.isFree ? '免费' : '付费'}
-                </span>
+                ))}
               </div>
             </div>
           </div>
           
-          {/* 官网链接 */}
-          {formData.website && (
-            <div className="mt-4 pt-4 border-t">
-              <a
-                href={formData.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-primary hover:underline"
-              >
-                <span>访问官网</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
+          <div className="flex items-center gap-3 mt-4 pt-4 border-t">
+            <Button asChild className="flex-1">
+              <a href={formData.website} target="_blank" rel="noopener noreferrer">
+                访问官网
               </a>
-            </div>
-          )}
+            </Button>
+            {formData.isFree ? (
+              <Badge variant="secondary" className="text-sm">免费</Badge>
+            ) : (
+              <Badge variant="outline" className="text-sm">付费</Badge>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* 标签 */}
-      {formData.tags && formData.tags.length > 0 && (
-        <div className="bg-card rounded-lg border p-4">
-          <h3 className="font-medium text-sm mb-3">标签</h3>
-          <div className="flex flex-wrap gap-2">
-            {formData.tags.map((tag, index) => (
-              <span key={index} className="text-xs px-2.5 py-1 rounded-full bg-secondary">
-                {tag}
-              </span>
-            ))}
-          </div>
+      {/* 详细介绍 */}
+      {formData.longDescription && (
+        <div className="bg-card rounded-lg border p-6">
+          <h3 className="font-semibold text-lg mb-4">详细介绍</h3>
+          <div 
+            className="prose prose-sm dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: formData.longDescription }}
+          />
         </div>
       )}
 
       {/* 定价信息 */}
       {formData.pricingInfo && (
-        <div className="bg-card rounded-lg border p-4">
-          <h3 className="font-medium text-sm mb-2">💰 定价信息</h3>
-          <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-            {formData.pricingInfo}
-          </div>
-        </div>
-      )}
-
-      {/* 详细介绍 */}
-      {formData.longDescription && (
-        <div className="bg-card rounded-lg border p-4">
-          <h3 className="font-medium text-sm mb-3">详细介绍</h3>
+        <div className="bg-card rounded-lg border p-6">
+          <h3 className="font-semibold text-lg mb-4">定价信息</h3>
           <div 
-            className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none" 
-            dangerouslySetInnerHTML={{ __html: formData.longDescription }} 
+            className="prose prose-sm dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: formData.pricingInfo }}
           />
         </div>
       )}
