@@ -10,11 +10,22 @@ export async function GET(
     const { id } = await params
     const client = getSupabaseClient()
 
-    const { data: news, error } = await client
+    // 支持 id 和 slug 两种方式访问
+    let query = client
       .from('ai_news')
       .select('*')
-      .eq('id', parseInt(id))
-      .single()
+    
+    // 判断是否为数字 ID
+    const isNumericId = !isNaN(parseInt(id))
+    
+    if (isNumericId) {
+      query = query.eq('id', parseInt(id))
+    } else {
+      // 按 slug 查询
+      query = query.eq('slug', decodeURIComponent(id))
+    }
+
+    const { data: news, error } = await query.single()
 
     if (error || !news) {
       return NextResponse.json(
