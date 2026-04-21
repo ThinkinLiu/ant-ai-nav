@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { ArrowLeft, Save, Send, Eye, Sparkles, Loader2, AlertTriangle } from 'lucide-react'
-import { Checkbox } from '@/components/ui/checkbox'
 import ImageUploader from '@/components/ui/image-uploader'
 import {
   Dialog,
@@ -404,34 +403,40 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {categories.map((category) => (
-                        <div key={category.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`category-${category.id}`}
-                            checked={formData.categories.includes(category.slug)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setFormData({
-                                  ...formData,
-                                  categories: [...formData.categories, category.slug],
-                                })
-                              } else {
+                    <div className="flex flex-wrap gap-2">
+                      {categories.map((category) => {
+                        const isSelected = formData.categories.includes(category.slug)
+                        return (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
                                 setFormData({
                                   ...formData,
                                   categories: formData.categories.filter((c) => c !== category.slug),
                                 })
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  categories: [...formData.categories, category.slug],
+                                })
                               }
                             }}
-                          />
-                          <label
-                            htmlFor={`category-${category.id}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            className={`
+                              px-3 py-1.5 rounded-full text-sm font-medium transition-all
+                              border cursor-pointer
+                              ${isSelected 
+                                ? 'bg-primary text-primary-foreground border-primary' 
+                                : 'bg-background hover:bg-muted border-border text-muted-foreground hover:text-foreground'
+                              }
+                            `}
+                            style={isSelected && category.color ? { backgroundColor: category.color, borderColor: category.color } : {}}
                           >
                             {category.name}
-                          </label>
-                        </div>
-                      ))}
+                          </button>
+                        )
+                      })}
                     </div>
                   )}
                   {formData.categories.length > 0 && (
