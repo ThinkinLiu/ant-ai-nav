@@ -13,13 +13,12 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Loader2, AlertCircle, Upload, Link2, Eye } from 'lucide-react'
+import { ArrowLeft, Loader2, AlertCircle, Upload, Link2, PanelRightOpen, PanelRightClose } from 'lucide-react'
 import ImageUploader from '@/components/ui/image-uploader'
 import RichTextEditor from '@/components/ui/rich-text-editor'
 import { MarkdownEditorSimple } from '@/components/ui/markdown-editor'
 import { ToolLogo } from '@/components/tools/ToolLogo'
 import { TagInput } from '@/components/ui/tag-input'
-import ToolPreview from '@/components/tools/ToolPreview'
 
 interface Category {
   id: number
@@ -53,7 +52,7 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [previewOpen, setPreviewOpen] = useState(false)
+  const [showPreview, setShowPreview] = useState(true) // 默认显示预览
   const [logoInputMode, setLogoInputMode] = useState<string>('upload')
   const [formData, setFormData] = useState({
     name: '',
@@ -179,56 +178,86 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
   const selectedCategory = categories.find(c => c.id.toString() === formData.categoryId)
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <Button variant="ghost" size="sm" className="mb-6" asChild>
-        <Link href="/publisher">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          返回
-        </Link>
-      </Button>
+    <div className="min-h-screen">
+      {/* 顶部导航栏 */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/publisher">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              返回发布中心
+            </Link>
+          </Button>
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium">编辑工具</span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowPreview(!showPreview)}
+              className="gap-2"
+            >
+              {showPreview ? (
+                <>
+                  <PanelRightClose className="h-4 w-4" />
+                  隐藏预览
+                </>
+              ) : (
+                <>
+                  <PanelRightOpen className="h-4 w-4" />
+                  显示预览
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            编辑工具
-            {tool.status === 'approved' && (
-              <Badge variant="default" className="text-xs">已通过</Badge>
-            )}
-            {tool.status === 'pending' && (
-              <Badge variant="secondary" className="text-xs">待审核</Badge>
-            )}
-            {tool.status === 'rejected' && (
-              <Badge variant="destructive" className="text-xs">已拒绝</Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* 提示信息 */}
-          {tool.status === 'approved' && (
-            <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                  <p className="font-medium">编辑后需要重新审核</p>
-                  <p className="mt-1">修改工具信息后，状态将变为"待审核"，需要管理员重新审批通过后才会显示在平台上。</p>
+      <div className="container mx-auto px-4 py-6">
+        {/* 左右两栏布局 */}
+        <div className={`grid gap-6 ${showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+          {/* 左栏：表单区域 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                填写工具信息
+                {tool.status === 'approved' && (
+                  <Badge variant="default" className="text-xs">已通过</Badge>
+                )}
+                {tool.status === 'pending' && (
+                  <Badge variant="secondary" className="text-xs">待审核</Badge>
+                )}
+                {tool.status === 'rejected' && (
+                  <Badge variant="destructive" className="text-xs">已拒绝</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* 提示信息 */}
+              {tool.status === 'approved' && (
+                <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                      <p className="font-medium">编辑后需要重新审核</p>
+                      <p className="mt-1">修改工具信息后，状态将变为"待审核"，需要管理员重新审批通过后才会显示在平台上。</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {tool.status === 'rejected' && tool.reject_reason && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                <div className="text-sm text-red-800 dark:text-red-200">
-                  <p className="font-medium">拒绝原因：{tool.reject_reason}</p>
-                  <p className="mt-1">请根据拒绝原因修改后重新提交。</p>
+              {tool.status === 'rejected' && tool.reject_reason && (
+                <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                    <div className="text-sm text-red-800 dark:text-red-200">
+                      <p className="font-medium">拒绝原因：{tool.reject_reason}</p>
+                      <p className="mt-1">请根据拒绝原因修改后重新提交。</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg">
                 {error}
@@ -398,30 +427,146 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
               />
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-4 pt-4 border-t">
               <Button type="submit" disabled={submitting}>
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 保存并提交审核
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>
-                <Eye className="mr-2 h-4 w-4" />
-                预览
               </Button>
               <Button type="button" variant="outline" asChild>
                 <Link href="/publisher">取消</Link>
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* 预览弹窗 */}
-      <ToolPreview
-        open={previewOpen}
-        onOpenChange={setPreviewOpen}
-        formData={formData}
-        categories={categories}
-      />
+          {/* 右栏：实时预览 */}
+          {showPreview && (
+            <div className="hidden lg:block">
+              <div className="sticky top-20">
+                <ToolPreviewPanel formData={formData} categories={categories} />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 预览面板组件
+function ToolPreviewPanel({ 
+  formData, 
+  categories 
+}: { 
+  formData: {
+    name: string
+    description: string
+    longDescription: string
+    website: string
+    logo: string
+    categoryId: string
+    isFree: boolean
+    pricingInfo: string
+    tags: string[]
+  }
+  categories: { id: number; name: string; color?: string }[]
+}) {
+  const selectedCategory = categories.find(c => c.id.toString() === formData.categoryId)
+
+  return (
+    <div className="bg-muted/30 rounded-lg border overflow-hidden">
+      <div className="bg-primary/10 px-4 py-2 border-b">
+        <p className="text-sm font-medium text-primary">实时预览</p>
+      </div>
+      <div className="p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+        {/* Tool Info */}
+        <div className="bg-background rounded-lg border mb-4">
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-14 h-14 rounded-lg overflow-hidden border bg-muted shrink-0">
+                <ToolLogo
+                  logo={formData.logo || null}
+                  name={formData.name || '工具'}
+                  website={formData.website}
+                  className="w-full h-full object-cover"
+                  size={56}
+                  fallbackBgColor={selectedCategory?.color}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="font-semibold text-lg truncate">{formData.name || '工具名称'}</h2>
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {formData.description || '工具描述将在此处显示...'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 mt-3">
+              {selectedCategory ? (
+                <span 
+                  className="text-xs px-2 py-1 rounded-full border"
+                  style={{ borderColor: selectedCategory.color, color: selectedCategory.color }}
+                >
+                  {selectedCategory.name}
+                </span>
+              ) : (
+                <span className="text-xs px-2 py-1 rounded-full border border-muted text-muted-foreground">
+                  未选择分类
+                </span>
+              )}
+              <span className={`text-xs px-2 py-1 rounded-full ${formData.isFree ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-secondary'}`}>
+                {formData.isFree ? '免费' : '付费'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Long Description */}
+        {formData.longDescription && (
+          <div className="bg-background rounded-lg border mb-4">
+            <div className="px-4 py-3 border-b">
+              <h3 className="font-medium text-sm">详细介绍</h3>
+            </div>
+            <div className="p-4">
+              <div 
+                className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none line-clamp-6" 
+                dangerouslySetInnerHTML={{ __html: formData.longDescription }} 
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Pricing Info */}
+        {formData.pricingInfo && (
+          <div className="bg-background rounded-lg border mb-4">
+            <div className="px-4 py-3 border-b">
+              <h3 className="font-medium text-sm">💰 定价信息</h3>
+            </div>
+            <div className="p-4">
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{formData.pricingInfo}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Tags */}
+        {formData.tags && formData.tags.length > 0 && (
+          <div className="bg-background rounded-lg border">
+            <div className="px-4 py-3 border-b">
+              <h3 className="font-medium text-sm">标签</h3>
+            </div>
+            <div className="p-4">
+              <div className="flex flex-wrap gap-2">
+                {formData.tags.map((tag, index) => (
+                  <span key={index} className="text-xs px-2 py-1 rounded-full bg-secondary">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
