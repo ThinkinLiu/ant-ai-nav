@@ -17,6 +17,7 @@ import {
   Eye, Clock, ArrowLeft, Send, ThumbsUp, Award, Edit
 } from 'lucide-react'
 import RelatedTools from '@/components/tools/RelatedTools'
+import RelatedNews from '@/components/tools/RelatedNews'
 import { ToolLogoNext } from '@/components/tools/ToolLogo'
 
 interface Tool {
@@ -506,6 +507,17 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
             <div className="lg:hidden">
               <RelatedTools toolId={tool.id} />
             </div>
+
+            {/* Related News - 移动端显示在主内容区域 */}
+            <div className="lg:hidden">
+              <RelatedNews 
+                toolId={tool.id} 
+                toolName={tool.name} 
+                toolTags={tool.tags}
+                variant="default"
+                maxItems={3}
+              />
+            </div>
           </div>
 
           {/* Sidebar */}
@@ -513,6 +525,17 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
             {/* Related Tools - PC端显示在右侧栏 */}
             <div className="hidden lg:block">
               <RelatedTools toolId={tool.id} variant="compact" />
+            </div>
+
+            {/* Related News - PC端显示在右侧栏 */}
+            <div className="hidden lg:block">
+              <RelatedNews 
+                toolId={tool.id} 
+                toolName={tool.name} 
+                toolTags={tool.tags}
+                variant="compact"
+                maxItems={3}
+              />
             </div>
 
             {/* Publisher Info - 桌面端显示 */}
