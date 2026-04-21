@@ -28,9 +28,10 @@
 | 12_seo_settings.sql | SEO设置（1条） |
 | 13_site_settings.sql | 网站设置（1条） |
 | 14_traffic_data_sources.sql | 流量数据源配置（4条） |
-| 15_friend_links.sql | 友情链接（3条） |
-| 16_smtp_settings.sql | SMTP设置（1条） |
+| 15_ai_news_fields.sql | AI资讯自定义字段 |
+| 16_friend_links.sql | 友情链接（3条） |
 | 17_cross_domain_config.sql | 跨域认证配置 |
+| 18_seo_multi_site.sql | SEO多站点配置 |
 
 ## 数据统计
 
@@ -57,8 +58,9 @@
 │ smtp_settings       │       1 │
 │ traffic_data_sources│       4 │
 │ friend_links        │       3 │
+│ cross_domain_config │       1 │
 └─────────────────────┴─────────┘
-总计: 1609 条记录
+总计: 1609+ 条记录
 ```
 
 ## 使用方法

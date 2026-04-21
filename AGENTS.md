@@ -98,13 +98,25 @@ pnpm ts-check     # TypeScript 类型检查
 
 ### 关键表
 - `users` - 用户表
-- `tools` - AI 工具表
+- `ai_tools` - AI 工具表
 - `categories` - 分类表
-- `news` - 资讯表
+- `ai_news` - AI 资讯表
+- `tags` - 标签表
+- `tool_tags` - 工具标签关联表
 - `announcements` - 公告表
-- `hall_of_fame` - 名人堂表
-- `timeline` - 时间线表
+- `comments` - 评论表
+- `favorites` - 收藏表
+- `ai_hall_of_fame` - AI 名人堂表
+- `ai_timeline` - AI 大事纪表
+- `friend_links` - 友情链接表
+- `publisher_applications` - 发布者申请表
+- `ai_tool_rankings` - AI工具排行榜表
+- `ranking_update_log` - 排行榜更新日志表
+- `site_settings` - 站点设置
+- `smtp_settings` - SMTP设置
+- `traffic_data_sources` - 流量数据源表
 - `seo_settings` - SEO配置表（支持多站点，通过 `site_type` 字段区分：`nav`=蚂蚁AI导航，`home`=蚂蚁AI之家）
+- `cross_domain_config` - 跨域认证配置表
 
 ### SEO 多站点配置
 项目支持为不同站点配置独立的 SEO 设置：

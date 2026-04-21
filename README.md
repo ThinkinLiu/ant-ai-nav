@@ -248,12 +248,16 @@ pnpm dev
 | `ai_news` | AI 资讯表 |
 | `ai_hall_of_fame` | AI 名人堂表 |
 | `ai_timeline` | AI 大事纪表 |
-| `friend_links` | 友情链接表 |
+| `announcements` | 公告表 |
 | `comments` | 评论表 |
 | `favorites` | 收藏表 |
+| `friend_links` | 友情链接表 |
+| `tags` | 标签表 |
+| `tool_tags` | 工具标签关联表 |
 | `site_settings` | 站点设置 |
 | `smtp_settings` | SMTP设置 |
-| `seo_settings` | SEO设置 |
+| `seo_settings` | SEO设置（支持多站点） |
+| `cross_domain_config` | 跨域认证配置 |
 
 详细结构请参考 `database/00_schema.sql`。
 
