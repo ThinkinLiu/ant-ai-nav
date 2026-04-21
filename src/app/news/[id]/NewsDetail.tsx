@@ -190,7 +190,7 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews, relatedTools
 
               {/* Source Link */}
               {news.source_url && (
-                <div className="mt-6 pt-6 border-t">
+                <div className="mt-6 pt-6 border-t flex justify-end">
                   <a
                     href={news.source_url}
                     target="_blank"
@@ -280,7 +280,18 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews, relatedTools
               {news.source && (
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">来源</span>
-                  <span className="max-w-[150px] truncate">{news.source}</span>
+                  {news.source_url ? (
+                    <a
+                      href={news.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="max-w-[150px] truncate text-primary hover:underline"
+                    >
+                      {news.source}
+                    </a>
+                  ) : (
+                    <span className="max-w-[150px] truncate">{news.source}</span>
+                  )}
                 </div>
               )}
               <div className="flex justify-between items-center">
