@@ -11,13 +11,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import RichTextEditor from '@/components/ui/rich-text-editor'
 import { TagInput } from '@/components/ui/tag-input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { ArrowLeft, Save, Send, Eye, Sparkles, Loader2, AlertTriangle } from 'lucide-react'
 import ImageUploader from '@/components/ui/image-uploader'
@@ -29,7 +22,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 import ToolSelector from './ToolSelector'
 
 interface NewsCategory {
@@ -215,10 +207,6 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
       toast.error('请填写标题')
       return
     }
-    if (!formData.summary.trim()) {
-      toast.error('请填写摘要')
-      return
-    }
     if (!formData.content.trim()) {
       toast.error('请填写正文内容')
       return
@@ -232,7 +220,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
       const submitData = {
         title: formData.title.trim(),
         slug,
-        summary: formData.summary.trim(),
+        summary: formData.summary.trim().replace(/<[^>]*>/g, ''),
         content: formData.content.trim(),
         coverImage: formData.coverImage.trim(),
         categories: formData.categories,
@@ -298,65 +286,70 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 返回按钮 */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={returnUrl}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            返回列表
-          </Link>
-        </Button>
+    <div className="min-h-screen">
+      {/* 顶部导航栏 */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={returnUrl}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              返回列表
+            </Link>
+          </Button>
+          <span className="text-sm font-medium">{mode === 'create' ? '新建AI资讯' : '编辑AI资讯'}</span>
+          <div className="w-[120px]" />
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        {/* 左侧：主要编辑区域 */}
-        <div className="col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{mode === 'create' ? '新建AI资讯' : '编辑AI资讯'}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* AI 自动生成区域 */}
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1 text-sm text-muted-foreground">
-                      输入标题和来源链接后，点击"AI采集"可自动从网络获取资讯内容（摘要、正文、来源、标签等）
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleGenerateInfo}
-                      disabled={generating || !formData.title.trim()}
-                    >
-                      {generating ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          采集中...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          AI采集
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  {/* 错误提示 */}
-                  {generateError && (
-                    <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                        <div className="text-sm">
-                          <p className="font-medium text-destructive mb-1">采集失败</p>
-                          <p className="text-muted-foreground whitespace-pre-wrap">{generateError}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+      <div className="container mx-auto px-4 py-6">
+        {/* AI 采集提示 */}
+        <div className="mb-6 bg-muted/50 rounded-lg p-4">
+          <div className="flex items-center gap-4">
+            <div className="flex-1 text-sm text-muted-foreground">
+              输入标题和来源链接后，点击&quot;AI采集&quot;可自动从网络获取资讯内容（摘要、正文、来源、标签等）
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateInfo}
+              disabled={generating || !formData.title.trim()}
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  采集中...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  AI采集
+                </>
+              )}
+            </Button>
+          </div>
+          {/* 错误提示 */}
+          {generateError && (
+            <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-destructive mb-1">采集失败</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{generateError}</p>
                 </div>
+              </div>
+            </div>
+          )}
+        </div>
 
+        {/* 左右两栏布局 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 左侧：主要编辑区域 */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>基本信息</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 {/* 标题 */}
                 <div className="space-y-2">
                   <Label htmlFor="title">标题 *</Label>
@@ -446,14 +439,16 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                   )}
                 </div>
 
-                {/* 摘要 */}
+                {/* 摘要 - 普通文本输入 */}
                 <div className="space-y-2">
-                  <Label>摘要</Label>
-                  <RichTextEditor
-                    value={formData.summary}
-                    onChange={(value) => setFormData({ ...formData, summary: value || '' })}
-                    placeholder="请输入资讯摘要（建议200字以内），支持图文粘贴"
-                    minHeight="120px"
+                  <Label htmlFor="summary">摘要</Label>
+                  <textarea
+                    id="summary"
+                    className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                    value={formData.summary.replace(/<[^>]*>/g, '')}
+                    onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                    placeholder="请输入资讯摘要（建议200字以内）"
+                    maxLength={500}
                   />
                   <p className="text-xs text-muted-foreground">
                     {formData.summary.replace(/<[^>]*>/g, '').length}/500 字符
@@ -470,7 +465,17 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                     minHeight="400px"
                   />
                 </div>
+              </CardContent>
+            </Card>
+          </div>
 
+          {/* 右侧：设置面板 */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>发布设置</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 {/* 封面图片 */}
                 <div className="space-y-2">
                   <Label>封面图片</Label>
@@ -483,7 +488,7 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                     maxSize={5}
                   />
                   <p className="text-xs text-muted-foreground">
-                    建议尺寸 1200x630 像素，支持 JPG、PNG 格式，最大 5MB
+                    建议尺寸 1200x630 像素
                   </p>
                 </div>
 
@@ -496,236 +501,223 @@ export default function NewsForm({ mode, newsId, returnUrl }: NewsFormProps) {
                     placeholder="输入标签，按回车或逗号分隔"
                     maxTags={10}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    输入标签后按回车或输入逗号（中英文皆可）自动分隔，最多添加 10 个标签
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 右侧：设置面板 */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>发布设置</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* 来源信息 */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="source">来源</Label>
-                  <Input
-                    id="source"
-                    value={formData.source}
-                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                    placeholder="如: 新浪科技、36氪"
-                  />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="sourceUrl">来源链接</Label>
-                  <Input
-                    id="sourceUrl"
-                    value={formData.sourceUrl}
-                    onChange={(e) => setFormData({ ...formData, sourceUrl: e.target.value })}
-                    placeholder="https://..."
-                  />
-                </div>
-              </div>
-
-              {/* 管理员选项 */}
-              {user.role === 'admin' && (
-                <div className="space-y-4 pt-4 border-t">
-                  {/* 发布时间 */}
+                {/* 来源信息 */}
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="publishedAt">发布时间</Label>
+                    <Label htmlFor="source">发布来源</Label>
                     <Input
-                      id="publishedAt"
-                      type="datetime-local"
-                      value={formData.publishedAt}
-                      onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
-                      max={new Date().toISOString().slice(0, 16)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {mode === 'create' ? '留空则使用当前时间' : '修改发布时间将影响资讯排序'}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>推荐文章</Label>
-                      <p className="text-xs text-muted-foreground">
-                        标记为推荐文章
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.isFeatured}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, isFeatured: checked })
-                      }
+                      id="source"
+                      value={formData.source}
+                      onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                      placeholder="如: 新浪科技、36氪"
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>热门文章</Label>
-                      <p className="text-xs text-muted-foreground">
-                        标记为热门文章
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.isHot}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, isHot: checked })
-                      }
+                  <div className="space-y-2">
+                    <Label htmlFor="sourceUrl">来源地址</Label>
+                    <Input
+                      id="sourceUrl"
+                      value={formData.sourceUrl}
+                      onChange={(e) => setFormData({ ...formData, sourceUrl: e.target.value })}
+                      placeholder="https://..."
                     />
                   </div>
                 </div>
-              )}
 
-              {/* 关联工具选择器 */}
-              <div className="space-y-2">
-                <ToolSelector
-                  selectedTools={formData.relatedTools}
-                  onChange={(tools) => setFormData({ ...formData, relatedTools: tools })}
-                />
-              </div>
+                {/* 管理员选项 */}
+                {user.role === 'admin' && (
+                  <div className="space-y-4 pt-4 border-t">
+                    {/* 发布时间 */}
+                    <div className="space-y-2">
+                      <Label htmlFor="publishedAt">发布时间</Label>
+                      <Input
+                        id="publishedAt"
+                        type="datetime-local"
+                        value={formData.publishedAt}
+                        onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
+                        max={new Date().toISOString().slice(0, 16)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {mode === 'create' ? '留空则使用当前时间' : '修改发布时间将影响资讯排序'}
+                      </p>
+                    </div>
 
-              {/* 操作按钮 */}
-              <div className="space-y-3 pt-4 border-t">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      className="w-full"
-                      disabled={!formData.title && !formData.summary && !formData.content}
-                    >
-                      <Eye className="mr-2 h-4 w-4" />
-                      预览
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[80vh]">
-                    <DialogHeader>
-                      <DialogTitle className="text-xl">资讯预览</DialogTitle>
-                    </DialogHeader>
-                    <ScrollArea className="max-h-[60vh] pr-4">
-                      <div className="prose prose-sm max-w-none dark:prose-invert">
-                        {/* 标题 */}
-                        {formData.title && (
-                          <h1 className="text-3xl font-bold mb-4">{formData.title}</h1>
-                        )}
-                        
-                        {/* 元信息 */}
-                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-6">
-                          {formData.categories.length > 0 && (
-                            <span>
-                              分类: {formData.categories.map(c => categories.find(cat => cat.slug === c)?.name).filter(Boolean).join(', ')}
-                            </span>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>推荐文章</Label>
+                        <p className="text-xs text-muted-foreground">
+                          标记为推荐文章
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formData.isFeatured}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, isFeatured: checked })
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>热门文章</Label>
+                        <p className="text-xs text-muted-foreground">
+                          标记为热门文章
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formData.isHot}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, isHot: checked })
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* 关联工具选择器 */}
+                <div className="space-y-2">
+                  <ToolSelector
+                    selectedTools={formData.relatedTools}
+                    onChange={(tools) => setFormData({ ...formData, relatedTools: tools })}
+                  />
+                </div>
+
+                {/* 操作按钮 */}
+                <div className="space-y-3 pt-4 border-t">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        className="w-full"
+                        disabled={!formData.title && !formData.content}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        预览
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh]">
+                      <DialogHeader>
+                        <DialogTitle className="text-xl">资讯预览</DialogTitle>
+                      </DialogHeader>
+                      <ScrollArea className="max-h-[60vh] pr-4">
+                        <div className="prose prose-sm max-w-none dark:prose-invert">
+                          {/* 标题 */}
+                          {formData.title && (
+                            <h1 className="text-3xl font-bold mb-4">{formData.title}</h1>
                           )}
-                          {formData.publishedAt && (
-                            <span>发布时间: {formData.publishedAt}</span>
+                          
+                          {/* 元信息 */}
+                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-6">
+                            {formData.categories.length > 0 && (
+                              <span>
+                                分类: {formData.categories.map(c => categories.find(cat => cat.slug === c)?.name).filter(Boolean).join(', ')}
+                              </span>
+                            )}
+                            {formData.publishedAt && (
+                              <span>发布时间: {formData.publishedAt}</span>
+                            )}
+                            {formData.source && (
+                              <span>来源: {formData.source}</span>
+                            )}
+                            {formData.tags.length > 0 && (
+                              <span>标签: {formData.tags.join(', ')}</span>
+                            )}
+                          </div>
+
+                          {/* 封面图 */}
+                          {formData.coverImage && (
+                            <div className="mb-6">
+                              <img
+                                src={formData.coverImage}
+                                alt="封面预览"
+                                className="w-full max-h-64 object-cover rounded-lg"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none'
+                                }}
+                              />
+                            </div>
                           )}
-                          {formData.source && (
-                            <span>来源: {formData.source}</span>
+
+                          {/* 摘要 */}
+                          {formData.summary && (
+                            <div className="mb-6 p-4 bg-muted rounded-lg">
+                              <h3 className="font-semibold mb-2">摘要</h3>
+                              <p className="text-sm whitespace-pre-wrap">{formData.summary.replace(/<[^>]*>/g, '')}</p>
+                            </div>
                           )}
-                          {formData.tags.length > 0 && (
-                            <span>标签: {formData.tags.join(', ')}</span>
+
+                          {/* 正文 */}
+                          {formData.content && (
+                            <div className="mb-6">
+                              <h3 className="font-semibold mb-2">正文</h3>
+                              <div className="prose prose-sm dark:prose-invert" dangerouslySetInnerHTML={{ __html: formData.content }} />
+                            </div>
+                          )}
+
+                          {/* 来源链接 */}
+                          {formData.sourceUrl && (
+                            <div className="pt-4 border-t">
+                              <a 
+                                href={formData.sourceUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                              >
+                                查看原文链接 →
+                              </a>
+                            </div>
                           )}
                         </div>
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
 
-                        {/* 封面图 */}
-                        {formData.coverImage && (
-                          <div className="mb-6">
-                            <img
-                              src={formData.coverImage}
-                              alt="封面预览"
-                              className="w-full max-h-64 object-cover rounded-lg"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none'
-                              }}
-                            />
-                          </div>
-                        )}
+                  <Button
+                    className="w-full"
+                    onClick={() => handleSubmit(false)}
+                    disabled={loading}
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    {mode === 'create' ? '发布资讯' : '保存并提交审核'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => handleSubmit(true)}
+                    disabled={loading}
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    保存草稿
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    asChild
+                  >
+                    <Link href={returnUrl}>取消</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-                        {/* 摘要 */}
-                        {formData.summary && (
-                          <div className="mb-6 p-4 bg-muted rounded-lg">
-                            <h3 className="font-semibold mb-2">摘要</h3>
-                            <div className="text-sm prose prose-sm dark:prose-invert" dangerouslySetInnerHTML={{ __html: formData.summary }} />
-                          </div>
-                        )}
-
-                        {/* 正文 */}
-                        {formData.content && (
-                          <div className="mb-6">
-                            <h3 className="font-semibold mb-2">正文</h3>
-                            <div className="prose prose-sm dark:prose-invert" dangerouslySetInnerHTML={{ __html: formData.content }} />
-                          </div>
-                        )}
-
-                        {/* 来源链接 */}
-                        {formData.sourceUrl && (
-                          <div className="pt-4 border-t">
-                            <a 
-                              href={formData.sourceUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              查看原文链接 →
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    </ScrollArea>
-                  </DialogContent>
-                </Dialog>
-
-                <Button
-                  className="w-full"
-                  onClick={() => handleSubmit(false)}
-                  disabled={loading}
-                >
-                  <Send className="mr-2 h-4 w-4" />
-                  {mode === 'create' ? '发布资讯' : '保存并提交审核'}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => handleSubmit(true)}
-                  disabled={loading}
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  保存草稿
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full"
-                  asChild
-                >
-                  <Link href={returnUrl}>取消</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 使用提示 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">💡 使用提示</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground space-y-2">
-              <p>• 标题和摘要是必填项</p>
-              <p>• 正文支持Markdown格式</p>
-              <p>• 发布后需要管理员审核通过才能显示</p>
-              <p>• 草稿可以随时保存和编辑</p>
-              {user.role === 'admin' && (
-                <p>• 管理员可以设置推荐和热门</p>
-              )}
-            </CardContent>
-          </Card>
+            {/* 使用提示 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">使用提示</CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground space-y-2">
+                <p>• 标题和正文是必填项</p>
+                <p>• 正文支持富文本编辑</p>
+                <p>• 发布后需要管理员审核通过才能显示</p>
+                <p>• 草稿可以随时保存和编辑</p>
+                {user.role === 'admin' && (
+                  <p>• 管理员可以设置推荐和热门</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
