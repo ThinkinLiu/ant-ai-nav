@@ -12,13 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Loader2, Sparkles, Wand2, Upload, Link2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Sparkles, Wand2, Upload, Link2, Eye } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import ImageUploader from '@/components/ui/image-uploader'
 import RichTextEditor from '@/components/ui/rich-text-editor'
 import { MarkdownEditorSimple } from '@/components/ui/markdown-editor'
 import { ToolLogo } from '@/components/tools/ToolLogo'
 import { TagInput } from '@/components/ui/tag-input'
+import ToolPreview from '@/components/tools/ToolPreview'
 
 interface Category {
   id: number
@@ -46,6 +47,7 @@ export default function NewToolPage() {
     tags: [] as string[],
   })
   const [error, setError] = useState('')
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   // 判断是否为管理员
   const isAdmin = user?.role === 'admin'
@@ -407,6 +409,10 @@ export default function NewToolPage() {
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 提交审核
               </Button>
+              <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>
+                <Eye className="mr-2 h-4 w-4" />
+                预览
+              </Button>
               <Button type="button" variant="outline" asChild>
                 <Link href="/publisher">取消</Link>
               </Button>
@@ -414,6 +420,14 @@ export default function NewToolPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* 预览弹窗 */}
+      <ToolPreview
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        formData={formData}
+        categories={categories}
+      />
     </div>
   )
 }

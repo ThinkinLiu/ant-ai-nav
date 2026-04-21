@@ -13,12 +13,13 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Loader2, AlertCircle, Upload, Link2 } from 'lucide-react'
+import { ArrowLeft, Loader2, AlertCircle, Upload, Link2, Eye } from 'lucide-react'
 import ImageUploader from '@/components/ui/image-uploader'
 import RichTextEditor from '@/components/ui/rich-text-editor'
 import { MarkdownEditorSimple } from '@/components/ui/markdown-editor'
 import { ToolLogo } from '@/components/tools/ToolLogo'
 import { TagInput } from '@/components/ui/tag-input'
+import ToolPreview from '@/components/tools/ToolPreview'
 
 interface Category {
   id: number
@@ -52,6 +53,7 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [logoInputMode, setLogoInputMode] = useState<string>('upload')
   const [formData, setFormData] = useState({
     name: '',
@@ -401,6 +403,10 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 保存并提交审核
               </Button>
+              <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>
+                <Eye className="mr-2 h-4 w-4" />
+                预览
+              </Button>
               <Button type="button" variant="outline" asChild>
                 <Link href="/publisher">取消</Link>
               </Button>
@@ -408,6 +414,14 @@ export default function EditToolPage({ params }: { params: Promise<{ id: string 
           </form>
         </CardContent>
       </Card>
+
+      {/* 预览弹窗 */}
+      <ToolPreview
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        formData={formData}
+        categories={categories}
+      />
     </div>
   )
 }
