@@ -39,6 +39,7 @@ export default function ImageUploader({
   const [urlInput, setUrlInput] = React.useState("")
   const [isValidatingUrl, setIsValidatingUrl] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const uploadAreaRef = React.useRef<HTMLDivElement>(null)
 
   // 处理文件上传
   const handleFileUpload = async (file: File) => {
@@ -97,9 +98,16 @@ export default function ImageUploader({
     }
   }
 
-  // 处理粘贴事件
+  // 处理粘贴事件 - 只在上传区域内监听
   React.useEffect(() => {
+    const uploadArea = uploadAreaRef.current
+    if (!uploadArea) return
+
     const handlePaste = async (e: ClipboardEvent) => {
+      // 检查焦点是否在上传区域内（包括其内部的输入框）
+      const activeElement = document.activeElement
+      if (!uploadArea.contains(activeElement)) return
+
       const items = e.clipboardData?.items
       if (!items) return
 
@@ -115,10 +123,9 @@ export default function ImageUploader({
       }
     }
 
-    // 监听全局粘贴事件
-    document.addEventListener('paste', handlePaste)
+    uploadArea.addEventListener('paste', handlePaste)
     return () => {
-      document.removeEventListener('paste', handlePaste)
+      uploadArea.removeEventListener('paste', handlePaste)
     }
   }, [])
 
@@ -172,7 +179,7 @@ export default function ImageUploader({
   }
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div ref={uploadAreaRef} className={cn("space-y-2", className)}>
       {value ? (
         <div className="relative group">
           <img
