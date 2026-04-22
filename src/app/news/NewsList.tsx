@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { getCategoriesConfig, parseCategory } from './config'
+import { getBannerById } from '@/lib/banners'
 
 // 格式化时间，精确到分钟
 function formatDateTime(dateStr: string): string {
@@ -267,10 +268,13 @@ export function NewsList({ totalCount, categoryConfig }: Props) {
                         />
                       </div>
                     ) : (
-                      <div className="w-32 h-24 flex-shrink-0 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
-                        <span className="text-3xl">
-                          {firstCategory?.icon || '📰'}
-                        </span>
+                      <div className="w-32 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+                        <img
+                          src={getBannerById(item.id)}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
                       </div>
                     )}
 

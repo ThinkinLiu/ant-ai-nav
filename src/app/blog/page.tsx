@@ -1,6 +1,7 @@
 import { getSupabaseClient } from '@/storage/database/supabase-client'
 import Link from 'next/link'
 import { Metadata } from 'next'
+import { getBannerById } from '@/lib/banners'
 
 // 生成动态 metadata
 export async function generateMetadata(): Promise<Metadata> {
@@ -320,16 +321,14 @@ export default async function BlogPage() {
                     className="bg-card border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
                   >
                     <div className="md:flex">
-                      {blog.cover_image && (
-                        <div className="md:w-1/3">
-                          <img
-                            src={blog.cover_image}
-                            alt={blog.title}
-                            className="w-full h-48 md:h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      )}
-                      <div className={`p-6 ${blog.cover_image ? 'md:w-2/3' : ''}`}>
+                      <div className="md:w-1/3">
+                        <img
+                          src={blog.cover_image || getBannerById(blog.id)}
+                          alt={blog.title}
+                          className="w-full h-48 md:h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="md:w-2/3">
                         {(() => {
                           const blogCategories = parseCategories(blog.category)
                           const filteredCategories = blogCategories.filter(cat => cat !== 'blog')

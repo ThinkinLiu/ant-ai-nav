@@ -7,6 +7,7 @@ import { categoryConfig, getCategoryConfig, getCategoriesConfig } from '../confi
 import { MarkdownViewer } from '@/components/ui/markdown-editor'
 import { Edit } from 'lucide-react'
 import { ToolLogoNext } from '@/components/tools/ToolLogo'
+import { getBannerById } from '@/lib/banners'
 
 interface NewsItem {
   id: number
@@ -102,15 +103,13 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews, relatedTools
           {/* Header */}
           <div className="bg-card border rounded-xl overflow-hidden">
             {/* Cover Image */}
-            {news.cover_image && (
-              <div className="aspect-video overflow-hidden bg-muted">
-                <img
-                  src={news.cover_image}
-                  alt={news.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+            <div className="aspect-video overflow-hidden bg-muted">
+              <img
+                src={news.cover_image || getBannerById(news.id)}
+                alt={news.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
             
             <div className="p-6 md:p-8">
               {/* Meta */}
@@ -352,17 +351,11 @@ export function NewsDetail({ news, relatedNews, prevNews, nextNews, relatedTools
                       className="group flex gap-3"
                     >
                       <div className="w-16 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                        {item.cover_image ? (
-                          <img
-                            src={item.cover_image}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                            <span>{itemCategory?.icon || '📰'}</span>
-                          </div>
-                        )}
+                        <img
+                          src={item.cover_image || getBannerById(item.id)}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">

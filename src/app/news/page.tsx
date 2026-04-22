@@ -4,6 +4,7 @@ import { NewsList } from './NewsList'
 import { TutorialList } from './TutorialList'
 import { getCategoriesConfig } from './config'
 import React from 'react'
+import { getBannerById } from '@/lib/banners'
 
 // 强制动态渲染，避免构建时访问数据库
 export const dynamic = 'force-dynamic'
@@ -276,22 +277,14 @@ export default async function NewsPage({ searchParams }: PageProps) {
                   href={`/news/${news.id}`}
                   className="group bg-gradient-to-br from-primary/5 to-primary/10 border rounded-xl overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300"
                 >
-                  {news.cover_image ? (
-                    <div className="aspect-video overflow-hidden bg-muted">
-                      <img
-                        src={news.cover_image}
-                        alt={news.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
-                      <span className="text-4xl">
-                        {categories[0]?.icon || '📰'}
-                      </span>
-                    </div>
-                  )}
+                  <div className="aspect-video overflow-hidden bg-muted">
+                    <img
+                      src={news.cover_image || getBannerById(news.id)}
+                      alt={news.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                  </div>
                   <div className="p-4">
                     <div className="flex items-center gap-1 flex-wrap text-xs text-muted-foreground mb-2">
                       {categories.length > 0 && (

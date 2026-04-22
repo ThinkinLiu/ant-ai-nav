@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatRelativeTime } from '@/lib/utils'
+import { getBannerById } from '@/lib/banners'
 
 interface RelatedNews {
   id: number
@@ -128,14 +129,13 @@ export default function RelatedNews({
               className="group block p-2 rounded-lg hover:bg-muted/50 transition-colors"
             >
               {/* 封面图 */}
-              {item.cover_image && (
-                <div className="relative w-full h-20 mb-2 rounded-md overflow-hidden bg-muted">
-                  <Image
-                    src={item.cover_image}
-                    alt={item.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+              <div className="relative w-full h-20 mb-2 rounded-md overflow-hidden bg-muted">
+                <Image
+                  src={item.cover_image || getBannerById(item.id)}
+                  alt={item.title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                />
                   {/* 标签 */}
                   <div className="absolute top-1 left-1 flex gap-1">
                     {item.is_hot && (
@@ -150,7 +150,6 @@ export default function RelatedNews({
                     )}
                   </div>
                 </div>
-              )}
               <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
                 {item.title}
               </h3>
@@ -201,18 +200,12 @@ export default function RelatedNews({
             >
               {/* 封面图 */}
               <div className="relative aspect-video w-full bg-muted">
-                {item.cover_image ? (
-                  <Image
-                    src={item.cover_image}
-                    alt={item.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Newspaper className="h-12 w-12 text-muted-foreground/30" />
-                  </div>
-                )}
+                <Image
+                  src={item.cover_image || getBannerById(item.id)}
+                  alt={item.title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                />
                 {/* 标签 */}
                 <div className="absolute top-2 right-2 flex gap-1">
                   {item.is_hot && (

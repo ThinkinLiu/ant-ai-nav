@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import { getBannerById } from '@/lib/banners'
 
 interface Tag {
   id: number
@@ -694,19 +695,13 @@ export default function TagsAdminPage() {
                     className="flex items-center gap-4 p-3 border rounded-lg hover:bg-muted/50"
                   >
                     <div className="w-16 h-12 rounded overflow-hidden shrink-0 bg-muted">
-                      {news.cover_image ? (
-                        <Image
-                          src={news.cover_image}
-                          alt={news.title}
-                          width={64}
-                          height={48}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Newspaper className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      )}
+                      <Image
+                        src={news.cover_image || getBannerById(news.id)}
+                        alt={news.title}
+                        width={64}
+                        height={48}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
