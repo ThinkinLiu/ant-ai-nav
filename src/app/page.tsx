@@ -302,79 +302,6 @@ function HomePageContent() {
   const processedCategoryIdRef = useRef<string | null>(null)
   const { user } = useAuth()
 
-  // 获取原始分类数据（所有工具统计）
-  const fetchCategoriesData = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const response = await fetch(`/api/home?t=${Date.now()}`, {
-        cache: 'no-store',
-        signal
-      })
-
-      // 如果请求被取消，直接返回
-      if (!response.ok) {
-        return
-      }
-
-      // 检查 Content-Type
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        return
-      }
-
-      const data = await response.json()
-
-      if (data.success) {
-        setCategories(data.data.categories || [])
-        setTotalToolCount(data.data.totalToolCount || 0)
-        setTabs(data.data.tabs || [])
-        setCurrentTab(data.data.currentTab || null)
-        setTabTools(data.data.tabTools || [])
-        setTabNews(data.data.tabNews || [])
-        setTabFame(data.data.tabFame || [])
-        setTabTimeline(data.data.tabTimeline || [])
-        setHotTools(data.data.hotTools || [])
-        setCategoriesLoaded(true)
-        setError(null)
-      } else {
-        console.error('API 返回错误:', data.error)
-        setError(data.error || '未知错误')
-      }
-    } catch (error: any) {
-      // 如果是中止错误或请求已中止，不显示错误
-      if (error?.name === 'AbortError' || signal?.aborted) {
-        return
-      }
-      console.error('获取分类数据失败:', error)
-      setError(error instanceof Error ? error.message : '网络错误')
-      // 不设置空数据，保留现有数据
-    }
-  }, [])
-
-  // 初始加载：获取分类数据
-  useEffect(() => {
-    const controller = new AbortController()
-    const signal = controller.signal
-
-    fetchCategoriesData(signal)
-
-    return () => {
-      controller.abort()
-    }
-  }, [fetchCategoriesData])
-
-  // 退出筛选模式时重置页码
-  useEffect(() => {
-    if (isFeatured !== 'true' && !searchQuery && !categoryId && activeCategory === 'all') {
-      const controller = new AbortController()
-      const signal = controller.signal
-
-      fetchCategoriesData(signal)
-
-      return () => {
-        controller.abort()
-      }
-    }
-  }, [isFeatured, searchQuery, categoryId, activeCategory, fetchCategoriesData])
 
   // 合并加载逻辑：一次性获取所有数据（首页第一页）
   useEffect(() => {
@@ -396,8 +323,8 @@ function HomePageContent() {
         if (signal.aborted) return
 
         try {
-          // 使用 /api/tools 端点，支持分页
-          const response = await fetch(`/api/tools?page=1&limit=16&sortBy=created_at&sortOrder=desc&t=${Date.now()}`, {
+          // 只调用 /api/home 端点一次，它已包含最新工具数据
+          const response = await fetch(`/api/home?t=${Date.now()}`, {
             cache: 'no-store',
             signal
           })
@@ -419,37 +346,24 @@ function HomePageContent() {
           if (signal.aborted) return
 
           if (data.success) {
-            // 获取首页所需的分类和Tab数据
-            const homeResponse = await fetch(`/api/home?t=${Date.now()}`, {
-              cache: 'no-store',
-              signal
-            })
-
-            // 检查是否已取消
-            if (signal.aborted) return
-
-            if (homeResponse.ok) {
-              const homeData = await homeResponse.json()
-              if (homeData.success) {
-                setCategories(homeData.data.categories || [])
-                setTotalToolCount(homeData.data.totalToolCount || 0)
-                setTabs(homeData.data.tabs || [])
-                setCurrentTab(homeData.data.currentTab || null)
-                setTabTools(homeData.data.tabTools || [])
-                setTabNews(homeData.data.tabNews || [])
-                setTabFame(homeData.data.tabFame || [])
-                setTabTimeline(homeData.data.tabTimeline || [])
-                setHotTools(homeData.data.hotTools || [])
-              }
-            }
-
-            // 设置工具列表数据
-            const latestTools = data.data?.data || []
+            // 设置所有首页数据
+            setCategories(data.data.categories || [])
+            setTotalToolCount(data.data.totalToolCount || 0)
+            setTabs(data.data.tabs || [])
+            setCurrentTab(data.data.currentTab || null)
+            setTabTools(data.data.tabTools || [])
+            setTabNews(data.data.tabNews || [])
+            setTabFame(data.data.tabFame || [])
+            setTabTimeline(data.data.tabTimeline || [])
+            setHotTools(data.data.hotTools || [])
+            
+            // 设置工具列表数据（来自 /api/home 的 latestTools）
+            const latestTools = data.data?.latestTools || []
             console.log('📦 加载最新工具数据:', latestTools.length, '个工具')
             setTools(latestTools)
-            setHasMore(data.data.total > latestTools.length)
+            setHasMore(latestTools.length >= 16)
             setError(null)
-            setLoading(false) // 确保在成功时设置 loading 为 false
+            setLoading(false)
             return // 成功，退出重试循环
           } else {
             console.error('API 返回错误:', data.error)
@@ -1215,7 +1129,52 @@ function HomePageContent() {
               <Button onClick={() => {
                 setError(null)
                 setLoading(true)
-                fetchCategoriesData()
+                // 使用 fetchAllData 进行重试
+                const controller = new AbortController()
+                const signal = controller.signal
+                
+                const retryFetch = async () => {
+                  try {
+                    const response = await fetch(`/api/home?t=${Date.now()}`, {
+                      cache: 'no-store',
+                      signal
+                    })
+                    
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+                    
+                    const contentType = response.headers.get('content-type')
+                    if (!contentType || !contentType.includes('application/json')) {
+                      throw new Error('Invalid content type')
+                    }
+                    
+                    const data = await response.json()
+                    
+                    if (data.success) {
+                      setCategories(data.data.categories || [])
+                      setTotalToolCount(data.data.totalToolCount || 0)
+                      setTabs(data.data.tabs || [])
+                      setCurrentTab(data.data.currentTab || null)
+                      setTabTools(data.data.tabTools || [])
+                      setTabNews(data.data.tabNews || [])
+                      setTabFame(data.data.tabFame || [])
+                      setTabTimeline(data.data.tabTimeline || [])
+                      setHotTools(data.data.hotTools || [])
+                      const latestTools = data.data?.latestTools || []
+                      setTools(latestTools)
+                      setHasMore(latestTools.length >= 16)
+                      setError(null)
+                      setLoading(false)
+                      setCategoriesLoaded(true)
+                    }
+                  } catch (err) {
+                    if (err.name !== 'AbortError') {
+                      setError(err instanceof Error ? err.message : '网络错误')
+                      setLoading(false)
+                    }
+                  }
+                }
+                
+                retryFetch()
               }}>
                 重新加载
               </Button>
