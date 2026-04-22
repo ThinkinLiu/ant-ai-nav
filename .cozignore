@@ -1,0 +1,92 @@
+# Coze 导出忽略文件
+# 此文件用于控制项目导出时需要排除的文件和目录
+
+# Git 仓库目录
+.git/
+
+# 环境变量文件（包含敏感配置）
+.env
+.env.*
+!.env.example
+!.env.example.*
+!.env.docker
+!.env.build.example
+!.env.production.example
+!.env.example.coze
+!.env.example.standalone
+
+# Coze 配置文件（运行时不需要）
+.coze
+.coze-logs
+.cozeproj
+
+# 构建产物
+.next/
+.rsbuild/
+dist/
+build/
+out/
+
+# 依赖目录
+node_modules/
+.pnp
+.pnp.js
+
+# 缓存目录
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.yarn/
+
+# 日志文件
+logs/
+*.log
+
+# 临时文件
+.tmp/
+.temp/
+*.tmp
+*.temp
+
+# 诊断报告
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+.nyc_output/
+coverage/
+
+# IDE 配置
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+*~
+
+# OS 文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# 私钥和证书
+*.pem
+*.key
+*.crt
+secrets/
+private/
+
+# 数据库备份
+*.sql
+*.dump
+backup/
+
+# TypeScript 构建信息
+*.tsbuildinfo
