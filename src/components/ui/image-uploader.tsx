@@ -141,27 +141,25 @@ export default function ImageUploader({
     setIsValidatingUrl(true)
 
     try {
-      // 验证图片 URL 是否可访问
-      const response = await fetch(urlInput, { method: 'HEAD' })
-      if (!response.ok) {
-        setError("图片链接无法访问，请检查链接是否正确")
-        return
-      }
+      // 使用 no-cors 模式验证图片 URL 是否可访问
+      // 由于 CORS 限制，只能验证请求是否发出，无法验证 content-type
+      const response = await fetch(urlInput, { 
+        method: 'HEAD',
+        mode: 'no-cors'
+      })
       
-      // 验证是否为图片
-      const contentType = response.headers.get('content-type') || ''
-      if (!contentType.startsWith('image/')) {
-        setError("链接不是图片，请输入图片链接")
-        return
-      }
-
+      // no-cors 模式下 response.ok 始终为 true
+      // 我们只能验证 URL 格式是否正确
       onChange(urlInput)
       setUrlInput("")
       setError("")
       toast.success("图片链接设置成功")
     } catch (err) {
-      setError("图片链接验证失败，请检查链接是否正确")
-      console.error('URL validation error:', err)
+      // 即使验证失败，也直接使用 URL，让图片加载失败时由 onError 处理
+      onChange(urlInput)
+      setUrlInput("")
+      setError("")
+      toast.success("图片链接已设置（加载失败时会显示占位图）")
     } finally {
       setIsValidatingUrl(false)
     }
