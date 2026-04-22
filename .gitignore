@@ -1,5 +1,9 @@
 .next
 
+# Git
+.git/
+.gitignore
+
 # Dependencies
 node_modules/
 .pnp
