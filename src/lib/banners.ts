@@ -1,5 +1,9 @@
-// Banner图片配置
-// 用于文章没有封面图时随机展示
+/**
+ * Banner 图片配置
+ * 用于文章没有封面图时随机展示
+ * 尺寸：600x315 像素（16:9比例，适合文章封面）
+ * 主题：蚂蚁AI导航、蚂蚁AI之家等网站宣传图
+ */
 
 export const BANNER_IMAGES = [
   '/banners/banner-1.jpg',
