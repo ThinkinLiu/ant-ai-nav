@@ -1,5 +1,9 @@
 .next
 
+# Git
+.git/
+.gitignore
+
 # Dependencies
 node_modules/
 .pnp
@@ -17,21 +21,19 @@ coverage/
 *.lcov
 .nyc_output
 
-# Environment variables
+# Environment variables - 忽略所有敏感配置
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.build
-.env.production
-
-# Allow example env files (safe to commit)
+.env.*
 !.env.example
 !.env.example.*
 !.env.docker
 !.env.build.example
 !.env.production.example
+!.env.example.coze
+!.env.example.standalone
+
+# Coze specific
+.coze/
 
 # Logs
 logs/

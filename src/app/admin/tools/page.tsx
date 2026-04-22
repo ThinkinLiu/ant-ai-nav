@@ -156,6 +156,7 @@ function AdminToolsContent() {
   })
   const [editLoading, setEditLoading] = useState(false)
   const [generateLoading, setGenerateLoading] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
@@ -522,6 +523,7 @@ function AdminToolsContent() {
     }
 
     setGenerateLoading(true)
+    setGenerateError(null)
     try {
       const response = await fetch('/api/admin/generate-tool-info', {
         method: 'POST',
@@ -560,9 +562,14 @@ function AdminToolsContent() {
           is_free: result.is_free ?? prev.is_free,
           pricing_info: result.pricing_info || prev.pricing_info,
         }))
+        setGenerateError(null)
+      } else {
+        // 显示错误信息给用户
+        setGenerateError(data.error || '生成失败，请稍后重试')
       }
     } catch (error) {
       console.error('自动生成失败:', error)
+      setGenerateError('网络错误，请检查网络连接后重试')
     } finally {
       setGenerateLoading(false)
     }
@@ -1086,6 +1093,18 @@ function AdminToolsContent() {
                 )}
               </Button>
             </div>
+            {/* 错误提示 */}
+            {generateError && (
+              <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                  <div className="text-sm text-destructive">
+                    <p className="font-medium mb-1">生成失败</p>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{generateError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="space-y-4 py-4">
@@ -1094,7 +1113,10 @@ function AdminToolsContent() {
                 <label className="text-sm font-medium">工具名称 *</label>
                 <Input
                   value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  onChange={(e) => {
+                    setEditForm({ ...editForm, name: e.target.value })
+                    setGenerateError(null)
+                  }}
                   placeholder="请输入工具名称"
                 />
               </div>
@@ -1102,7 +1124,10 @@ function AdminToolsContent() {
                 <label className="text-sm font-medium">官网地址 *</label>
                 <Input
                   value={editForm.website}
-                  onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                  onChange={(e) => {
+                    setEditForm({ ...editForm, website: e.target.value })
+                    setGenerateError(null)
+                  }}
                   placeholder="https://example.com"
                 />
               </div>

@@ -42,6 +42,10 @@
     "@tiptap/extension-image": "^3.22.3",
     "@tiptap/extension-link": "^3.22.2",
     "@tiptap/extension-placeholder": "^3.22.3",
+    "@tiptap/extension-table": "^3.22.4",
+    "@tiptap/extension-table-cell": "^3.22.4",
+    "@tiptap/extension-table-header": "^3.22.4",
+    "@tiptap/extension-table-row": "^3.22.4",
     "@tiptap/extension-task-item": "^3.22.3",
     "@tiptap/extension-task-list": "^3.22.3",
     "@tiptap/extension-text-style": "^3.22.2",
@@ -84,6 +88,7 @@
     "only-allow": "^1.2.2",
     "react-dev-inspector": "^2.0.1",
     "shadcn": "latest",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"

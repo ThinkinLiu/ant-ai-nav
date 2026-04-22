@@ -86,6 +86,82 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">数据概览</h1>
 
+      {/* 快捷操作 - 移至顶部 */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            快捷操作
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            {/* 新增操作 */}
+            <Link
+              href="/admin/tools/new"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <FileText className="h-4 w-4" />
+              新增工具
+            </Link>
+            <Link
+              href="/admin/news/new"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Newspaper className="h-4 w-4" />
+              新增资讯
+            </Link>
+            <Link
+              href="/admin/hall-of-fame/new"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+            >
+              <Award className="h-4 w-4" />
+              新增名人
+            </Link>
+            <Link
+              href="/admin/timeline/new"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              <Calendar className="h-4 w-4" />
+              新增大事纪
+            </Link>
+            
+            {/* 审核操作 */}
+            {(stats?.pendingTools ?? 0) > 0 && (
+              <Link
+                href="/admin/tools?status=pending"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              >
+                <Clock className="h-4 w-4" />
+                审核待处理工具
+                <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
+                  {stats?.pendingTools ?? 0}
+                </span>
+              </Link>
+            )}
+            {(stats?.pendingNewsCount ?? 0) > 0 && (
+              <Link
+                href="/admin/news?status=pending"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Clock className="h-4 w-4" />
+                审核待发布资讯
+                <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
+                  {stats?.pendingNewsCount ?? 0}
+                </span>
+              </Link>
+            )}
+            <Link
+              href="/admin/applications?status=pending"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+            >
+              <Users className="h-4 w-4" />
+              审核发布者申请
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* 工具统计 */}
       <Card>
         <CardHeader className="pb-3">
@@ -308,79 +384,6 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {/* 快捷操作 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">快捷操作</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {/* 新增操作 */}
-            <Link
-              href="/admin/tools/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              <FileText className="h-4 w-4" />
-              新增工具
-            </Link>
-            <Link
-              href="/admin/news/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <Newspaper className="h-4 w-4" />
-              新增资讯
-            </Link>
-            <Link
-              href="/admin/hall-of-fame/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
-            >
-              <Award className="h-4 w-4" />
-              新增名人
-            </Link>
-            <Link
-              href="/admin/timeline/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              <Calendar className="h-4 w-4" />
-              新增大事纪
-            </Link>
-            
-            {/* 审核操作 */}
-            {(stats?.pendingTools ?? 0) > 0 && (
-              <Link
-                href="/admin/tools?status=pending"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                <Clock className="h-4 w-4" />
-                审核待处理工具
-                <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
-                  {stats?.pendingTools ?? 0}
-                </span>
-              </Link>
-            )}
-            {(stats?.pendingNewsCount ?? 0) > 0 && (
-              <Link
-                href="/admin/news?status=pending"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
-              >
-                <Clock className="h-4 w-4" />
-                审核待发布资讯
-                <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
-                  {stats?.pendingNewsCount ?? 0}
-                </span>
-              </Link>
-            )}
-            <Link
-              href="/admin/applications?status=pending"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
-            >
-              <Users className="h-4 w-4" />
-              审核发布者申请
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

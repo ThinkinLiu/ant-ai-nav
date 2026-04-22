@@ -5,6 +5,14 @@
 - **描述**: 现代化的 AI 工具导航平台
 - **技术栈**: Next.js 16 (App Router), React 19, TypeScript 5, shadcn/ui, Tailwind CSS 4, Supabase
 
+## 主要功能
+- **AI工具导航**: 收录各类AI工具，支持分类浏览和搜索
+- **发布功能**: 登录用户可在顶部导航栏使用发布功能
+  - **发布工具**: 发布AI工具（需要 publisher 或 admin 角色）
+  - **发布资讯**: 发布AI相关资讯（需要 publisher 或 admin 角色）
+- **名人堂**: 展示AI领域杰出人物
+- **时间线**: 记录AI发展重要事件
+
 ## 构建和测试命令
 
 ### 开发环境
@@ -71,12 +79,15 @@ pnpm ts-check     # TypeScript 类型检查
 - `GET /api/news` - 资讯列表
 - `GET /api/hall-of-fame` - 名人堂列表
 - `GET /api/timeline` - 时间线列表
+- `GET /api/seo?site_type=nav|home` - 获取指定站点的SEO配置
+- `GET /api/sitemap-home` - 获取蚂蚁AI之家站点地图
 
 ### 管理后台接口
 - `GET/POST /api/admin/tools` - 工具管理
 - `GET/POST /api/admin/categories` - 分类管理
 - `GET/POST /api/admin/news` - 资讯管理
 - `GET/POST /api/admin/announcements` - 公告管理
+- `GET/PUT /api/admin/seo?site_type=nav|home` - SEO设置管理（支持多站点）
 
 ## 数据库
 
@@ -87,12 +98,38 @@ pnpm ts-check     # TypeScript 类型检查
 
 ### 关键表
 - `users` - 用户表
-- `tools` - AI 工具表
+- `ai_tools` - AI 工具表
 - `categories` - 分类表
-- `news` - 资讯表
+- `ai_news` - AI 资讯表
+- `tags` - 标签表
+- `tool_tags` - 工具标签关联表
 - `announcements` - 公告表
-- `hall_of_fame` - 名人堂表
-- `timeline` - 时间线表
+- `comments` - 评论表
+- `favorites` - 收藏表
+- `ai_hall_of_fame` - AI 名人堂表
+- `ai_timeline` - AI 大事纪表
+- `friend_links` - 友情链接表
+- `publisher_applications` - 发布者申请表
+- `ai_tool_rankings` - AI工具排行榜表
+- `ranking_update_log` - 排行榜更新日志表
+- `site_settings` - 站点设置
+- `smtp_settings` - SMTP设置
+- `traffic_data_sources` - 流量数据源表
+- `seo_settings` - SEO配置表（支持多站点，通过 `site_type` 字段区分：`nav`=蚂蚁AI导航，`home`=蚂蚁AI之家）
+- `cross_domain_config` - 跨域认证配置表
+
+### SEO 多站点配置
+项目支持为不同站点配置独立的 SEO 设置：
+
+| 站点 | site_type | 描述 |
+|------|-----------|------|
+| 蚂蚁AI导航 | `nav` | AI工具导航平台 |
+| 蚂蚁AI之家 | `home` | AI博客/资讯平台 |
+
+**配置说明**：
+- 管理后台 `/admin/seo` 支持切换站点进行配置
+- 公开 API `/api/seo?site_type=nav|home` 获取指定站点配置
+- 蚂蚁AI之家站点地图：`/api/sitemap-home`
 
 ## 代码风格指南
 
@@ -122,7 +159,9 @@ pnpm ts-check     # TypeScript 类型检查
 - 支持引用和代码块
 - 支持添加链接
 - 支持插入图片（支持粘贴、拖拽上传）
+- 支持表格编辑
 - 支持从网页粘贴内容（保留基本格式）
+- **支持AI工具（DeepSeek等）代码块粘贴**
 
 **使用方式**：
 ```tsx
@@ -142,8 +181,18 @@ import RichTextEditor from '@/components/ui/rich-text-editor'
 
 **粘贴行为**：
 - 从网页粘贴：自动清理外部样式，保留基本 HTML 结构（标题、列表、图片等）
+- **从DeepSeek等AI工具粘贴代码块**：智能清理复杂格式，保留纯文本和换行
 - 粘贴图片：自动转换为 base64 或通过 `onImageUpload` 上传
 - 拖拽图片：同上
+
+**代码块处理**：
+- 自动检测 Markdown 代码块（```python```）并转换为 `<pre><code>` 格式
+- 识别带代码特征的 div/p 标签（class 包含 language-、code-block、highlight 等）
+- 自动提取纯文本内容，移除语法高亮标签
+- **保护代码块内的换行和缩进**（防止全局空格清理破坏代码格式）
+- 保留原始换行和缩进
+- 清理连续空行（最多保留一行）
+- 支持多种代码块样式识别
 
 ## 安全注意事项
 

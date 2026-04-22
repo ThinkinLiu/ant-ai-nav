@@ -61,7 +61,8 @@ export async function fetchCrossDomainConfig(): Promise<CrossDomainConfig> {
       }
     }
   } catch (error) {
-    console.error('获取跨域配置失败:', error)
+    // 静默处理网络错误，避免控制台报错
+    // Failed to fetch 通常是网络问题或 CORS 问题，不影响功能
   }
 
   // 返回默认配置

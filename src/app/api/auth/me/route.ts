@@ -31,6 +31,55 @@ function getToken(request: NextRequest): string | null {
   return null
 }
 
+/**
+ * 检查是否为自定义 token（Base64 JSON 格式，非 Supabase JWT）
+ */
+function isCustomToken(token: string): boolean {
+  try {
+    // 尝试解码 Base64
+    const decoded = Buffer.from(token, 'base64').toString('utf-8')
+    const data = JSON.parse(decoded)
+    // 自定义 token 包含 userId 字段
+    return typeof data.userId === 'string' && data.exp !== undefined
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 验证自定义 token 并获取用户信息
+ */
+async function verifyCustomToken(token: string, supabaseUrl: string, supabaseAnonKey: string) {
+  try {
+    const decoded = Buffer.from(token, 'base64').toString('utf-8')
+    const data = JSON.parse(decoded)
+    
+    // 检查过期
+    if (data.exp && Date.now() > data.exp) {
+      return { error: 'TOKEN_EXPIRED', message: '登录状态已过期，请重新登录' }
+    }
+    
+    // 从数据库获取用户信息
+    const client = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+    
+    const { data: userData, error } = await client
+      .from('users')
+      .select('*')
+      .eq('id', data.userId)
+      .single()
+    
+    if (error || !userData) {
+      return { error: 'USER_NOT_FOUND', message: '用户不存在' }
+    }
+    
+    return { user: userData }
+  } catch (err) {
+    return { error: 'INVALID_TOKEN', message: '无效的登录状态' }
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const token = getToken(request)
@@ -53,7 +102,26 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 使用 JWT 直接验证
+    // 检查是否为自定义 token（QQ OAuth 等使用）
+    if (isCustomToken(token)) {
+      console.log('[/api/auth/me] 检测到自定义 token（QQ OAuth）')
+      const result = await verifyCustomToken(token, supabaseUrl, supabaseAnonKey)
+      
+      if (result.error) {
+        return NextResponse.json(
+          { success: false, error: result.message, code: result.error },
+          { status: 401 }
+        )
+      }
+      
+      return NextResponse.json({
+        success: true,
+        data: result.user,
+        tokenType: 'custom',
+      })
+    }
+
+    // 使用 Supabase JWT 验证
     const client = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: false,
@@ -100,6 +168,7 @@ export async function GET(request: NextRequest) {
         name: user.user_metadata?.name,
         role: 'user',
       },
+      tokenType: 'supabase',
     })
   } catch (error) {
     console.error('[/api/auth/me] Error:', error)

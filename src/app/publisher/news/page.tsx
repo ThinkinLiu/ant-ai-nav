@@ -511,7 +511,9 @@ export default function PublisherNews() {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <Link href={`/news/${item.id}`} className="hover:text-primary transition-colors">
                         <h3 className="font-medium truncate">{item.title}</h3>
+                      </Link>
                         <Badge
                           variant={
                             item.status === 'approved'
@@ -584,7 +586,7 @@ export default function PublisherNews() {
                           asChild
                           title="查看前端页面"
                         >
-                          <Link href={`/news/${item.slug}`} target="_blank" rel="noopener noreferrer">
+                          <Link href={`/news/${item.id}`} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4" />
                           </Link>
                         </Button>

@@ -193,7 +193,7 @@ export default function AboutPage() {
             />
             <TechCard
               title="富文本编辑"
-              items={['@uiw/react-md-editor', 'Quill.js', 'Markdown']}
+              items={['TipTap', '图片粘贴上传', '网页内容导入']}
             />
             <TechCard
               title="其他服务"

@@ -9,10 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import RichTextEditor from '@/components/ui/rich-text-editor'
 import ImageUploader from '@/components/ui/image-uploader'
-import { Save, Globe, Share2, Search, Code, BarChart3, Loader2, Map, Copyright, BookOpen } from 'lucide-react'
+import { Save, Globe, Share2, Search, Code, BarChart3, Loader2, Map, Copyright, BookOpen, LayoutGrid, FileText } from 'lucide-react'
 import { MenuConfig } from '@/components/admin/MenuConfig'
 
+type SiteType = 'nav' | 'home'
+
 interface SEOSettings {
+  id?: number
+  site_type: SiteType
   site_name: string
   site_description: string
   site_keywords: string
@@ -59,7 +63,9 @@ interface SEOSettings {
 }
 
 export default function SEOSettingsPage() {
+  const [selectedSite, setSelectedSite] = useState<SiteType>('nav')
   const [settings, setSettings] = useState<SEOSettings>({
+    site_type: 'nav',
     site_name: '',
     site_description: '',
     site_keywords: '',
@@ -109,17 +115,20 @@ export default function SEOSettingsPage() {
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
-    fetchSettings()
-  }, [])
+    fetchSettings(selectedSite)
+  }, [selectedSite])
 
-  const fetchSettings = async () => {
+  const fetchSettings = async (siteType: SiteType) => {
+    setIsLoading(true)
     try {
-      const response = await fetch('/api/admin/seo')
+      const response = await fetch(`/api/admin/seo?site_type=${siteType}`)
       const data = await response.json()
       if (data.data) {
         // 将null值转换为空字符串，避免React input报错
         const sanitizedData = {
           ...data.data,
+          site_type: data.data.site_type || selectedSite,
+          site_name: data.data.site_name || '',
           site_name: data.data.site_name || '',
           site_description: data.data.site_description || '',
           site_keywords: data.data.site_keywords || '',
@@ -174,7 +183,7 @@ export default function SEOSettingsPage() {
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      const response = await fetch('/api/admin/seo', {
+      const response = await fetch(`/api/admin/seo?site_type=${selectedSite}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
@@ -284,6 +293,31 @@ export default function SEOSettingsPage() {
           <p className="text-muted-foreground">配置网站搜索引擎优化相关设置</p>
         </div>
         <div className="flex items-center gap-4">
+          {/* 站点选择器 */}
+          <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
+            <button
+              onClick={() => setSelectedSite('nav')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedSite === 'nav'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              蚂蚁AI导航
+            </button>
+            <button
+              onClick={() => setSelectedSite('home')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                selectedSite === 'home'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              蚂蚁AI之家
+            </button>
+          </div>
           {saveMessage && (
             <span className={`text-sm ${saveMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
               {saveMessage.text}

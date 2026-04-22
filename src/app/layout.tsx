@@ -73,7 +73,7 @@ export const metadata: Metadata = {
     siteName: '蚂蚁AI导航',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.webp',
         width: 1200,
         height: 630,
         alt: '蚂蚁AI导航',
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '蚂蚁AI导航 - 发现最好的AI工具',
     description: '蚂蚁AI导航是一个专注于AI工具的资源导航平台，帮助用户发现和使用最优秀的AI产品。',
-    images: ['/og-image.png'],
+    images: ['/og-image.webp'],
   },
   alternates: {
     canonical: '/',

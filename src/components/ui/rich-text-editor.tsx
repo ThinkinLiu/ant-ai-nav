@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -12,6 +12,10 @@ import HorizontalRule from '@tiptap/extension-horizontal-rule'
 import Placeholder from '@tiptap/extension-placeholder'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { 
@@ -35,7 +39,8 @@ import {
 } from 'lucide-react'
 
 interface RichTextEditorProps {
-  content: string
+  content?: string
+  value?: string
   onChange: (content: string) => void
   disabled?: boolean
   placeholder?: string
@@ -43,14 +48,28 @@ interface RichTextEditorProps {
   onImageUpload?: (file: File) => Promise<string>
 }
 
+// 统一 content 变量，支持 value 或 content 作为 prop 名称
+function useContentProp(content?: string, value?: string): string {
+  // value 优先，其次 content，最后空字符串
+  return value ?? content ?? ''
+}
+
 export default function RichTextEditor({
   content,
+  value,
   onChange,
   disabled = false,
   placeholder = '请输入内容，支持粘贴富文本内容...',
   minHeight = '200px',
   onImageUpload
 }: RichTextEditorProps) {
+  // 统一 content 变量
+  const contentValue = useContentProp(content, value)
+  
+  // 用于防止同步循环
+  const isUpdatingFromOutside = useRef(false)
+  const lastExternalValue = useRef(contentValue)
+  
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -101,17 +120,34 @@ export default function RichTextEditor({
       TaskItem.configure({
         nested: true,
       }),
+      Table.configure({
+        resizable: false,
+        HTMLAttributes: {
+          class: 'border-collapse w-full my-4',
+        },
+      }),
+      TableRow,
+      TableHeader.configure({
+        HTMLAttributes: {
+          class: 'border bg-muted/50 px-3 py-2 font-semibold text-left',
+        },
+      }),
+      TableCell.configure({
+        HTMLAttributes: {
+          class: 'border px-3 py-2',
+        },
+      }),
     ],
-    content,
+    content: contentValue,
     editable: !disabled,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+      // 这里不做任何事，由 useEffect 监听器处理
     },
     editorProps: {
       attributes: {
         class: 'prose prose-sm max-w-none focus:outline-none p-4',
-        style: `min-height: ${minHeight}`,
+        style: `height: ${minHeight}; overflow-y: auto;`,
       },
       handlePaste: (view, event) => {
         // 获取剪贴板数据
@@ -164,6 +200,38 @@ export default function RichTextEditor({
     },
   })
 
+  // 同步外部 content 变化到编辑器
+  useEffect(() => {
+    if (!editor) return
+    
+    // 如果外部值变了，且不是由内部更新触发的
+    if (contentValue !== lastExternalValue.current && !isUpdatingFromOutside.current) {
+      // 设置标志防止 onUpdate 触发
+      isUpdatingFromOutside.current = true
+      editor.commands.setContent(contentValue || '')
+      lastExternalValue.current = contentValue
+      // 下一个 tick 重置标志
+      requestAnimationFrame(() => {
+        isUpdatingFromOutside.current = false
+      })
+    }
+  }, [contentValue, editor])
+
+  // 监听编辑器更新，通知外部
+  useEffect(() => {
+    if (!editor) return
+    
+    const handleUpdate = () => {
+      if (!isUpdatingFromOutside.current) {
+        lastExternalValue.current = editor.getHTML()
+        onChange(editor.getHTML())
+      }
+    }
+    
+    editor.on('update', handleUpdate)
+    return () => { editor.off('update', handleUpdate) }
+  }, [editor, onChange])
+
   const handleImagePaste = async (file: File) => {
     if (!editor) return
     
@@ -197,69 +265,194 @@ export default function RichTextEditor({
     }
   }
 
-  // 清理粘贴的 HTML，移除外部样式但保留基本结构
+  // 清理粘贴的 HTML，保留格式但移除外部样式
   const cleanPastedHtml = (html: string): string => {
     // 创建临时 DOM 来处理 HTML
     if (typeof window === 'undefined') return html
     
     const parser = new DOMParser()
-    const doc = parser.parseFromString(html, 'text/html')
     
-    // 移除所有 style 属性和外部样式表引用
-    const elements = doc.body.querySelectorAll('*')
-    elements.forEach(el => {
+    // ===== 第一步：提取并保护所有代码块内容（使用字符串处理） =====
+    const codeBlocks: string[] = []
+    let content = html
+    
+    // 提取并保护 <pre>...</pre> 标签内容
+    content = content.replace(/<pre([^>]*)>([\s\S]*?)<\/pre>/gi, (match, attrs, inner) => {
+      // 提取纯文本内容（保留换行）
+      const textContent = inner
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim()
+      
+      // 提取语言 class
+      const langMatch = inner.match(/class="([^"]*language-(\w+)[^"]*)"/)
+      const lang = langMatch ? langMatch[2] : ''
+      
+      const index = codeBlocks.length
+      codeBlocks.push(textContent)
+      
+      // 返回带有占位符的代码块
+      return `<pre data-code-index="${index}" data-lang="${lang}"><code>___CODE_PLACEHOLDER_${index}___</code></pre>`
+    })
+    
+    // 提取并保护 Markdown 代码块 ```lang ... ```
+    content = content.replace(/```(\w*)\s*\n?([\s\S]*?)```/g, (match, lang, code) => {
+      const index = codeBlocks.length
+      codeBlocks.push(code)
+      return `<pre data-code-index="${index}" data-lang="${lang}"><code>___CODE_PLACEHOLDER_${index}___</code></pre>`
+    })
+    
+    // 处理分散在多个 <p> 标签中的代码块
+    // 例如: <p>```bash</p><p>代码行1</p><p>代码行2</p><p>```</p>
+    content = content.replace(/<p[^>]*>\s*```(\w*)\s*<\/p>([\s\S]*?)<p[^>]*>\s*```\s*<\/p>/gi, (match, lang, innerContent) => {
+      // 提取纯文本内容
+      const textContent = innerContent
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .trim()
+      
+      const index = codeBlocks.length
+      codeBlocks.push(textContent)
+      
+      return `<pre data-code-index="${index}" data-lang="${lang}"><code>___CODE_PLACEHOLDER_${index}___</code></pre>`
+    })
+    
+    // ===== 第二步：清理 HTML =====
+    const doc = parser.parseFromString(content, 'text/html')
+    
+    // 移除所有 style 和不必要的属性
+    const allElements = doc.body.querySelectorAll('*')
+    allElements.forEach(el => {
       el.removeAttribute('style')
-      el.removeAttribute('class')
       el.removeAttribute('id')
       el.removeAttribute('data-id')
       el.removeAttribute('data-type')
       el.removeAttribute('data-version')
-      el.removeAttribute('data-pault-text-color')
-      el.removeAttribute('data-pault-bg-color')
-      el.removeAttribute('data-pault-font-size')
-      el.removeAttribute('data-pault-letter-spacing')
-      el.removeAttribute('data-pault-line-height')
-      el.removeAttribute('data-pault-text-align')
-      el.removeAttribute('data-pault-width')
-      el.removeAttribute('data-pault-slug')
-      el.removeAttribute('data-pault-image')
-      el.removeAttribute('data-pault-video')
-      el.removeAttribute('data-pault-file')
-      el.removeAttribute('data-pault-embed')
-      el.removeAttribute('data-pault-tweet')
-      el.removeAttribute('data-pault-github')
-      el.removeAttribute('data-pault-hrtype')
-      el.removeAttribute('data-pault-src')
+      el.removeAttribute('data-language')
+      el.removeAttribute('data-highlighted')
+      el.removeAttribute('data-lang')
+      el.removeAttribute('tabindex')
+      el.removeAttribute('spellcheck')
+      
+      // 移除所有 data-* 属性（但保留 data-code-index）
+      Array.from(el.attributes).forEach(attr => {
+        if (attr.name.startsWith('data-') && attr.name !== 'data-code-index' && attr.name !== 'data-lang') {
+          el.removeAttribute(attr.name)
+        }
+      })
     })
     
     // 移除 script 和 style 标签
-    const scripts = doc.body.querySelectorAll('script, style, noscript, iframe, object, embed')
+    const scripts = doc.body.querySelectorAll('script, style, noscript, iframe, object, embed, svg')
     scripts.forEach(el => el.remove())
     
-    // 处理图片 - 保留 src，如果是 base64 或绝对 URL
+    // 处理图片
     const images = doc.body.querySelectorAll('img')
     images.forEach(img => {
       const src = img.getAttribute('src')
-      if (src && (src.startsWith('data:') || src.startsWith('http'))) {
-        // 保留有效图片
-      } else {
-        // 移除无效图片
+      if (src && !src.startsWith('data:') && !src.startsWith('http') && !src.startsWith('//')) {
         img.remove()
+      } else if (src && (src.startsWith('data:') || src.startsWith('http') || src.startsWith('//'))) {
+        img.setAttribute('class', 'max-w-full h-auto rounded-lg my-4')
+        img.removeAttribute('style')
+        img.removeAttribute('width')
+        img.removeAttribute('height')
+        img.removeAttribute('loading')
+      } else {
+        img.remove()
+      }
+    })
+    
+    // 处理表格
+    const tables = doc.body.querySelectorAll('table')
+    tables.forEach(table => {
+      const cells = table.querySelectorAll('td, th')
+      cells.forEach(cell => {
+        cell.removeAttribute('style')
+        cell.removeAttribute('class')
+      })
+      
+      const rows = table.querySelectorAll('tr')
+      rows.forEach(row => {
+        row.removeAttribute('style')
+        row.removeAttribute('class')
+      })
+      
+      table.removeAttribute('style')
+      table.removeAttribute('class')
+      table.setAttribute('class', 'border-collapse w-full my-4')
+      
+      const thead = table.querySelector('thead')
+      if (thead) {
+        thead.removeAttribute('style')
+        thead.removeAttribute('class')
+      }
+      const tbody = table.querySelector('tbody')
+      if (tbody) {
+        tbody.removeAttribute('style')
+        tbody.removeAttribute('class')
       }
     })
     
     // 处理链接
     const links = doc.body.querySelectorAll('a')
     links.forEach(link => {
-      // 保留 href
       const href = link.getAttribute('href')
-      if (!href || href.startsWith('javascript:')) {
-        // 移除无用的链接，保留文本
+      if (!href || href.startsWith('javascript:') || href === '#') {
         link.replaceWith(link.textContent || '')
+      } else {
+        link.removeAttribute('style')
+        link.removeAttribute('class')
       }
     })
     
-    return doc.body.innerHTML
+    // 移除空的段落和 div
+    const emptyElements = doc.body.querySelectorAll('p:empty, div:empty, span:empty, br')
+    emptyElements.forEach(el => {
+      if (el.tagName === 'BR') return
+      el.remove()
+    })
+    
+    // ===== 第三步：恢复代码块内容 =====
+    let cleanHtml = doc.body.innerHTML
+    
+    // 恢复代码块内容
+    codeBlocks.forEach((code, index) => {
+      // 替换占位符为实际的代码内容
+      // 转义 HTML 特殊字符
+      const escapedCode = code
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+      
+      cleanHtml = cleanHtml.replace(
+        `<code>___CODE_PLACEHOLDER_${index}___</code>`,
+        `<code>${escapedCode}</code>`
+      )
+    })
+    
+    // 清理连续的空行
+    cleanHtml = cleanHtml.replace(/<p><br\s*\/?><\/p>/gi, '<br>')
+    cleanHtml = cleanHtml.replace(/<div><br\s*\/?><\/div>/gi, '<br>')
+    cleanHtml = cleanHtml.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '<br>')
+    
+    // 标准化列表结构
+    cleanHtml = cleanHtml.replace(/<li>\s*<p>([\s\S]*?)<\/p>\s*<\/li>/gi, '<li>$1</li>')
+    cleanHtml = cleanHtml.replace(/<p>\s*<li>([\s\S]*?)<\/li>\s*<\/p>/gi, '<li>$1</li>')
+    
+    // 清理临时的 data 属性
+    cleanHtml = cleanHtml.replace(/\s*data-code-index="\d+"/g, '')
+    cleanHtml = cleanHtml.replace(/\s*data-lang="[^"]*"/g, '')
+    
+    return cleanHtml
   }
 
   const addLink = useCallback(() => {
