@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // 启用 standalone 输出模式，用于 Docker 部署
   output: 'standalone',
   
+  // 生产环境压缩（默认启用，这里显式声明）
+  compress: true,
+  
   // 图片配置
   images: {
     remotePatterns: [
@@ -27,6 +30,12 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   
+  // 编译器优化
+  compiler: {
+    // 生产环境移除 console.log
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  
   // 实验性优化
   experimental: {
     // 优化包导入，减少构建时间和内存
@@ -36,8 +45,6 @@ const nextConfig: NextConfig = {
       'date-fns',
       'sonner',
     ],
-    // 禁用 CSS 优化（避免 critters 依赖问题）
-    optimizeCss: false,
   },
   
   // Standalone 模式：确保包含所有必要的文件
@@ -47,6 +54,36 @@ const nextConfig: NextConfig = {
       './node_modules/coze-coding-dev-sdk/**',
       './public/**',
     ],
+  },
+  
+  // HTTP 头缓存策略
+  async headers() {
+    return [
+      // 静态资源长期缓存（1年）
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // 页面缓存（1小时）
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
+    ];
   },
 };
 
