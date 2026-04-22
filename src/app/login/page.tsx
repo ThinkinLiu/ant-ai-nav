@@ -14,6 +14,19 @@ import Image from 'next/image'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 
+// QQ图标组件
+function QQIcon({ className = 'w-5 h-5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="12" fill="#12B7F5"/>
+      <path d="M12 5C8.5 5 6 7.5 6 10.5C6 12.5 7 14 7 14L6.5 16H8L9 14.5C9.5 15 10.5 16 12 16C13.5 16 14.5 15 15 14.5L16 16H17.5L17 14C17 14 18 12.5 18 10.5C18 7.5 15.5 5 12 5Z" fill="white"/>
+      <circle cx="10" cy="10" r="1.5" fill="#12B7F5"/>
+      <circle cx="14" cy="10" r="1.5" fill="#12B7F5"/>
+      <path d="M10 13C10 13 10.5 14 12 14C13.5 14 14 13 14 13" stroke="#12B7F5" strokeWidth="0.8" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
 // 英文错误信息翻译为中文
 const translateError = (error: string): string => {
   const errorMap: Record<string, string> = {
@@ -361,7 +374,7 @@ function LoginForm() {
                         className="flex-1"
                         onClick={() => handleOAuthLogin('qq')}
                       >
-                        <span className="mr-2 text-lg">🐧</span>
+                        <QQIcon className="mr-2 w-5 h-5" />
                         QQ登录
                       </Button>
                     )}
@@ -464,7 +477,7 @@ function LoginForm() {
                           className="flex-1"
                           onClick={() => handleOAuthLogin('qq')}
                         >
-                          <span className="mr-2 text-lg">🐧</span>
+                          <QQIcon className="mr-2 w-5 h-5" />
                           QQ登录
                         </Button>
                       )}

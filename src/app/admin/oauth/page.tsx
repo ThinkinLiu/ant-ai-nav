@@ -10,6 +10,19 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Loader2, Settings, MessageCircle } from 'lucide-react'
 
+// QQ图标组件
+function QQIcon({ className = 'w-6 h-6' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="12" fill="white"/>
+      <path d="M12 5C8.5 5 6 7.5 6 10.5C6 12.5 7 14 7 14L6.5 16H8L9 14.5C9.5 15 10.5 16 12 16C13.5 16 14.5 15 15 14.5L16 16H17.5L17 14C17 14 18 12.5 18 10.5C18 7.5 15.5 5 12 5Z" fill="#12B7F5"/>
+      <circle cx="10" cy="10" r="1.5" fill="white"/>
+      <circle cx="14" cy="10" r="1.5" fill="white"/>
+      <path d="M10 13C10 13 10.5 14 12 14C13.5 14 14 13 14 13" stroke="white" strokeWidth="0.8" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
 interface OAuthSetting {
   id: number
   provider: 'wechat' | 'qq'
@@ -30,9 +43,9 @@ const providerInfo = {
   },
   qq: {
     name: 'QQ登录',
-    icon: '🐧',
+    iconComponent: QQIcon,
     description: '使用QQ账号快捷登录',
-    color: 'bg-blue-500',
+    color: 'bg-[#12B7F5]',
     appIdLabel: 'APP ID',
     appSecretLabel: 'APP Key',
     helpUrl: 'https://connect.qq.com/',
@@ -164,7 +177,7 @@ export default function OAuthSettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 ${info.color} rounded-lg flex items-center justify-center text-xl`}>
-                      {info.icon}
+                      {info.iconComponent ? <info.iconComponent className="w-6 h-6" /> : info.icon}
                     </div>
                     <div>
                       <CardTitle className="text-lg">{info.name}</CardTitle>
