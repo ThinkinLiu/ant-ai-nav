@@ -182,17 +182,17 @@ export default function RichTextEditor({
           const docSize = view.state.doc.content.size
           
           // 检查是否是意外选中了全部内容（容错处理）
-          // 如果选区是整个文档或接近整个文档，且光标在开始或结束位置，
-          // 则取消选区，让内容插入到当前位置
+          // 如果选区是整个文档或接近整个文档，则取消选区
           const isSelectingAll = (from === 0 && to >= docSize) || 
                                  (from <= 1 && to >= docSize - 1)
           
           if (isSelectingAll) {
-            // 取消选区，将光标移到内容末尾
-            const pos = Math.min(from, docSize)
-            view.dispatch(view.state.tr.setSelection(
-              view.state.selection.constructor.near(pos === 0 ? pos : Math.max(0, pos - 1))
-            ))
+            // 使用更安全的方式：直接在末尾位置创建空选区
+            const tr = view.state.tr
+            const pos = docSize > 1 ? docSize - 1 : 0
+            // 使用 TextSelection.between 创建空选区
+            const selection = view.state.selection.constructor.between(pos, pos)
+            view.dispatch(tr.setSelection(selection))
           }
           
           editor?.commands.insertContent(cleanHtml)
