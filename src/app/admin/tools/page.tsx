@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -106,7 +106,6 @@ export default function AdminToolsPage() {
 function AdminToolsContent() {
   const { token } = useAuth()
   const searchParams = useSearchParams()
-  const router = useRouter()
   const [tools, setTools] = useState<Tool[]>([])
   const [loading, setLoading] = useState(true)
   const [initializing, setInitializing] = useState(true)
@@ -874,7 +873,7 @@ function AdminToolsContent() {
                         variant="ghost" 
                         size="sm" 
                         title="编辑"
-                        onClick={() => router.push(`/publisher/tools/${tool.id}/edit`)}
+                        onClick={() => handleOpenEdit(tool)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
