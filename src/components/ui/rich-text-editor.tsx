@@ -189,26 +189,11 @@ export default function RichTextEditor({
                                  (from <= 1 && to >= docSize - 1)
           
           if (isSelectingAll) {
-            // 意外选中全部内容时，在文档末尾位置插入
-            // 注意：必须使用一个有效的位置，不能使用 docSize
-            const insertPos = Math.max(0, docSize - 1)
-            const tr = view.state.tr.replaceWith(
-              insertPos, 
-              insertPos, 
-              editor.schema.text('') // 插入一个空文本节点作为锚点
-            )
-            view.dispatch(tr)
-            
-            // 然后在空节点位置插入内容
-            setTimeout(() => {
-              editor.chain()
-                .focus()
-                .setTextSelection(insertPos)
-                .insertContent(cleanHtml)
-                .run()
-            }, 0)
+            // 意外选中全部内容时，先取消选区到末尾位置，然后插入
+            const insertPos = Math.max(1, docSize - 1)
+            editor.chain().focus().setTextSelection(insertPos).insertContent(cleanHtml).run()
           } else {
-            // 正常插入
+            // 正常插入到当前位置（如果选区是折叠的）或替换选区内容
             editor.chain().focus().insertContent(cleanHtml).run()
           }
           return true
