@@ -174,6 +174,9 @@ export default function RichTextEditor({
         // 如果有 HTML 内容，保留格式粘贴
         if (html) {
           event.preventDefault()
+          
+          if (!editor) return true
+          
           // 清理 HTML，移除外部样式，只保留结构
           const cleanHtml = cleanPastedHtml(html)
           
@@ -181,21 +184,33 @@ export default function RichTextEditor({
           const { from, to } = view.state.selection
           const docSize = view.state.doc.content.size
           
-          // 检查是否是意外选中了全部内容（容错处理）
-          // 如果选区是整个文档或接近整个文档，则取消选区
+          // 检查是否是意外选中了全部内容
           const isSelectingAll = (from === 0 && to >= docSize) || 
                                  (from <= 1 && to >= docSize - 1)
           
           if (isSelectingAll) {
-            // 使用更安全的方式：直接在末尾位置创建空选区
-            const tr = view.state.tr
-            const pos = docSize > 1 ? docSize - 1 : 0
-            // 使用 TextSelection.between 创建空选区
-            const selection = view.state.selection.constructor.between(pos, pos)
-            view.dispatch(tr.setSelection(selection))
+            // 意外选中全部内容时，在文档末尾位置插入
+            // 注意：必须使用一个有效的位置，不能使用 docSize
+            const insertPos = Math.max(0, docSize - 1)
+            const tr = view.state.tr.replaceWith(
+              insertPos, 
+              insertPos, 
+              editor.schema.text('') // 插入一个空文本节点作为锚点
+            )
+            view.dispatch(tr)
+            
+            // 然后在空节点位置插入内容
+            setTimeout(() => {
+              editor.chain()
+                .focus()
+                .setTextSelection(insertPos)
+                .insertContent(cleanHtml)
+                .run()
+            }, 0)
+          } else {
+            // 正常插入
+            editor.chain().focus().insertContent(cleanHtml).run()
           }
-          
-          editor?.commands.insertContent(cleanHtml)
           return true
         }
         
