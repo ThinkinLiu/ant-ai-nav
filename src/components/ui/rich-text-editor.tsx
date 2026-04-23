@@ -176,7 +176,8 @@ export default function RichTextEditor({
           event.preventDefault()
           // 清理 HTML，移除外部样式，只保留结构
           const cleanHtml = cleanPastedHtml(html)
-          editor?.commands.insertContent(cleanHtml)
+          // 使用 setContent 替换内容并确保触发 update 事件
+          editor?.commands.setContent(cleanHtml)
           return true
         }
         
