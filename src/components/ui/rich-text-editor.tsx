@@ -180,22 +180,8 @@ export default function RichTextEditor({
           // 清理 HTML，移除外部样式，只保留结构
           const cleanHtml = cleanPastedHtml(html)
           
-          // 获取当前选区状态
-          const { from, to } = view.state.selection
-          const docSize = view.state.doc.content.size
-          
-          // 检查是否是意外选中了全部内容
-          const isSelectingAll = (from === 0 && to >= docSize) || 
-                                 (from <= 1 && to >= docSize - 1)
-          
-          if (isSelectingAll) {
-            // 意外选中全部内容时，先取消选区到末尾位置，然后插入
-            const insertPos = Math.max(1, docSize - 1)
-            editor.chain().focus().setTextSelection(insertPos).insertContent(cleanHtml).run()
-          } else {
-            // 正常插入到当前位置（如果选区是折叠的）或替换选区内容
-            editor.chain().focus().insertContent(cleanHtml).run()
-          }
+          // 直接插入内容，让 TipTap 自动处理选区
+          editor.chain().focus().insertContent(cleanHtml).run()
           return true
         }
         
