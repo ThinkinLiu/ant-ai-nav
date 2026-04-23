@@ -869,13 +869,10 @@ function AdminToolsContent() {
                           <Eye className="h-4 w-4" />
                         </a>
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        title="编辑"
-                        onClick={() => handleOpenEdit(tool)}
-                      >
-                        <Edit className="h-4 w-4" />
+                      <Button variant="ghost" size="sm" asChild title="编辑">
+                        <Link href={`/publisher/tools/${tool.id}/edit`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
                       </Button>
                       <Button 
                         variant="ghost" 
