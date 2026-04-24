@@ -398,6 +398,18 @@ export const oauthSettings = pgTable("oauth_settings", {
 	unique("oauth_settings_provider_key").on(table.provider),
 ]);
 
+export const browseHistory = pgTable("browse_history", {
+	id: serial().primaryKey().notNull(),
+	userId: varchar("user_id", { length: 255 }).notNull(),
+	toolId: integer("tool_id").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("browse_history_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("browse_history_tool_id_idx").using("btree", table.toolId.asc().nullsLast().op("int4_ops")),
+	index("browse_history_created_at_idx").using("btree", table.createdAt.desc().nullsLast().op("timestamptz_ops")),
+	unique("browse_history_user_tool_unique").on(table.userId, table.toolId),
+]);
+
 export const newsCategories = pgTable("news_categories", {
 	id: serial().primaryKey().notNull(),
 	name: varchar({ length: 50 }).notNull(),

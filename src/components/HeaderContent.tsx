@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Search, Menu, X, Plus, Settings, LogOut, User, LayoutDashboard, Home, BookOpen, Compass } from 'lucide-react'
+import { Search, Menu, X, Plus, Settings, LogOut, User, LayoutDashboard, Home, BookOpen, Compass, Clock } from 'lucide-react'
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -299,6 +299,12 @@ export function HeaderContent() {
                       我的收藏
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/history">
+                      <Clock className="mr-2 h-4 w-4" />
+                      浏览历史
+                    </Link>
+                  </DropdownMenuItem>
                   {(user.role === 'publisher' || user.role === 'admin') && (
                     <DropdownMenuItem asChild>
                       <Link href="/publisher">
@@ -418,6 +424,9 @@ export function HeaderContent() {
                   </Link>
                   <Link href="/favorites" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
                     我的收藏
+                  </Link>
+                  <Link href="/history" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>
+                    浏览历史
                   </Link>
                   {(user.role === 'publisher' || user.role === 'admin') && (
                     <Link href="/publisher" className="text-sm font-medium py-2" onClick={() => setIsMenuOpen(false)}>

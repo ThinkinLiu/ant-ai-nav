@@ -10,6 +10,8 @@
 - **发布功能**: 登录用户可在顶部导航栏使用发布功能
   - **发布工具**: 发布AI工具（需要 publisher 或 admin 角色）
   - **发布资讯**: 发布AI相关资讯（需要 publisher 或 admin 角色）
+- **收藏功能**: 登录用户可收藏感兴趣的 AI 工具
+- **浏览历史**: 登录用户可查看浏览历史记录
 - **名人堂**: 展示AI领域杰出人物
 - **时间线**: 记录AI发展重要事件
 
@@ -82,6 +84,17 @@ pnpm ts-check     # TypeScript 类型检查
 - `GET /api/seo?site_type=nav|home` - 获取指定站点的SEO配置
 - `GET /api/sitemap-home` - 获取蚂蚁AI之家站点地图
 
+### 收藏与历史接口（需登录）
+- `GET /api/favorites` - 获取收藏列表
+- `POST /api/favorites` - 添加收藏
+- `DELETE /api/favorites?id=xxx` - 删除收藏
+- `DELETE /api/favorites?toolId=xxx` - 通过工具ID删除收藏
+- `GET /api/history` - 获取浏览历史列表
+- `POST /api/history` - 添加浏览记录
+- `DELETE /api/history?id=xxx` - 删除浏览记录
+- `DELETE /api/history?toolId=xxx` - 通过工具ID删除浏览记录
+- `PUT /api/history` - 清空所有浏览历史
+
 ### 管理后台接口
 - `GET/POST /api/admin/tools` - 工具管理
 - `GET/POST /api/admin/categories` - 分类管理
@@ -106,6 +119,7 @@ pnpm ts-check     # TypeScript 类型检查
 - `announcements` - 公告表
 - `comments` - 评论表
 - `favorites` - 收藏表
+- `browse_history` - 浏览历史表
 - `ai_hall_of_fame` - AI 名人堂表
 - `ai_timeline` - AI 大事纪表
 - `friend_links` - 友情链接表

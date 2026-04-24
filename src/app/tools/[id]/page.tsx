@@ -82,12 +82,29 @@ export default function ToolDetailPage({ params }: { params: Promise<{ id: strin
         // 检查收藏状态
         if (user && token) {
           checkFavoriteById(data.data.id)
+          // 添加浏览记录
+          addBrowseHistory(data.data.id)
         }
       }
     } catch (error) {
       console.error('获取工具详情失败:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const addBrowseHistory = async (toolId: number) => {
+    try {
+      await fetch('/api/history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ toolId }),
+      })
+    } catch (error) {
+      // 浏览记录失败不影响其他功能，静默处理
     }
   }
 
