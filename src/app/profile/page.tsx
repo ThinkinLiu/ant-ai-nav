@@ -105,9 +105,9 @@ export default function ProfilePage() {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await response.json()
-      if (data.success) {
-        setFavorites(data.data || [])
-        setStats(prev => ({ ...prev, favoritesCount: data.data?.length || 0 }))
+      if (data.success && data.data) {
+        setFavorites(data.data.favorites || [])
+        setStats(prev => ({ ...prev, favoritesCount: data.data.total || 0 }))
       }
     } catch (error) {
       console.error('获取收藏失败:', error)
@@ -137,8 +137,8 @@ export default function ProfilePage() {
 
   const fetchStats = async () => {
     if (!user) return
-    // 计算加入天数
-    const createdAt = new Date(user.id.split('-')[0]) // 简单估算
+    // 计算加入天数 - 使用 Supabase 用户创建时间
+    const createdAt = user.created_at ? new Date(user.created_at) : new Date()
     const now = new Date()
     const joinedDays = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)) || 1
     setStats(prev => ({ ...prev, joinedDays: Math.max(1, joinedDays) }))

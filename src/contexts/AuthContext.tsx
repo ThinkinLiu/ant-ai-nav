@@ -17,6 +17,7 @@ interface User {
   name: string | null
   avatar: string | null
   role: 'user' | 'publisher' | 'admin'
+  created_at?: string  // 用户创建时间
 }
 
 interface AuthContextType {
