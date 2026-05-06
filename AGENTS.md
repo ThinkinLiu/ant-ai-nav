@@ -44,8 +44,43 @@ pnpm ts-check     # TypeScript 类型检查
 - `COZE_WORKLOAD_IDENTITY_CLIENT_SECRET` - Coze 客户端密钥
 
 ### 对象存储环境变量（图片上传功能必需）
-- `COZE_BUCKET_ENDPOINT_URL` - 对象存储端点 URL
-- `COZE_BUCKET_NAME` - 存储桶名称
+
+项目支持多种存储方式，通过 `STORAGE_TYPE` 环境变量切换：
+
+#### 通用配置
+| 变量名 | 说明 | 可选值 |
+|--------|------|--------|
+| `STORAGE_TYPE` | 存储类型 | `s3`（默认）、`qiniu`、`local` |
+
+#### S3 兼容存储（默认）
+适用于 AWS S3、MinIO、阿里云 OSS、腾讯云 COS、七牛云等兼容 S3 的对象存储。
+
+| 变量名 | 说明 |
+|--------|------|
+| `COZE_BUCKET_ENDPOINT_URL` | 对象存储端点 URL |
+| `COZE_BUCKET_NAME` | 存储桶名称 |
+| `COZE_BUCKET_ACCESS_KEY` | Access Key（可选，部分存储需要） |
+| `COZE_BUCKET_SECRET_KEY` | Secret Key（可选，部分存储需要） |
+| `COZE_BUCKET_REGION` | 区域（默认 cn-beijing） |
+| `COZE_BUCKET_PUBLIC_DOMAIN` | CDN/自定义域名（可选，设置后优先使用） |
+
+#### 七牛云存储
+| 变量名 | 说明 |
+|--------|------|
+| `QINIU_ACCESS_KEY` | Access Key |
+| `QINIU_SECRET_KEY` | Secret Key |
+| `QINIU_BUCKET_NAME` | 存储桶名称 |
+| `QINIU_DOMAIN` | 绑定的域名（不带协议） |
+| `QINIU_REGION` | 区域（默认 z0） |
+
+#### 本地存储
+适用于开发环境或小型部署。
+
+| 变量名 | 说明 |
+|--------|------|
+| `LOCAL_UPLOAD_DIR` | 上传目录（默认 public/uploads） |
+| `LOCAL_PUBLIC_PATH` | 公共访问路径（默认 /uploads） |
+| `LOCAL_BASE_URL` | 自定义基础 URL（可选） |
 
 ### 环境变量文件加载顺序
 1. `.env.local` (最高优先级)
