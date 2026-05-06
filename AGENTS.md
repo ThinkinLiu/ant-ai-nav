@@ -272,6 +272,11 @@ useEffect(() => {
 - 大多数组件通过依赖 `user` 状态来响应登录变化，无需额外监听 refreshTrigger
 - 只有在数据获取不直接依赖 user 状态时，才需要额外监听 refreshTrigger
 
+### Header 组件 Suspense 边界
+Header 组件（`src/components/Header.tsx`）包含一个 Suspense boundary，用于支持 `useSearchParams()` 的 SSR：
+- `HeaderFallback` - 服务端/加载时的骨架屏组件
+- `HeaderContent` - 实际的头部内容（需要客户端渲染）
+
 ### API 安全
 - 管理接口需要进行身份验证
 - 使用 middleware 进行路由保护
