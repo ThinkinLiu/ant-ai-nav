@@ -43,6 +43,10 @@ pnpm ts-check     # TypeScript 类型检查
 - `COZE_WORKLOAD_IDENTITY_CLIENT_ID` - Coze 客户端 ID
 - `COZE_WORKLOAD_IDENTITY_CLIENT_SECRET` - Coze 客户端密钥
 
+### 对象存储环境变量（图片上传功能必需）
+- `COZE_BUCKET_ENDPOINT_URL` - 对象存储端点 URL
+- `COZE_BUCKET_NAME` - 存储桶名称
+
 ### 环境变量文件加载顺序
 1. `.env.local` (最高优先级)
 2. `.env.build`

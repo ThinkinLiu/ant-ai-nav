@@ -10,11 +10,29 @@ const storage = new S3Storage({
   region: 'cn-beijing',
 })
 
+// 检查存储配置
+function checkStorageConfig(): string | null {
+  if (!process.env.COZE_BUCKET_ENDPOINT_URL) {
+    return 'COZE_BUCKET_ENDPOINT_URL is not configured'
+  }
+  if (!process.env.COZE_BUCKET_NAME) {
+    return 'COZE_BUCKET_NAME is not configured'
+  }
+  return null
+}
+
 // 图片文件上传
 // 支持 JPG、PNG、GIF、WebP 格式
 // 返回签名 URL（有效期 10 年）和文件 key
 export async function POST(request: NextRequest) {
   try {
+    // 检查存储配置
+    const configError = checkStorageConfig()
+    if (configError) {
+      console.error('Storage config error:', configError)
+      return NextResponse.json({ error: '存储服务未配置，请联系管理员' }, { status: 500 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File
     const folder = formData.get('folder') as string || 'uploads'
@@ -48,12 +66,16 @@ export async function POST(request: NextRequest) {
     const safeExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? ext : 'jpg'
     const fileName = `${folder}/${timestamp}_${randomStr}.${safeExt}`
 
+    console.log('Uploading file:', { fileName, contentType: file.type, size: file.size })
+
     // 上传到对象存储
     const fileKey = await storage.uploadFile({
       fileContent: buffer,
       fileName,
       contentType: file.type,
     })
+
+    console.log('File uploaded, key:', fileKey)
 
     // 生成签名 URL（有效期 10 年 = 315360000 秒）
     // 这确保了上传的图片链接几乎永久有效
@@ -73,9 +95,10 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('上传失败:', error)
+    console.error('Upload failed:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: '上传失败，请重试' },
+      { error: `上传失败: ${errorMessage}` },
       { status: 500 }
     )
   }
