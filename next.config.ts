@@ -45,6 +45,13 @@ const nextConfig: NextConfig = {
       'date-fns',
       'sonner',
     ],
+    // 外部化需要 Node.js 的包
+    serverExternalPackages: [
+      '@supabase/supabase-js',
+      'coze-coding-dev-sdk',
+      '@aws-sdk/client-s3',
+      '@aws-sdk/s3-request-presigner',
+    ],
   },
   
   // Standalone 模式：确保包含所有必要的文件

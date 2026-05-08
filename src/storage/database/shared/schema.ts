@@ -531,3 +531,32 @@ export const tags = pgTable("tags", {
 	index("tags_slug_idx").using("btree", table.slug.asc().nullsLast().op("text_ops")),
 	unique("tags_slug_unique").on(table.slug),
 ]);
+
+export const storageSettings = pgTable("storage_settings", {
+	id: serial().primaryKey().notNull(),
+	storageType: varchar("storage_type", { length: 50 }).default('s3').notNull(),
+	// S3 配置
+	s3Endpoint: varchar("s3_endpoint", { length: 500 }),
+	s3Bucket: varchar("s3_bucket", { length: 255 }),
+	s3AccessKey: varchar("s3_access_key", { length: 255 }),
+	s3SecretKey: varchar("s3_secret_key", { length: 255 }),
+	s3Region: varchar("s3_region", { length: 100 }).default('cn-beijing'),
+	s3PublicDomain: varchar("s3_public_domain", { length: 500 }),
+	// 七牛云配置
+	qiniuAccessKey: varchar("qiniu_access_key", { length: 255 }),
+	qiniuSecretKey: varchar("qiniu_secret_key", { length: 255 }),
+	qiniuBucket: varchar("qiniu_bucket", { length: 255 }),
+	qiniuDomain: varchar("qiniu_domain", { length: 500 }),
+	qiniuRegion: varchar("qiniu_region", { length: 50 }).default('z0'),
+	// 本地存储配置
+	localUploadDir: varchar("local_upload_dir", { length: 500 }).default('public/uploads'),
+	localPublicPath: varchar("local_public_path", { length: 500 }).default('/uploads'),
+	localBaseUrl: varchar("local_base_url", { length: 500 }),
+	// 通用设置
+	maxFileSize: integer("max_file_size").default(10485760),
+	allowedExtensions: text("allowed_extensions").array(),
+	// 状态
+	isActive: boolean("is_active").default(true),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+});

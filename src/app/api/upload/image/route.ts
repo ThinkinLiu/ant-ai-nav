@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getStorage, validateStorageConfig, getStorageType } from '@/lib/storage'
+import { getStorage, getStorageType, loadStorageConfigFromDatabase, validateStorageConfig } from '@/lib/storage'
 
 // 图片文件上传
 // 支持 JPG、PNG、GIF、WebP 格式
 // 返回签名 URL（有效期 10 年）和文件 key
 export async function POST(request: NextRequest) {
   try {
+    // 优先从数据库加载配置进行验证
+    const dbConfig = await loadStorageConfigFromDatabase()
+    const configToValidate = dbConfig || undefined
+    
     // 验证存储配置
-    const validation = validateStorageConfig()
+    const validation = validateStorageConfig(configToValidate)
     if (!validation.valid) {
       console.error('Storage config error:', validation.error)
       return NextResponse.json(
@@ -51,8 +55,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`[${getStorageType()}] Uploading file:`, { fileName, contentType: file.type, size: file.size })
 
-    // 获取存储实例并上传
-    const storage = getStorage()
+    // 获取存储实例并上传（优先使用数据库配置）
+    const storage = await getStorage()
     const fileKey = await storage.uploadFile(buffer, fileName, file.type)
 
     console.log(`[${getStorageType()}] File uploaded, key:`, fileKey)
