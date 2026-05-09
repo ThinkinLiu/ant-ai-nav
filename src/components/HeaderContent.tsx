@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Search, Menu, X, Plus, Settings, LogOut, User, LayoutDashboard, Home, BookOpen, Compass, Clock } from 'lucide-react'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface SiteSettings {
@@ -36,7 +36,7 @@ interface MenuItem {
   is_default: boolean
 }
 
-export function HeaderContent() {
+export function HeaderContentInner() {
   const { user, logout, refreshTrigger } = useAuth()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -460,5 +460,25 @@ export function HeaderContent() {
         </div>
       )}
     </header>
+  )
+}
+
+
+function HeaderContentFallback() {
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <div className="h-8 w-32 animate-pulse rounded bg-muted" />
+        <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+      </div>
+    </header>
+  )
+}
+
+export function HeaderContent() {
+  return (
+    <Suspense fallback={<HeaderContentFallback />}>
+      <HeaderContentInner />
+    </Suspense>
   )
 }
