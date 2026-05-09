@@ -849,13 +849,13 @@ function HomePageContent() {
                       </Button>
                     </div>
                     <Card className="overflow-hidden">
-                      <CardContent className="py-1.5 px-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
+                      <CardContent className="py-2 px-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                           {tabNews.map((news, index) => (
                             <Link 
                               key={news.id} 
                               href={`/news/${news.id}`}
-                              className="flex items-start gap-2 py-1 group hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
+                              className="flex items-start gap-2 py-2 group hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
                             >
                               <span className="text-xs text-muted-foreground w-5 shrink-0 pt-0.5">
                                 {index + 1}.
@@ -877,13 +877,13 @@ function HomePageContent() {
                 {/* 资讯类型Tab */}
                 {currentTab?.type === 'news' && tabNews.length > 0 && (
                   <Card className="overflow-hidden">
-                    <CardContent className="py-1.5 px-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
+                    <CardContent className="py-2 px-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                         {tabNews.map((news, index) => (
                           <Link 
                             key={news.id} 
                             href={`/news/${news.id}`}
-                            className="flex items-start gap-2 py-1 group hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
+                            className="flex items-start gap-2 py-2 group hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
                           >
                             <span className="text-xs text-muted-foreground w-5 shrink-0 pt-0.5">
                               {index + 1}.
