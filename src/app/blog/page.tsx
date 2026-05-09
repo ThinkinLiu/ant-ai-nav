@@ -318,17 +318,17 @@ export default async function BlogPage() {
                 {blogs.map((blog) => (
                   <article
                     key={blog.id}
-                    className="bg-card border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                    className="bg-card border rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group p-4 md:p-5"
                   >
-                    <div className="md:flex">
-                      <div className="md:w-1/3">
+                    <div className="md:flex md:gap-5">
+                      <div className="md:w-2/5 mb-4 md:mb-0">
                         <img
                           src={blog.cover_image || getBannerById(blog.id)}
                           alt={blog.title}
-                          className="w-full h-48 md:h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-48 md:h-40 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>
-                      <div className="md:w-2/3">
+                      <div className="md:w-3/5 flex flex-col justify-center">
                         {(() => {
                           const blogCategories = parseCategories(blog.category)
                           const filteredCategories = blogCategories.filter(cat => cat !== 'blog')
@@ -339,7 +339,7 @@ export default async function BlogPage() {
                             return (
                               <span
                                 key={cat}
-                                className="text-xs px-2 py-1 rounded-full"
+                                className="text-xs px-2.5 py-1 rounded-full"
                                 style={{ backgroundColor: `${colorClass}20`, color: colorClass }}
                               >
                                 {displayName}
@@ -350,7 +350,7 @@ export default async function BlogPage() {
                           if (categoryBadges.length === 0) return null
 
                           return (
-                            <div className="flex items-center gap-2 mb-3 flex-wrap">
+                            <div className="flex items-center gap-2.5 mb-3 flex-wrap">
                               {categoryBadges}
                               <span className="text-xs text-muted-foreground">
                                 {formatRelativeTime(blog.published_at)}
@@ -358,12 +358,12 @@ export default async function BlogPage() {
                             </div>
                           )
                         })()}
-                        <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
+                        <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors line-clamp-2">
                           <a href={`/news/${blog.id}`}>
                             {blog.title}
                           </a>
                         </h3>
-                        <p className="text-muted-foreground mb-4 line-clamp-2">
+                        <p className="text-muted-foreground mb-4 line-clamp-3 text-sm leading-relaxed">
                           {blog.summary}
                         </p>
                         <div className="flex items-center justify-between">
@@ -398,21 +398,21 @@ export default async function BlogPage() {
               {hotBlogs.length === 0 ? (
                 <p className="text-muted-foreground text-sm">暂无热门博客</p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {hotBlogs.map((blog, index) => (
                     <a
                       key={blog.id}
                       href={`/news/${blog.id}`}
-                      className="flex gap-3 group"
+                      className="flex gap-4 group pb-5 border-b last:border-b-0 last:pb-0"
                     >
-                      <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                      <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
+                        <h4 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors leading-snug">
                           {blog.title}
                         </h4>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-2">
                           👁️ {blog.view_count || 0} 阅读
                         </p>
                       </div>
@@ -431,12 +431,12 @@ export default async function BlogPage() {
               {popularTags.length === 0 ? (
                 <p className="text-muted-foreground text-sm">暂无标签</p>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-3">
                   {popularTags.map((tag) => (
                     <Link
                       key={tag}
                       href={`/tags/${encodeURIComponent(tag)}`}
-                      className="text-xs bg-muted px-3 py-1.5 rounded-full hover:bg-primary hover:text-white transition-colors cursor-pointer"
+                      className="text-sm bg-muted/80 px-4 py-2 rounded-full hover:bg-primary hover:text-white transition-colors cursor-pointer"
                     >
                       {tag}
                     </Link>
