@@ -36,19 +36,6 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
-  // 外部化需要 Node.js 的包（Next.js 16 放在顶层）
-  serverExternalPackages: [
-    '@supabase/supabase-js',
-    'coze-coding-dev-sdk',
-    '@aws-sdk/client-s3',
-    '@aws-sdk/s3-request-presigner',
-  ],
-
-  // Turbopack 配置
-  turbopack: {
-    root: '/workspace/projects',
-  },
-  
   // 实验性优化
   experimental: {
     // 优化包导入，减少构建时间和内存
@@ -57,6 +44,13 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-icons',
       'date-fns',
       'sonner',
+    ],
+    // 外部化需要 Node.js 的包
+    serverExternalPackages: [
+      '@supabase/supabase-js',
+      'coze-coding-dev-sdk',
+      '@aws-sdk/client-s3',
+      '@aws-sdk/s3-request-presigner',
     ],
   },
   
