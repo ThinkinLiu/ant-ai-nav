@@ -53,17 +53,37 @@ export async function loadStorageConfigFromDatabase(): Promise<StorageConfig | n
     }
     
     // 根据存储类型构建配置
-    const config: StorageConfig = {
-      type: data.storage_type as StorageType,
-      endpointUrl: data.s3_endpoint || undefined,
-      bucketName: data.s3_bucket || data.qiniu_bucket || undefined,
-      accessKey: data.s3_access_key || data.qiniu_access_key || undefined,
-      secretKey: data.s3_secret_key || data.qiniu_secret_key || undefined,
-      region: data.s3_region || data.qiniu_region || undefined,
-      domain: data.s3_public_domain || data.qiniu_domain || undefined,
-      uploadDir: data.local_upload_dir || undefined,
-      publicPath: data.local_public_path || undefined,
-      baseUrl: data.local_base_url || undefined,
+    let config: StorageConfig
+    
+    if (data.storage_type === 'qiniu') {
+      // 七牛云配置
+      config = {
+        type: 'qiniu',
+        accessKey: data.qiniu_access_key || '',
+        secretKey: data.qiniu_secret_key || '',
+        bucketName: data.qiniu_bucket || '',
+        domain: data.qiniu_domain || '',
+        region: data.qiniu_region || 'z0',
+      }
+    } else if (data.storage_type === 'local') {
+      // 本地存储配置
+      config = {
+        type: 'local',
+        uploadDir: data.local_upload_dir || 'public/uploads',
+        publicPath: data.local_public_path || '/uploads',
+        baseUrl: data.local_base_url,
+      }
+    } else {
+      // S3 配置
+      config = {
+        type: 's3',
+        endpointUrl: data.s3_endpoint || '',
+        accessKey: data.s3_access_key || '',
+        secretKey: data.s3_secret_key || '',
+        bucketName: data.s3_bucket || '',
+        region: data.s3_region || 'cn-beijing',
+        publicDomain: data.s3_public_domain,
+      }
     }
     
     console.log('[Storage] Loaded config from database, type:', data.storage_type)
@@ -97,15 +117,20 @@ export function createStorage(config?: StorageConfig): StorageAdapter {
  * 获取存储实例（单例模式）- 优先使用数据库配置
  */
 export async function getStorage(): Promise<StorageAdapter> {
-  if (!storageInstance || !cachedConfig) {
-    // 优先尝试从数据库加载配置
-    const dbConfig = await loadStorageConfigFromDatabase()
-    
-    if (dbConfig) {
+  // 每次都重新从数据库加载配置（确保配置变更后生效）
+  const dbConfig = await loadStorageConfigFromDatabase()
+  
+  if (dbConfig) {
+    // 检查配置是否变化
+    if (!storageInstance || JSON.stringify(cachedConfig) !== JSON.stringify(dbConfig)) {
+      console.log('[Storage] Config changed, creating new instance')
       cachedConfig = dbConfig
       storageInstance = createStorage(dbConfig)
-    } else {
-      // 回退到环境变量配置
+    }
+  } else {
+    // 回退到环境变量配置
+    if (!storageInstance) {
+      console.log('[Storage] Using environment config')
       cachedConfig = getStorageConfig()
       storageInstance = createStorage(cachedConfig)
     }
