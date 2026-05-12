@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { Card, CardContent } from '@/components/ui/card'
-import { Eye, Calendar, Loader2, Search } from 'lucide-react'
-import { formatRelativeTime } from '@/lib/utils'
+import { useSearchParams } from 'next/navigation'
+import { getBannerById } from '@/lib/banners'
 
 // 格式化时间，精确到分钟
 function formatDateTime(dateStr: string): string {
@@ -28,20 +27,33 @@ function formatDate(dateStr: string): string {
   return `${year}年${month}月${day}日`
 }
 
+// 教程分类配置
+const TUTORIAL_CATEGORIES: Record<string, { label: string; icon: string; color: string }> = {
+  'ai-tool': { label: 'AI工具', icon: '🛠️', color: '#3B82F6' },
+  'ai-tutorial': { label: 'AI教程', icon: '📚', color: '#10B981' },
+  'ai-news': { label: 'AI资讯', icon: '📰', color: '#F59E0B' },
+  'ai-research': { label: 'AI研究', icon: '🔬', color: '#8B5CF6' },
+  'prompt': { label: 'Prompt', icon: '✨', color: '#EC4899' },
+  'midjourney': { label: 'Midjourney', icon: '🎨', color: '#06B6D4' },
+  'chatgpt': { label: 'ChatGPT', icon: '💬', color: '#22C55E' },
+  'stable-diffusion': { label: 'SD', icon: '🖼️', color: '#EF4444' },
+}
+
 interface NewsItem {
   id: number
   title: string
+  title_en: string | null
   summary: string
-  cover_image: string | null
+  source: string | null
+  source_url: string | null
   category: string | null
-  published_at: string
-  view_count: number
   tags: string[] | null
-}
-
-interface CategoryInfo {
-  name: string
-  color: string
+  cover_image: string | null
+  is_featured: boolean
+  is_hot: boolean
+  view_count: number
+  like_count: number
+  published_at: string
 }
 
 interface Props {
@@ -50,16 +62,32 @@ interface Props {
 }
 
 export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
+  const searchParams = useSearchParams()
   const [tutorials, setTutorials] = useState<NewsItem[]>([])
-  const [categories, setCategories] = useState<Record<string, CategoryInfo>>({})
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showHotOnly, setShowHotOnly] = useState(false)
   const pageSize = 15
   const observerRef = useRef<HTMLDivElement>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  const fetchTutorials = useCallback(async (pageNum: number, search: string) => {
+  // 初始化时读取 URL 参数
+  useEffect(() => {
+    const categoryParam = searchParams.get('category')
+    const searchParam = searchParams.get('search')
+    const hotParam = searchParams.get('hot') === 'true'
+
+    // 设置初始状态
+    setSelectedCategory(categoryParam || null)
+    setSearchQuery(searchParam || '')
+    setShowHotOnly(hotParam)
+    setIsInitialized(true)
+  }, []) // 只在组件挂载时执行一次
+
+  const fetchTutorials = useCallback(async (pageNum: number, cat: string | null, search: string, hotOnly: boolean) => {
     setLoading(true)
     try {
       const params = new URLSearchParams({
@@ -68,9 +96,15 @@ export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
         category: category,
         status: 'approved',
       })
-
+      
+      if (cat) {
+        params.append('category_slug', cat)
+      }
       if (search) {
         params.append('search', search)
+      }
+      if (hotOnly) {
+        params.append('hot', 'true')
       }
 
       const res = await fetch(`/api/news?${params}`)
@@ -79,13 +113,10 @@ export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
       if (data.success) {
         if (pageNum === 1) {
           setTutorials(data.data.data)
-          setCategories(data.data.categories || {})
         } else {
           setTutorials(prev => [...prev, ...data.data.data])
         }
         setTotal(data.data.total)
-      } else {
-        console.error('API returned error:', data.error)
       }
     } catch (error) {
       console.error('获取数据失败:', error)
@@ -94,10 +125,13 @@ export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
     }
   }, [pageSize, category])
 
+  // 当状态变化时获取数据
   useEffect(() => {
-    fetchTutorials(1, searchQuery)
-    setPage(1)
-  }, [searchQuery, fetchTutorials])
+    if (isInitialized) {
+      fetchTutorials(1, selectedCategory, searchQuery, showHotOnly)
+      setPage(1)
+    }
+  }, [selectedCategory, searchQuery, showHotOnly, fetchTutorials, isInitialized])
 
   // 无限滚动
   useEffect(() => {
@@ -108,7 +142,7 @@ export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
           if (page < totalPages) {
             const nextPage = page + 1
             setPage(nextPage)
-            fetchTutorials(nextPage, searchQuery)
+            fetchTutorials(nextPage, selectedCategory, searchQuery, showHotOnly)
           }
         }
       },
@@ -120,12 +154,12 @@ export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
     }
 
     return () => observer.disconnect()
-  }, [loading, page, total, searchQuery, fetchTutorials])
+  }, [loading, page, total, selectedCategory, searchQuery, showHotOnly, fetchTutorials])
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setPage(1)
-    fetchTutorials(1, searchQuery)
+    fetchTutorials(1, selectedCategory, searchQuery, showHotOnly)
   }
 
   // 按日期分组
@@ -138,174 +172,211 @@ export function TutorialList({ hotTutorials, category = 'tutorial' }: Props) {
     return acc
   }, {} as Record<string, NewsItem[]>)
 
+  // 解析分类
+  const parseCategory = (categoryStr: string | null): { label: string; icon: string; color: string }[] => {
+    if (!categoryStr) return []
+    try {
+      const parsed = JSON.parse(categoryStr)
+      const categories = Array.isArray(parsed) ? parsed : [parsed]
+      return categories
+        .map(cat => TUTORIAL_CATEGORIES[cat] || { label: cat, icon: '📄', color: '#9CA3AF' })
+        .filter(Boolean)
+    } catch {
+      const config = TUTORIAL_CATEGORIES[categoryStr]
+      return config ? [config] : [{ label: categoryStr, icon: '📄', color: '#9CA3AF' }]
+    }
+  }
+
   return (
     <div>
-      {/* Search */}
-      <div className="mb-6">
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      {/* Filters */}
+      <div className="flex flex-col gap-4 mb-6 sticky top-16 bg-background/95 backdrop-blur py-4 z-10 -mt-4">
+        {/* Category Filter */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              selectedCategory === null
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted hover:bg-muted/80'
+            }`}
+          >
+            全部
+          </button>
+          {Object.entries(TUTORIAL_CATEGORIES).map(([key, config]) => (
+            <button
+              key={key}
+              onClick={() => setSelectedCategory(key)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-1 ${
+                selectedCategory === key
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted hover:bg-muted/80'
+              }`}
+            >
+              <span>{config.icon}</span>
+              <span>{config.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Search and Filter */}
+        <div className="flex justify-end gap-2">
+          <form onSubmit={handleSearch} className="flex gap-2">
             <input
               type="text"
               placeholder={category === 'blog' ? '搜索博客...' : '搜索教程...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 w-full rounded-lg border bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+              className="px-4 py-1.5 border rounded-lg bg-background w-48 text-sm"
             />
-          </div>
+            <button
+              type="submit"
+              className="px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
+            >
+              搜索
+            </button>
+          </form>
+
           <button
-            type="submit"
-            className="px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
+            onClick={() => setShowHotOnly(!showHotOnly)}
+            className={`px-3 py-1.5 border rounded-lg text-sm flex items-center gap-1.5 transition-colors ${
+              showHotOnly
+                ? 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400'
+                : 'bg-background hover:bg-muted'
+            }`}
           >
-            搜索
+            <span>🔥</span>
+            <span className="hidden sm:inline">热门</span>
           </button>
-        </form>
+        </div>
       </div>
 
-      {/* Tutorial List */}
-      {loading && tutorials.length === 0 ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : (
-        <>
-          {Object.entries(groupedTutorials).map(([date, items]) => (
-            <div key={date} className="mb-8">
-              <h3 className="text-lg font-semibold mb-4 text-muted-foreground">{date}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {items.map((tutorial) => (
+      {/* Tutorial List by Date */}
+      <div className="space-y-8">
+        {Object.entries(groupedTutorials).map(([date, items]) => (
+          <div key={date}>
+            {/* Date Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
+                {date}
+              </div>
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-sm text-muted-foreground">{items.length} 条</span>
+            </div>
+
+            {/* Tutorial Items */}
+            <div className="space-y-4">
+              {items.map((item) => {
+                const categories = parseCategory(item.category)
+                const firstCategory = categories[0]
+
+                return (
                   <Link
-                    key={tutorial.id}
-                    href={`/news/${tutorial.id}`}
-                    className="group bg-card border rounded-xl overflow-hidden hover:shadow-lg transition-all"
+                    key={item.id}
+                    href={`/news/${item.id}`}
+                    className="group flex gap-4 bg-card border rounded-xl p-4 hover:shadow-lg hover:border-primary/30 transition-all duration-300"
                   >
-                    {tutorial.cover_image && (
-                      <div className="aspect-video overflow-hidden bg-muted">
+                    {/* Cover Image */}
+                    {item.cover_image ? (
+                      <div className="w-32 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
                         <img
-                          src={tutorial.cover_image}
-                          alt={tutorial.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          src={item.cover_image}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-32 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+                        <img
+                          src={getBannerById(item.id)}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
                           loading="lazy"
                         />
                       </div>
                     )}
-                    <div className="p-4">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        {(() => {
-                          // 解析 category 字段
-                          let categoriesList: string[] = []
-                          try {
-                            if (tutorial.category) {
-                              const parsed = JSON.parse(tutorial.category)
-                              if (Array.isArray(parsed)) {
-                                categoriesList = parsed
-                              } else {
-                                categoriesList = [parsed]
-                              }
-                            }
-                          } catch {
-                            if (tutorial.category) {
-                              categoriesList = [tutorial.category]
-                            }
-                          }
 
-                          // 过滤掉"博客日志"分类
-                          const filteredCategories = categoriesList.filter(catSlug => {
-                            const catInfo = categories[catSlug]
-                            return catInfo && catInfo.name !== '博客日志'
-                          })
-
-                          // 如果有分类，显示所有分类
-                          if (filteredCategories.length > 0) {
-                            return filteredCategories.map((catSlug, idx) => {
-                              const catInfo = categories[catSlug]
-                              const color = catInfo?.color || '#9CA3AF'
-                              return (
-                                <span
-                                  key={idx}
-                                  className="inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium"
-                                  style={{
-                                    backgroundColor: `${color}20`,
-                                    borderColor: color,
-                                    color: color
-                                  }}
-                                >
-                                  {catInfo?.name || catSlug}
-                                </span>
-                              )
-                            })
-                          }
-
-                          // 否则显示默认分类
-                          return (
-                            <span
-                              className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium ${category === 'blog' ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-amber-500/10 border-amber-500 text-amber-500'}`}
-                            >
-                              {category === 'blog' ? '博客' : '教程'}
-                            </span>
-                          )
-                        })()}
-                        {tutorial.tags && tutorial.tags.length > 0 && (
-                          tutorial.tags.slice(0, 3).map((tag, idx) => (
-                            <span key={idx} className="inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium">
-                              {tag}
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        {categories.length > 0 && (
+                          categories.map((cat) => (
+                            <span key={cat.label} className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">
+                              {cat.icon} {cat.label}
                             </span>
                           ))
                         )}
+                        {item.is_hot && (
+                          <span className="text-xs px-2 py-0.5 bg-red-500/10 text-red-600 dark:text-red-400 rounded">
+                            🔥 热门
+                          </span>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          🕐 {formatDateTime(item.published_at)}
+                        </span>
+                        {item.source && (
+                          <span className="text-xs text-muted-foreground">
+                            · {item.source}
+                          </span>
+                        )}
                       </div>
-                      <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-2 mb-2">
-                        {tutorial.title}
+                      
+                      <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-1">
+                        {item.title}
                       </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                        {tutorial.summary}
+                      
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        {item.summary}
                       </p>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      
+                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {formatRelativeTime(tutorial.published_at)}
+                          <span>👁️</span>
+                          {item.view_count || 0}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="h-3 w-3" />
-                          {tutorial.view_count || 0}
-                        </span>
+                        {item.tags && item.tags.length > 0 && (
+                          <div className="flex gap-1">
+                            {item.tags.slice(0, 2).map((tag, i) => (
+                              <span key={i} className="bg-muted px-1.5 py-0.5 rounded">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </Link>
-                ))}
-              </div>
+                )
+              })}
             </div>
-          ))}
+          </div>
+        ))}
+      </div>
 
-          {/* Loading indicator */}
-          {loading && tutorials.length > 0 && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          )}
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      )}
 
-          {/* No more data indicator */}
-          {!loading && tutorials.length >= total && total > 0 && (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              已加载全部{category === 'blog' ? '博客' : '教程'}
-            </div>
-          )}
+      {/* Empty State */}
+      {!loading && tutorials.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          <div className="text-4xl mb-4">🔍</div>
+          <p>没有找到匹配的{category === 'blog' ? '博客' : '教程'}</p>
+        </div>
+      )}
 
-          {/* Empty state */}
-          {!loading && tutorials.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-4xl mb-4">{category === 'blog' ? '📝' : '📚'}</div>
-              <h3 className="text-lg font-semibold mb-2">暂无{category === 'blog' ? '博客' : '教程'}</h3>
-              <p className="text-muted-foreground">
-                {searchQuery
-                  ? `没有找到相关${category === 'blog' ? '博客' : '教程'}，请尝试其他关键词`
-                  : `暂时还没有${category === 'blog' ? '博客' : '教程'}内容`}
-              </p>
-            </div>
-          )}
+      {/* Load More Trigger */}
+      <div ref={observerRef} className="h-10" />
 
-          {/* Intersection Observer ref */}
-          <div ref={observerRef} className="h-10" />
-        </>
+      {/* Total Count */}
+      {!loading && tutorials.length > 0 && (
+        <div className="text-center py-4 text-sm text-muted-foreground">
+          共 {total} 条{category === 'blog' ? '博客' : '教程'}
+        </div>
       )}
     </div>
   )
