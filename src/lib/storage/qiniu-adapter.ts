@@ -14,6 +14,17 @@ export class QiniuStorageAdapter implements StorageAdapter {
   }
 
   /**
+   * URL Safe Base64 编码
+   * 七牛云要求使用 URL Safe 格式的 Base64
+   */
+  private urlSafeBase64(str: string): string {
+    return Buffer.from(str)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+  }
+
+  /**
    * 生成七牛云上传凭证
    * 凭证有效期为 1 小时
    */
@@ -31,14 +42,19 @@ export class QiniuStorageAdapter implements StorageAdapter {
       deadline,
     })
 
-    // 计算签名
-    const encodedPolicy = Buffer.from(policy).toString('base64')
+    // 计算 URL Safe Base64 编码的策略
+    const encodedPolicy = this.urlSafeBase64(policy)
+
+    // 使用 HMAC-SHA1 计算签名
     const signature = crypto
       .createHmac('sha1', secretKey)
       .update(encodedPolicy)
       .digest('base64')
+      // 签名也需要 URL Safe 编码
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
 
-    // 拼接 AccessKey:Signature
+    // 拼接上传凭证: AccessKey:EncodedSign:EncodedPolicy
     return `${accessKey}:${signature}:${encodedPolicy}`
   }
 
