@@ -52,6 +52,7 @@ export interface QiniuConfig {
   bucketName: string      // 存储桶名称
   domain: string          // 绑定的域名（不带协议）
   region?: string         // 区域，默认为 z0（华东）
+  isPrivate?: boolean     // 是否为私有空间，默认 false（公共空间）
 }
 
 /**
@@ -86,6 +87,7 @@ export function getStorageConfig(): StorageConfig {
         bucketName: process.env.QINIU_BUCKET_NAME || '',
         domain: process.env.QINIU_DOMAIN || '',
         region: process.env.QINIU_REGION || 'z0',
+        isPrivate: process.env.QINIU_IS_PRIVATE === 'true',
       }
 
     case 'local':

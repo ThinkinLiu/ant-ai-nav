@@ -109,9 +109,6 @@ export class QiniuStorageAdapter implements StorageAdapter {
   }
 
   async generatePresignedUrl(key: string, expireTime: number): Promise<string> {
-    // 七牛云的公共bucket可以直接使用域名访问
-    // 对于私有bucket，需要生成下载凭证
-
     // 构建基础URL
     let baseUrl = this.config.domain
     if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
@@ -120,16 +117,35 @@ export class QiniuStorageAdapter implements StorageAdapter {
 
     const url = `${baseUrl}/${key}`
 
-    // 检查是否需要生成下载凭证
+    // 如果是公共空间，直接返回URL（无需签名）
+    const isPrivate = this.config.isPrivate || false
+    
+    if (!isPrivate) {
+      // 公共空间直接返回URL
+      return url
+    }
+
+    // 私有空间需要生成下载凭证
+    // 文档: https://developer.qiniu.com/kodo/1202/download-token
     const deadline = Math.floor(Date.now() / 1000) + expireTime
-    const encodedUrl = Buffer.from(url).toString('base64url')
-    const signedStr = `${url}\n${deadline}`
+    
+    // 构造待签名字符串: URL + '?e=' + deadline
+    const signedStr = `${url}?e=${deadline}`
+    
+    // 使用 HMAC-SHA1 签名
     const signature = crypto
       .createHmac('sha1', this.config.secretKey)
       .update(signedStr)
-      .digest('base64url')
+      .digest('base64')
+      // 转换为 URL Safe 格式
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
 
-    return `${url}?e=${deadline}&token=${this.config.accessKey}:${signature}`
+    // 拼接下载凭证: AccessKey:encoded_signature
+    const downloadToken = `${this.config.accessKey}:${signature}`
+
+    // 最终URL格式: URL?e=deadline&token=downloadToken
+    return `${url}?e=${deadline}&token=${downloadToken}`
   }
 
   getType() {
