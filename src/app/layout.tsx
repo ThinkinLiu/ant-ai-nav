@@ -8,6 +8,17 @@ import { AnalyticsScript } from '@/components/AnalyticsScript'
 import { Toaster } from '@/components/ui/sonner'
 import { OAuthCallbackHandler } from '@/components/OAuthCallbackHandler'
 
+// Footer fallback component for Suspense
+function FooterFallback() {
+  return (
+    <footer className="border-t bg-muted/30">
+      <div className="container mx-auto px-4 py-8">
+        <div className="h-32 animate-pulse bg-muted/50 rounded" />
+      </div>
+    </footer>
+  )
+}
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -108,7 +119,9 @@ export default function RootLayout({
           <main className="flex-1">
             {children}
           </main>
-          <Footer />
+          <Suspense fallback={<FooterFallback />}>
+            <Footer />
+          </Suspense>
         </AuthProvider>
         <Toaster />
       </body>
