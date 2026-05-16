@@ -74,6 +74,9 @@
     "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@jridgewell/gen-mapping": "^0.3.13",
+    "@jridgewell/resolve-uri": "^3.1.2",
+    "@jridgewell/trace-mapping": "^0.3.31",
     "@react-dev-inspector/babel-plugin": "^2.0.1",
     "@react-dev-inspector/middleware": "^2.0.1",
     "@tailwindcss/postcss": "^4",

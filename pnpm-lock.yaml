@@ -196,6 +196,15 @@ importers:
         specifier: ^4.3.5
         version: 4.3.6
     devDependencies:
+      '@jridgewell/gen-mapping':
+        specifier: ^0.3.13
+        version: 0.3.13
+      '@jridgewell/resolve-uri':
+        specifier: ^3.1.2
+        version: 3.1.2
+      '@jridgewell/trace-mapping':
+        specifier: ^0.3.31
+        version: 0.3.31
       '@react-dev-inspector/babel-plugin':
         specifier: ^2.0.1
         version: 2.0.1
