@@ -109,28 +109,32 @@ export class QiniuStorageAdapter implements StorageAdapter {
   }
 
   async generatePresignedUrl(key: string, expireTime: number): Promise<string> {
-    // 构建基础URL
-    let baseUrl = this.config.domain
-    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
-      baseUrl = 'https://' + baseUrl
+    // 签名时必须使用七牛云绑定的域名（签名验证依赖 Host）
+    let signDomain = this.config.domain
+    if (!signDomain.startsWith('http://') && !signDomain.startsWith('https://')) {
+      signDomain = 'https://' + signDomain
     }
 
-    const url = `${baseUrl}/${key}`
+    // 公共访问时使用的域名（通过 nginx 代理访问）
+    let accessDomain = this.config.publicDomain || this.config.domain
+    if (!accessDomain.startsWith('http://') && !accessDomain.startsWith('https://')) {
+      accessDomain = 'https://' + accessDomain
+    }
 
-    // 如果是公共空间，直接返回URL（无需签名）
+    // 如果是公共空间，直接返回访问 URL（无需签名）
     const isPrivate = this.config.isPrivate || false
     
     if (!isPrivate) {
-      // 公共空间直接返回URL
-      return url
+      // 公共空间直接返回访问 URL
+      return `${accessDomain}/${key}`
     }
 
     // 私有空间需要生成下载凭证
     // 文档: https://developer.qiniu.com/kodo/1202/download-token
     const deadline = Math.floor(Date.now() / 1000) + expireTime
     
-    // 构造待签名字符串: URL + '?e=' + deadline
-    const signedStr = `${url}?e=${deadline}`
+    // 构造待签名字符串: 使用绑定域名生成签名（七牛云会验证 Host）
+    const signedStr = `${signDomain}/${key}?e=${deadline}`
     
     // 使用 HMAC-SHA1 签名
     const signature = crypto
@@ -144,8 +148,10 @@ export class QiniuStorageAdapter implements StorageAdapter {
     // 拼接下载凭证: AccessKey:encoded_signature
     const downloadToken = `${this.config.accessKey}:${signature}`
 
-    // 最终URL格式: URL?e=deadline&token=downloadToken
-    return `${url}?e=${deadline}&token=${downloadToken}`
+    // 最终返回访问 URL（使用公共访问域名，但签名参数保持不变）
+    // 关键点：nginx 代理时需要设置 proxy_set_header Host img.mayiai.site;
+    // 这样七牛云才能正确验证签名
+    return `${accessDomain}/${key}?e=${deadline}&token=${downloadToken}`
   }
 
   getType() {

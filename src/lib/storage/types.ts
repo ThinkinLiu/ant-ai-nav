@@ -50,9 +50,10 @@ export interface QiniuConfig {
   accessKey: string      // Access Key
   secretKey: string      // Secret Key
   bucketName: string      // 存储桶名称
-  domain: string          // 绑定的域名（不带协议）
+  domain: string          // 七牛云绑定的域名（用于上传和签名）
   region?: string         // 区域，默认为 z0（华东）
   isPrivate?: boolean     // 是否为私有空间，默认 false（公共空间）
+  publicDomain?: string   // 公共访问域名（用于实际访问，如 nginx 代理域名）
 }
 
 /**
@@ -88,6 +89,7 @@ export function getStorageConfig(): StorageConfig {
         domain: process.env.QINIU_DOMAIN || '',
         region: process.env.QINIU_REGION || 'z0',
         isPrivate: process.env.QINIU_IS_PRIVATE === 'true',
+        publicDomain: process.env.QINIU_PUBLIC_DOMAIN,
       }
 
     case 'local':

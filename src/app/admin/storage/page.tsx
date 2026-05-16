@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
 import { Loader2, HardDrive, Cloud, FolderOpen, Save } from 'lucide-react'
 
@@ -25,6 +26,8 @@ interface StorageSettings {
   qiniu_bucket?: string
   qiniu_domain?: string
   qiniu_region?: string
+  qiniu_is_private?: boolean
+  qiniu_public_domain?: string
   // 本地存储配置
   local_upload_dir?: string
   local_public_path?: string
@@ -69,6 +72,8 @@ export default function StorageSettingsPage() {
     qiniu_bucket: '',
     qiniu_domain: '',
     qiniu_region: 'z0',
+    qiniu_is_private: false,
+    qiniu_public_domain: '',
     local_upload_dir: 'public/uploads',
     local_public_path: '/uploads',
     local_base_url: '',
@@ -321,14 +326,14 @@ export default function StorageSettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="qiniu_domain">访问域名 *</Label>
+                  <Label htmlFor="qiniu_domain">绑定域名 *</Label>
                   <Input
                     id="qiniu_domain"
-                    placeholder="https://cdn.example.com"
+                    placeholder="https://img.example.com"
                     value={settings.qiniu_domain || ''}
                     onChange={(e) => setSettings({ ...settings, qiniu_domain: e.target.value })}
                   />
-                  <p className="text-xs text-muted-foreground">已绑定到存储桶的自定义域名</p>
+                  <p className="text-xs text-muted-foreground">七牛云存储空间绑定的域名</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="qiniu_region">区域</Label>
@@ -340,7 +345,38 @@ export default function StorageSettingsPage() {
                   />
                   <p className="text-xs text-muted-foreground">可选值: z0 (华东), z1 (华北), z2 (华南), na0 (北美), as0 (东南亚)</p>
                 </div>
+                <div className="space-y-2 flex items-center gap-3">
+                  <Switch
+                    id="qiniu_is_private"
+                    checked={settings.qiniu_is_private || false}
+                    onCheckedChange={(checked) => setSettings({ ...settings, qiniu_is_private: checked })}
+                  />
+                  <Label htmlFor="qiniu_is_private" className="cursor-pointer">私有空间</Label>
+                  <p className="text-xs text-muted-foreground">开启后，访问文件需要带签名</p>
+                </div>
               </div>
+              
+              {settings.qiniu_is_private && (
+                <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-4">
+                  <div className="text-sm font-medium">私有空间配置</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="qiniu_public_domain">公共访问域名</Label>
+                      <Input
+                        id="qiniu_public_domain"
+                        placeholder="https://cdn.example.com"
+                        value={settings.qiniu_public_domain || ''}
+                        onChange={(e) => setSettings({ ...settings, qiniu_public_domain: e.target.value })}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        用于实际访问的域名（如 nginx 代理域名）。留空则使用绑定域名。
+                        <br />
+                        示例：绑定域名为 http://img.example.com，公共访问域名为 https://cdn.example.com
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

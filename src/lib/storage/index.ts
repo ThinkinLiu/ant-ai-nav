@@ -65,6 +65,7 @@ export async function loadStorageConfigFromDatabase(): Promise<StorageConfig | n
         domain: data.qiniu_domain || '',
         region: data.qiniu_region || 'z0',
         isPrivate: data.qiniu_is_private || false,
+        publicDomain: data.qiniu_public_domain || undefined,
       }
     } else if (data.storage_type === 'local') {
       // 本地存储配置
