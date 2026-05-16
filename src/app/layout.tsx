@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import { Inspector } from 'react-dev-inspector'
 import { Suspense } from 'react'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -97,12 +96,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const isDev = process.env.NODE_ENV === 'development'
-
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body className="antialiased min-h-screen flex flex-col" suppressHydrationWarning>
-        {isDev && <Inspector />}
         <AnalyticsScript />
         <AuthProvider>
           <Suspense fallback={null}>
