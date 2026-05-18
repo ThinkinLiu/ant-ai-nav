@@ -140,8 +140,8 @@ export function HeaderContentInner() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+    <header suppressHydrationWarning className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div suppressHydrationWarning className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
           {isBlogPage && siteSettings.blog_logo ? (
@@ -163,7 +163,7 @@ export function HeaderContentInner() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-4">
+        <nav suppressHydrationWarning className="hidden md:flex items-center space-x-4">
           {menuItems.length > 0 ? (
             // 使用动态菜单配置
             menuItems.map((item) => (
@@ -246,7 +246,7 @@ export function HeaderContentInner() {
         </form>
 
         {/* User Menu */}
-        <div className="flex items-center space-x-3">
+        <div suppressHydrationWarning className="flex items-center space-x-3">
           {user ? (
             <>
               {/* 在博客页面隐藏发布按钮 */}
@@ -466,8 +466,8 @@ export function HeaderContentInner() {
 
 function HeaderContentFallback() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+    <header suppressHydrationWarning className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div suppressHydrationWarning className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="h-8 w-32 animate-pulse rounded bg-muted" />
         <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
       </div>
